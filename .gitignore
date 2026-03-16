@@ -1,0 +1,20 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+# Environment files
+.env
+.env.dev
+
+# Documentation (local only)
+CODE_WALKTHROUGH.md
+COMMANDS.md
+FUTURE_FEATURES.md
+SYMFONY_DB_CHEAT_SHEET.md
