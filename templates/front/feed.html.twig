@@ -1,0 +1,54 @@
+{% extends 'front/layout.html.twig' %}
+
+{% block title %}Feed{% endblock %}
+
+{% block content %}
+{% if search is not empty %}
+    <div class="search-results-header">
+        <span>Results for "<strong>{{ search }}</strong>"</span>
+        <a href="{{ path('app_feed') }}" class="clear-search">✕ Clear</a>
+    </div>
+{% endif %}
+
+{% if posts is empty %}
+    <div class="empty-state">
+        <h3>No posts yet</h3>
+        <p>Be the first to share your travel experience!</p>
+        <a href="{{ path('app_post_new') }}" class="primary-btn">+ Create Post</a>
+    </div>
+{% elseif viewMode == 'list' %}
+    {# ═══ LIST / FEED VIEW ═══ #}
+    <div class="posts-list">
+        {% for post in posts %}
+            {% include 'components/post_card_list.html.twig' with {
+                post: post,
+                meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+            } %}
+        {% endfor %}
+    </div>
+{% else %}
+    {# ═══ GRID VIEW — 2-column masonry ═══ #}
+    <div class="posts-grid">
+        <div class="masonry-col">
+            {% for post in posts %}
+                {% if loop.index is odd %}
+                    {% include 'components/post_card.html.twig' with {
+                        post: post,
+                        meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+                    } %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="masonry-col">
+            {% for post in posts %}
+                {% if loop.index is even %}
+                    {% include 'components/post_card.html.twig' with {
+                        post: post,
+                        meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+                    } %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

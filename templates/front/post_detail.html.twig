@@ -1,0 +1,99 @@
+{% extends 'front/layout.html.twig' %}
+
+{% block title %}{{ post.content|slice(0,50) }}{% endblock %}
+
+{% block content %}
+<div class="detail-view">
+    {# ── TOP BAR ── #}
+    <div class="detail-top-bar">
+        <a href="{{ path('app_feed') }}" class="close-detail-btn">← Back</a>
+    </div>
+
+    <div class="split-view">
+        {# ═══ LEFT — Post Content ═══ #}
+        <div class="post-content-panel">
+            {% if post.hasImage %}
+                <div class="detail-hero-container">
+                    <img src="{{ asset(post.imagePath) }}" alt="Post image" class="detail-hero-image">
+                </div>
+            {% endif %}
+
+            <div class="detail-content-card">
+                <div class="detail-author-row">
+                    <div class="avatar">{{ post.client.username|first|upper|default('U') }}</div>
+                    <div>
+                        <span class="detail-author-name">{{ post.client.username|default('Anonymous') }}</span>
+                        <span class="post-meta">{{ post.timeAgo }}</span>
+                    </div>
+                </div>
+
+                {% if post.hasPlace %}
+                    <div class="place-weather-row">
+                        <span class="post-place-tag">📍 {{ post.place }}</span>
+                        <span class="weather-badge" id="weatherBadge-{{ post.id }}" style="display:none"></span>
+                    </div>
+                {% endif %}
+
+                <p class="detail-post-text">{{ post.content|nl2br }}</p>
+
+                <div class="post-stats">
+                    <span class="post-stats-text" id="likeStats-{{ post.id }}">
+                        {% if likeCount > 0 %}{{ likeCount }} like{{ likeCount > 1 ? 's' : '' }}{% endif %}
+                    </span>
+                    <span class="post-stats-text" id="commentStats-{{ post.id }}">
+                        {% if commentCount > 0 %}{{ commentCount }} comment{{ commentCount > 1 ? 's' : '' }}{% endif %}
+                    </span>
+                </div>
+
+                <div class="post-actions">
+                    <button class="action-btn {{ userLiked ? 'liked' : '' }}" 
+                            id="likeBtn-{{ post.id }}" onclick="toggleLike({{ post.id }})">
+                        {{ userLiked ? '❤️ Liked' : '🤍 Like' }}
+                    </button>
+                    <button class="action-btn" onclick="document.getElementById('commentInput').focus()">
+                        Comment
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        {# ═══ RIGHT — Comments Panel ═══ #}
+        <div class="comments-panel">
+            <div class="comments-panel-header">
+                <span class="comments-panel-title">Comments</span>
+                <span class="comments-count-pill" id="commentCountPill">{{ commentCount }}</span>
+            </div>
+
+            <div class="comment-input-row">
+                <div class="avatar avatar-sm">W</div>
+                <input type="text" id="commentInput" placeholder="Write a comment…" 
+                       data-publication-id="{{ post.id }}"
+                       onkeydown="if(event.key==='Enter')submitComment({{ post.id }})">
+                <button class="comment-post-btn" onclick="submitComment({{ post.id }})">Post</button>
+            </div>
+
+            <div class="comments-list" id="commentsList">
+                {% for comment in comments %}
+                    {% include 'components/comment_item.html.twig' with {comment: comment, clientId: clientId} %}
+                {% else %}
+                    <p class="no-comments">No comments yet. Be the first!</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if post.hasPlace %}
+<script>
+    fetch('/api/weather/{{ post.place|url_encode }}')
+        .then(r => r.json())
+        .then(data => {
+            if (data && !data.error) {
+                const badge = document.getElementById('weatherBadge-{{ post.id }}');
+                badge.innerHTML = `${data.formattedTemp} — ${data.weatherDescription}`;
+                badge.style.display = 'inline-flex';
+            }
+        }).catch(() => {});
+</script>
+{% endif %}
+{% endblock %}
