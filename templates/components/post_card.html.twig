@@ -1,0 +1,63 @@
+{# Grid post card #}
+<article class="post-card" data-post-id="{{ post.id }}">
+    {# ── HEADER ── #}
+    <div class="post-header">
+        <div class="avatar">{{ post.client.username|first|upper|default('U') }}</div>
+        <div class="post-header-info">
+            <span class="post-author-name">{{ post.client.username|default('Anonymous') }}</span>
+            <span class="post-meta">{{ post.timeAgo }}</span>
+            {% if post.hasPlace %}
+                <span class="post-place-tag">📍 {{ post.place }}</span>
+            {% endif %}
+        </div>
+        <div class="post-menu">
+            {% if post.client and post.client.id == clientId|default(1) %}
+                <button class="post-menu-btn" onclick="togglePostMenu(this)">⋯</button>
+                <div class="post-menu-dropdown" style="display:none">
+                    <a href="{{ path('app_post_edit', {id: post.id}) }}">Edit</a>
+                    <form action="{{ path('app_post_delete', {id: post.id}) }}" method="post" onsubmit="return confirm('Delete this post?')">
+                        <button type="submit">Delete</button>
+                    </form>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── CONTENT ── #}
+    <div class="post-content-area">
+        <p class="post-text-preview">{{ post.content|nl2br }}</p>
+    </div>
+
+    {# ── IMAGE ── #}
+    {% if post.hasImage %}
+        <div class="post-image-container">
+            <a href="{{ path('app_post_detail', {id: post.id}) }}">
+                <img src="{{ asset(post.imagePath) }}" alt="Post image" class="post-image" loading="lazy">
+            </a>
+        </div>
+    {% endif %}
+
+    {# ── STATS BAR ── #}
+    {% set likeCount = meta.likeCount|default(0) %}
+    {% set commentCount = meta.commentCount|default(0) %}
+    {% if likeCount > 0 or commentCount > 0 %}
+        <div class="post-stats">
+            {% if likeCount > 0 %}
+                <span class="post-stats-text" id="likeStats-{{ post.id }}">{{ likeCount }} like{{ likeCount > 1 ? 's' : '' }}</span>
+            {% endif %}
+            {% if commentCount > 0 %}
+                <span class="post-stats-text">{{ commentCount }} comment{{ commentCount > 1 ? 's' : '' }}</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {# ── ACTIONS BAR ── #}
+    <div class="post-actions">
+        <button class="action-btn {{ meta.userLiked|default(false) ? 'liked' : '' }}" 
+                id="likeBtn-{{ post.id }}"
+                onclick="toggleLike({{ post.id }})">
+            {{ meta.userLiked|default(false) ? '❤️ Liked' : '🤍 Like' }}
+        </button>
+        <a href="{{ path('app_post_detail', {id: post.id}) }}" class="action-btn">Comment</a>
+    </div>
+</article>
