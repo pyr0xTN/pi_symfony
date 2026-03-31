@@ -1,0 +1,325 @@
+/* ═══════════════════════════════════════════════════════════════
+   Rehletna — Main JavaScript
+   Handles: Likes, Comments, Search, Dark Mode, Chat, Menus
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Dark Mode Toggle ──────────────────────────────────────────
+function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme') || 'light';
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('rehletna-theme', next);
+
+    // Update toggle button text
+    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+        btn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+    });
+    document.querySelectorAll('.theme-toggle-nav').forEach(btn => {
+        btn.textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+}
+
+// Apply saved theme on load
+(function () {
+    const saved = localStorage.getItem('rehletna-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+                btn.textContent = saved === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
+            });
+            document.querySelectorAll('.theme-toggle-nav').forEach(btn => {
+                btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+            });
+        });
+    }
+})();
+
+// ── Like Toggle (AJAX) ───────────────────────────────────────
+function toggleLike(publicationId) {
+    const btn = document.getElementById('likeBtn-' + publicationId);
+    if (!btn) return;
+
+    // Optimistic animation
+    btn.style.transform = 'scale(1.2)';
+    setTimeout(() => btn.style.transform = '', 200);
+
+    const formData = new FormData();
+    formData.append('publication_id', publicationId);
+
+    fetch('/api/like/toggle', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = data.liked ? '❤️ Liked' : '🤍 Like';
+            btn.classList.toggle('liked', data.liked);
+
+            // Update stats counter(s) on page
+            document.querySelectorAll('#likeStats-' + publicationId).forEach(el => {
+                el.textContent = data.likeCount > 0
+                    ? data.likeCount + ' like' + (data.likeCount > 1 ? 's' : '')
+                    : '';
+            });
+        })
+        .catch(err => console.error('Like toggle failed:', err));
+}
+
+// ── Comment Submit (AJAX) ────────────────────────────────────
+function submitComment(publicationId) {
+    const input = document.getElementById('commentInput');
+    if (!input) return;
+
+    const content = input.value.trim();
+    if (!content) return;
+
+    const formData = new FormData();
+    formData.append('publication_id', publicationId);
+    formData.append('content', content);
+
+    fetch('/api/comment', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+
+            input.value = '';
+
+            // Remove "no comments" placeholder
+            const noComments = document.querySelector('.no-comments');
+            if (noComments) noComments.remove();
+
+            // Build new comment element
+            const commentHtml = `
+                <div class="comment-item" id="comment-${data.id}">
+                    <div class="comment-top-row">
+                        <div class="avatar avatar-sm">${(data.username || 'U')[0].toUpperCase()}</div>
+                        <div class="comment-body">
+                            <div class="comment-meta-row">
+                                <span class="comment-username">${data.username}</span>
+                                <span class="comment-time">${data.timeAgo}</span>
+                            </div>
+                            <p class="comment-content" id="commentContent-${data.id}">${data.content}</p>
+                        </div>
+                    </div>
+                    <div class="comment-owner-actions">
+                        <button class="comment-action-edit" onclick="startEditComment(${data.id})">Edit</button>
+                        <span class="comment-action-dot">·</span>
+                        <button class="comment-action-delete" onclick="deleteComment(${data.id})">Delete</button>
+                    </div>
+                </div>`;
+
+            const list = document.getElementById('commentsList');
+            list.insertAdjacentHTML('beforeend', commentHtml);
+
+            // Update count pill
+            const pill = document.getElementById('commentCountPill');
+            if (pill) pill.textContent = data.commentCount;
+
+            // Update stats
+            const stats = document.getElementById('commentStats-' + publicationId);
+            if (stats) {
+                stats.textContent = data.commentCount + ' comment' + (data.commentCount > 1 ? 's' : '');
+            }
+
+            // Scroll to bottom
+            list.scrollTop = list.scrollHeight;
+        })
+        .catch(err => console.error('Add comment failed:', err));
+}
+
+// ── Start Edit Comment ───────────────────────────────────────
+function startEditComment(commentId) {
+    const contentEl = document.getElementById('commentContent-' + commentId);
+    if (!contentEl) return;
+
+    const original = contentEl.textContent;
+    contentEl.innerHTML = `
+        <input type="text" class="edit-comment-input" value="${original.replace(/"/g, '&quot;')}" 
+               onkeydown="if(event.key==='Enter')saveEditComment(${commentId}); if(event.key==='Escape')cancelEditComment(${commentId},'${original.replace(/'/g, "\\'")}')"
+               style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border);
+                      background:var(--bg-input);font-size:13px;font-family:var(--font);color:var(--text-primary);">`;
+
+    contentEl.querySelector('input').focus();
+}
+
+function saveEditComment(commentId) {
+    const input = document.querySelector('#commentContent-' + commentId + ' input');
+    if (!input) return;
+
+    const content = input.value.trim();
+    if (!content) return;
+
+    fetch('/api/comment/' + commentId, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content }),
+    })
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById('commentContent-' + commentId);
+            el.textContent = data.content;
+        })
+        .catch(err => console.error('Edit comment failed:', err));
+}
+
+function cancelEditComment(commentId, original) {
+    const el = document.getElementById('commentContent-' + commentId);
+    if (el) el.textContent = original;
+}
+
+// ── Delete Comment ───────────────────────────────────────────
+function deleteComment(commentId) {
+    if (!confirm('Delete this comment?')) return;
+
+    fetch('/api/comment/' + commentId, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            const el = document.getElementById('comment-' + commentId);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translateX(20px)';
+                setTimeout(() => el.remove(), 300);
+            }
+
+            const pill = document.getElementById('commentCountPill');
+            if (pill) pill.textContent = data.commentCount;
+        })
+        .catch(err => console.error('Delete comment failed:', err));
+}
+
+// ── Post Menu Toggle ─────────────────────────────────────────
+function togglePostMenu(btn) {
+    const dropdown = btn.nextElementSibling;
+    const isVisible = dropdown.style.display === 'block';
+
+    // Close all other menus
+    document.querySelectorAll('.post-menu-dropdown').forEach(d => d.style.display = 'none');
+
+    dropdown.style.display = isVisible ? 'none' : 'block';
+}
+
+// Close menus on outside click
+document.addEventListener('click', e => {
+    if (!e.target.closest('.post-menu')) {
+        document.querySelectorAll('.post-menu-dropdown').forEach(d => d.style.display = 'none');
+    }
+});
+
+// ── Chat Panel ───────────────────────────────────────────────
+function toggleChatPanel() {
+    const panel = document.getElementById('chatPanel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+    if (panel.style.display === 'flex') {
+        document.getElementById('chatInput')?.focus();
+    }
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const messages = document.getElementById('chatMessages');
+    if (!input || !messages) return;
+
+    const text = input.value.trim();
+    if (!text) return;
+
+    // Add user message to chat
+    messages.insertAdjacentHTML('beforeend',
+        `<div class="chat-msg user"><p>${escapeHtml(text)}</p></div>`);
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+
+    // Show typing indicator
+    const typingId = 'typing-' + Date.now();
+    messages.insertAdjacentHTML('beforeend',
+        `<div class="chat-msg assistant" id="${typingId}"><p>Thinking…</p></div>`);
+    messages.scrollTop = messages.scrollHeight;
+
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text }),
+    })
+        .then(r => r.json())
+        .then(data => {
+            // Remove typing indicator
+            document.getElementById(typingId)?.remove();
+
+            // Add assistant reply
+            messages.insertAdjacentHTML('beforeend',
+                `<div class="chat-msg assistant"><p>${escapeHtml(data.reply || data.error || 'No response')}</p></div>`);
+            messages.scrollTop = messages.scrollHeight;
+        })
+        .catch(() => {
+            document.getElementById(typingId)?.remove();
+            messages.insertAdjacentHTML('beforeend',
+                `<div class="chat-msg assistant"><p>Connection error. Please try again.</p></div>`);
+        });
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ── Search Debounce ──────────────────────────────────────────
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        const field = document.getElementById('searchField');
+        if (!field) return;
+
+        let timeout;
+        field.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                field.form.submit();
+            }, 500);
+        });
+    });
+})();
+
+// ── Image Lightbox ───────────────────────────────────────────
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Attach to all post images (feed cards + detail hero)
+        document.addEventListener('click', e => {
+            const img = e.target.closest('.post-image, .detail-hero-image');
+            if (!img) return;
+            e.preventDefault();
+            e.stopPropagation();
+            openLightbox(img.src);
+        });
+    });
+
+    function openLightbox(src) {
+        const overlay = document.createElement('div');
+        overlay.className = 'lightbox-overlay';
+        overlay.innerHTML = `
+            <button class="lightbox-close">✕</button>
+            <img src="${src}" class="lightbox-img" alt="">`;
+
+        document.body.appendChild(overlay);
+        document.body.style.overflow = 'hidden';
+
+        function close() {
+            overlay.classList.add('closing');
+            setTimeout(() => {
+                overlay.remove();
+                document.body.style.overflow = '';
+            }, 200);
+        }
+
+        // Close on backdrop click
+        overlay.addEventListener('click', e => {
+            if (e.target === overlay || e.target.classList.contains('lightbox-close')) {
+                close();
+            }
+        });
+
+        // Close on Escape
+        const onKey = e => {
+            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+        };
+        document.addEventListener('keydown', onKey);
+    }
+})();
