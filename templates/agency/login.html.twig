@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Agency Login{% endblock %}
+
+{% block body %}
+<div class="login-root">
+    <div class="login-split">
+        {# ── LEFT: Brand Panel ── #}
+        <div class="login-brand-panel">
+            <h1 class="login-brand-name">Rehletna<span class="brand-dot">.tn</span></h1>
+            <h2 class="login-brand-sub">Agency Portal</h2>
+            <div class="login-brand-sep"></div>
+            <p class="login-brand-desc">
+                Manage posts submitted to your agency. Review, approve or reject traveller 
+                experiences before they go live.
+            </p>
+        </div>
+
+        {# ── RIGHT: Login Form ── #}
+        <div class="login-form-panel">
+            <h2 class="login-form-title">Agency Sign In</h2>
+            <p class="login-form-subtitle">Enter your agency credentials to access the moderation panel.</p>
+
+            {% if error %}
+                <div class="login-error-label">{{ error }}</div>
+            {% endif %}
+
+            <form method="post" action="{{ path('agency_login') }}">
+                <div class="login-field-group">
+                    <label class="login-field-label">Email address</label>
+                    <input type="email" name="email" class="login-field" 
+                           placeholder="agency@example.com" required autofocus>
+                </div>
+
+                <div class="login-field-group">
+                    <label class="login-field-label">Password</label>
+                    <input type="password" name="password" class="login-field" 
+                           placeholder="Enter your password" required>
+                </div>
+
+                <button type="submit" class="primary-btn login-submit-btn">Sign In</button>
+            </form>
+
+            <p class="login-footer-note">
+                Not an agency? <a href="{{ path('app_feed') }}">Return to the traveller app</a>.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
