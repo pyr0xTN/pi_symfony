@@ -84,6 +84,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: Profile::class, cascade: ['persist', 'remove'])]
     private ?Profile $profile = null;
 
+    /**
+     * @var Collection<int, ParticipantConversation>
+     */
+    #[ORM\OneToMany(targetEntity: ParticipantConversation::class, mappedBy: 'idUtilisateur')]
+    private Collection $participantConversations;
+
+    /**
+     * @var Collection<int, Messages>
+     */
+    #[ORM\OneToMany(targetEntity: Messages::class, mappedBy: 'idExpediteur')]
+    private Collection $messagesEnvoyees;
+
     public function __construct()
     {
         $this->date = new \DateTime();
@@ -93,6 +105,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->sentMessages = new ArrayCollection();
         $this->receivedMessages = new ArrayCollection();
         $this->purchases = new ArrayCollection();
+        $this->participantConversations = new ArrayCollection();
+        $this->messagesEnvoyees = new ArrayCollection();
     }
 
     // ========== REQUIRED SYMFONY INTERFACE METHODS ==========
@@ -646,6 +660,66 @@ public function getAddress(): ?string
 public function getCreatedAt(): ?\DateTimeInterface
 {
     return $this->date;
+}
+
+/**
+ * @return Collection<int, ParticipantConversation>
+ */
+public function getParticipantConversations(): Collection
+{
+    return $this->participantConversations;
+}
+
+public function addParticipantConversation(ParticipantConversation $participantConversation): static
+{
+    if (!$this->participantConversations->contains($participantConversation)) {
+        $this->participantConversations->add($participantConversation);
+        $participantConversation->setIdUtilisateur($this);
+    }
+
+    return $this;
+}
+
+public function removeParticipantConversation(ParticipantConversation $participantConversation): static
+{
+    if ($this->participantConversations->removeElement($participantConversation)) {
+        // set the owning side to null (unless already changed)
+        if ($participantConversation->getIdUtilisateur() === $this) {
+            $participantConversation->setIdUtilisateur(null);
+        }
+    }
+
+    return $this;
+}
+
+/**
+ * @return Collection<int, Messages>
+ */
+public function getMessagesEnvoyees(): Collection
+{
+    return $this->messagesEnvoyees;
+}
+
+public function addMessagesEnvoyee(Messages $messagesEnvoyee): static
+{
+    if (!$this->messagesEnvoyees->contains($messagesEnvoyee)) {
+        $this->messagesEnvoyees->add($messagesEnvoyee);
+        $messagesEnvoyee->setIdExpediteur($this);
+    }
+
+    return $this;
+}
+
+public function removeMessagesEnvoyee(Messages $messagesEnvoyee): static
+{
+    if ($this->messagesEnvoyees->removeElement($messagesEnvoyee)) {
+        // set the owning side to null (unless already changed)
+        if ($messagesEnvoyee->getIdExpediteur() === $this) {
+            $messagesEnvoyee->setIdExpediteur(null);
+        }
+    }
+
+    return $this;
 }
 
 }
