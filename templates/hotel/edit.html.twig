@@ -1,0 +1,128 @@
+{# templates/hotel/edit.html.twig #}
+{# Converted from: updateHotel.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Modifier un Hôtel{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">🏨 Modifier un Hôtel</h2>
+
+        {{ form_start(form, { attr: { enctype: 'multipart/form-data', novalidate: 'novalidate' } }) }}
+
+            <div class="form-grid form-grid-2col">
+
+                {# Nom #}
+                <div class="form-group">
+                    <label class="form-label">Nom Hôtel :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Nom' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Description #}
+                <div class="form-group">
+                    <label class="form-label">Description :</label>
+                    {{ form_widget(form.description, { attr: { class: 'form-input', placeholder: 'Description' } }) }}
+                    {% if form.description.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.description) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Prix #}
+                <div class="form-group">
+                    <label class="form-label">Prix (TND) :</label>
+                    {{ form_widget(form.prix, { attr: { class: 'form-input', placeholder: 'Prix' } }) }}
+                    {% if form.prix.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.prix) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Capacité #}
+                <div class="form-group">
+                    <label class="form-label">Capacité :</label>
+                    {{ form_widget(form.capacite, { attr: { class: 'form-input', placeholder: 'Capacité' } }) }}
+                    {% if form.capacite.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.capacite) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Nombre d'étoiles #}
+                <div class="form-group">
+                    <label class="form-label">Nb Étoiles :</label>
+                    {{ form_widget(form.nbEtoiles, { attr: { class: 'form-input', placeholder: "Nombre d'étoiles" } }) }}
+                    {% if form.nbEtoiles.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nbEtoiles) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Localisation #}
+                <div class="form-group">
+                    <label class="form-label">Localisation :</label>
+                    {{ form_widget(form.localisation, { attr: { class: 'form-input', placeholder: 'Localisation' } }) }}
+                    {% if form.localisation.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.localisation) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Type Chambre #}
+                <div class="form-group">
+                    <label class="form-label">Type Chambre :</label>
+                    {{ form_widget(form.typeChambre, { attr: { class: 'form-input', placeholder: 'Type de chambre' } }) }}
+                    {% if form.typeChambre.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.typeChambre) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Disponibilité #}
+                <div class="form-group form-group-checkbox">
+                    {{ form_widget(form.disponible, { attr: { class: 'form-checkbox' } }) }}
+                    <label class="form-label">Disponible</label>
+                </div>
+
+                {# Photo #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Photo :</label>
+                    {% if hotel.photo %}
+                        <img src="{{ asset('uploads/hotels/' ~ hotel.photo) }}" alt="Photo actuelle" class="img-preview" />
+                    {% endif %}
+                    <div class="file-upload-row">
+                        {{ form_widget(form.photo, { attr: { class: 'form-input-file', id: 'photoInput', accept: 'image/*' } }) }}
+                        <label for="photoInput" class="btn-submit">📁 Choisir une image</label>
+                        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none;" />
+                    </div>
+                    {% if form.photo.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.photo) }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Modifier</button>
+                <a href="{{ path('hotel_show', { id: hotel.id }) }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.getElementById('photoInput').addEventListener('change', function (e) {
+            const preview = document.getElementById('imgPreview');
+            const file = e.target.files[0];
+            if (file) {
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            }
+        });
+    </script>
+{% endblock %}

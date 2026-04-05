@@ -1,0 +1,96 @@
+/* ================= FORM STYLING ================= */
+
+/* The White Card containing the form */
+.form-card {
+    -fx-background-color: white;
+    -fx-background-radius: 15;
+    -fx-padding: 30;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.08), 10, 0, 0, 0);
+    -fx-min-width: 650;
+}
+
+/* Form Title */
+.form-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #183c75; /* Rehletna Dark Blue */
+    -fx-padding: 0 0 20 0;
+}
+
+/* Labels next to inputs */
+.form-label {
+    -fx-text-fill: #555555;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* Text Fields & DatePickers */
+.form-input {
+    -fx-background-color: #f9fbfc;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 8 10;
+    -fx-font-size: 13px;
+    -fx-text-fill: #333;
+}
+
+.form-input:focused {
+    -fx-background-color: white;
+    -fx-border-color: #4ba3a1; /* Rehletna Teal Focus */
+    -fx-effect: dropshadow(three-pass-box, rgba(75, 163, 161, 0.1), 5, 0, 0, 0);
+}
+
+/* Submit Button */
+.btn-submit {
+    -fx-background-color: #4ba3a1; /* Rehletna Teal */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-radius: 5;
+    -fx-padding: 10 30;
+    -fx-cursor: hand;
+}
+
+.btn-submit:hover {
+    -fx-background-color: #3a8a88; /* Darker Teal */
+}
+
+.error-label {
+    -fx-text-fill: #D32F2F; /* Rouge foncé */
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+}
+
+/* Style pour les champs de saisie invalides */
+.error {
+    -fx-border-color: #D32F2F;
+    -fx-border-width: 1.5px;
+    -fx-border-radius: 3px;
+}
+/* ================= DETAILS VIEW ================= */
+
+/* The value text (e.g., "Tunis", "350 TND") */
+.detail-value {
+    -fx-font-size: 15px;
+    -fx-text-fill: #183c75; /* Dark Blue */
+    -fx-font-weight: normal;
+}
+
+/* Back Button */
+.btn-back {
+    -fx-background-color: white;
+    -fx-text-fill: #555;
+    -fx-border-color: #ccc;
+    -fx-border-radius: 25;
+    -fx-background-radius: 25;
+    -fx-padding: 8 25;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+
+.btn-back:hover {
+    -fx-background-color: #f4f4f4;
+    -fx-text-fill: #183c75;
+    -fx-border-color: #183c75;
+}

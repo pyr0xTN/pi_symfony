@@ -1,0 +1,75 @@
+{# templates/hotel/show.html.twig #}
+{# Converted from: hotelDetails.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Détails Hôtel{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        {# Header #}
+        <div class="detail-header">
+            <h2 class="form-title">🏨 Détails de l'Hôtel</h2>
+            <h3 class="detail-name">{{ hotel.nom }}</h3>
+        </div>
+
+        <hr class="separator" />
+
+        {# Details Grid #}
+        <div class="detail-grid">
+
+            <div class="detail-row">
+                <span class="form-label">Localisation :</span>
+                <span class="detail-value">
+                    {{ hotel.localisation }}
+                    {% if weather is defined %}
+                        <span class="weather-badge">{{ weather }}°C</span>
+                    {% endif %}
+                    <a href="{{ path('hotel_country_info', { id: hotel.idService }) }}" class="btn-country" title="Infos pays">🌍</a>
+                </span>
+
+                <span class="form-label">Prix / Nuit :</span>
+                <span class="detail-value">{{ hotel.prix }} TND</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="form-label">Nombre Étoiles :</span>
+                <span class="detail-value">
+                    {% for i in 1..hotel.nombre_etoiles %}★{% endfor %}
+                </span>
+
+                <span class="form-label">Type Chambre :</span>
+                <span class="detail-value">{{ hotel.typeChambre }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="form-label">Capacité :</span>
+                <span class="detail-value">{{ hotel.capacite }}</span>
+
+                <span class="form-label">Statut :</span>
+                <span class="detail-value badge {% if hotel.disponibilite %}badge-success{% else %}badge-danger{% endif %}">
+                    {{ hotel.disponibilite ? 'Disponible' : 'Indisponible' }}
+                </span>
+            </div>
+
+            <div class="detail-row detail-row-full">
+                <span class="form-label">Description :</span>
+                <span class="detail-value">{{ hotel.description }}</span>
+            </div>
+
+        </div>
+
+        <hr class="separator" />
+
+        {# Action Buttons #}
+        <div class="form-actions">
+            <a href="{{ path('services_index') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_new', { serviceId: hotel.idService, serviceType: 'hotel' }) }}" class="btn-submit">
+                Réserver une chambre
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

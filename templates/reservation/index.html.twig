@@ -1,0 +1,88 @@
+{# templates/reservation/index.html.twig #}
+{# Converted from: Reservations.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Available Reservations{% endblock %}
+
+{% block top_bar_actions %}
+<form method="GET" action="{{ path('reservations_index') }}" class="search-form">
+    <input
+        type="text"
+        name="q"
+        class="search-box"
+        placeholder="Search services..."
+        value="{{ app.request.query.get('q') }}"
+    />
+    <button type="submit" class="action-btn">🔍 Search</button>
+</form>
+{% endblock %}
+
+{% block content %}
+
+   {% if reservations is empty %}
+        <p class="empty-state">Aucune réservation trouvée.</p>
+    {% else %}
+        <div class="cards-grid">
+            {% for reservation in reservations %}
+                <div class="reservation-card">
+                    
+                    {# Header: Name & Status #}
+                    <div class="rc-header">
+                        <h3 class="rc-name">{{ reservation.nom }}</h3>
+                        
+                        {# Dynamic badge color based on status #}
+                        {% set badgeClass = 'badge-info' %}
+                        {% if reservation.statut|lower == 'en attente' %}
+                            {% set badgeClass = 'badge-pending' %}
+                        {% elseif reservation.statut|lower == 'confirmée' %}
+                            {% set badgeClass = 'badge-success' %}
+                        {% elseif reservation.statut|lower == 'annulée' %}
+                            {% set badgeClass = 'badge-danger' %}
+                        {% endif %}
+                        
+                        <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
+                    </div>
+
+                    {# Body: Details #}
+                    <div class="rc-body">
+                        <div class="rc-detail-item">
+                            <span class="rc-icon">📅</span>
+                            <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                        </div>
+                        
+                        <div class="rc-detail-item">
+                            <span class="rc-icon">💳</span>
+                            <span>{{ reservation.modePaiement }}</span>
+                        </div>
+                           <div class="rc-detail-item">
+                            <span class="rc-icon">💳</span>
+                            <span>service name</span>
+                        </div>
+                        
+                        {# Only show if it has a value to avoid empty spacing #}
+                        {% if reservation.siege is defined and reservation.siege %}
+                            <div class="rc-detail-item">
+                                <span class="rc-icon">💺</span>
+                                <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Footer: Actions #}
+                    <div class="rc-footer">
+                        <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
+                            Voir détails
+                        </a>
+                        <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+                           class="rc-btn rc-btn-danger"
+                           onclick="return confirm('Confirmer la suppression ?')">
+                           Supprimer
+                        </a>
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+{% endblock %}

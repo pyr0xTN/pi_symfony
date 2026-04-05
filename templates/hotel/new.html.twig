@@ -1,0 +1,157 @@
+{# templates/hotel/new.html.twig #}
+{# Converted from: AddHotel.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Ajouter un Hôtel{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">🏨 Ajouter un Hôtel</h2>
+
+        {{ form_start(form, { attr: { enctype: 'multipart/form-data', novalidate: 'novalidate' } }) }}
+
+            <div class="form-grid form-grid-2col">
+
+                {# Nom #}
+                <div class="form-group">
+                    <label class="form-label">Nom Hôtel :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Ex: El Mouradi' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Description #}
+                <div class="form-group">
+                    <label class="form-label">Description :</label>
+                    {{ form_widget(form.description, { attr: { class: 'form-input', placeholder: 'Courte description' } }) }}
+                    {% if form.description.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.description) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Prix #}
+                <div class="form-group">
+                    <label class="form-label">Prix (TND) :</label>
+                    {{ form_widget(form.prix, { attr: { class: 'form-input', placeholder: '0.00' } }) }}
+                    {% if form.prix.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.prix) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Capacité #}
+                <div class="form-group">
+                    <label class="form-label">Capacité :</label>
+                    {{ form_widget(form.capacite, { attr: { class: 'form-input', placeholder: 'Nb Personnes' } }) }}
+                    {% if form.capacite.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.capacite) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Nombre d'étoiles #}
+                <div class="form-group">
+                    <label class="form-label">Nb Étoiles :</label>
+                    {{ form_widget(form.nombreEtoiles, { attr: { class: 'form-input', placeholder: '1 - 5' } }) }}
+                    {% if form.nombreEtoiles.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nombreEtoiles) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Localisation #}
+                <div class="form-group">
+                    <label class="form-label">Localisation :</label>
+                    {{ form_widget(form.localisation, { attr: { class: 'form-input', placeholder: 'Ville / Adresse' } }) }}
+                    {% if form.localisation.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.localisation) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Type Chambre #}
+                <div class="form-group">
+                    <label class="form-label">Type Chambre :</label>
+                    {{ form_widget(form.typeChambre, { attr: { class: 'form-input', placeholder: 'Ex: Single, Double, Suite' } }) }}
+                    {% if form.typeChambre.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.typeChambre) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Disponibilité #}
+                <div class="form-group form-group-checkbox">
+                    {{ form_widget(form.disponibilite, { attr: { class: 'form-checkbox' } }) }}
+                    <label class="form-label">Disponible</label>
+                </div>
+
+               {# Photo #}
+<div class="form-group form-group-full">
+    <label class="form-label">Photo :</label>
+    <div class="file-upload-row">
+        
+        {# We hide the default input using style="display:none;" (or use your CSS class) #}
+        {{ form_widget(form.photo, { attr: { class: 'form-input-file', accept: 'image/*', style: 'display:none;' } }) }}
+        
+        {# We dynamically link the label to Symfony's generated ID #}
+        <label for="{{ form.photo.vars.id }}" class="btn-submit">📁 Choisir une image</label>
+        
+        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none; max-width: 200px; margin-top: 10px;" />
+    </div>
+    {% if form.photo.vars.errors|length %}
+        <span class="error-label">{{ form_errors(form.photo) }}</span>
+    {% endif %}
+</div>     
+
+            </div>
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Ajouter Hôtel</button>
+                <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Wait for the HTML to fully load before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Get the exact ID Symfony generated for the input
+            const inputId = '{{ form.photo.vars.id }}';
+            const photoInput = document.getElementById(inputId);
+            const preview = document.getElementById('imgPreview');
+
+            // Make sure the input exists on the page to prevent JS errors
+            if (photoInput) {
+                photoInput.addEventListener('change', function (e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Check if it's actually an image
+                        if (!file.type.startsWith('image/')) {
+                            alert('Veuillez sélectionner une image valide.');
+                            e.target.value = ''; 
+                            return;
+                        }
+
+                        preview.src = URL.createObjectURL(file);
+                        preview.style.display = 'block';
+
+                        // Free up memory
+                        preview.onload = function() {
+                            URL.revokeObjectURL(preview.src);
+                        };
+                    } else {
+                        // Hide preview if user cancels
+                        preview.src = '#';
+                        preview.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

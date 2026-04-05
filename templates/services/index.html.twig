@@ -1,0 +1,106 @@
+{# templates/services/index.html.twig #}
+{# Converted from: Services.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Available Services{% endblock %}
+
+{% block top_bar_actions %}
+<form method="GET" action="{{ path('services_index') }}" class="search-form">
+    <input
+        type="text"
+        name="q"
+        class="search-box"
+        placeholder="Search services..."
+        value="{{ app.request.query.get('q') }}"
+    />
+    <button type="submit" class="action-btn">🔍 Search</button>
+</form>
+{% endblock %}
+
+{% block content %}
+
+    {% if services is empty %}
+        <div class="empty-state">
+            <span class="empty-icon">🔍</span>
+            <p>Aucun service disponible pour le moment.</p>
+        </div>
+    {% else %}
+        <div class="cards-grid">
+            {% for service in services %}
+
+                <div class="service-card">
+
+                    {# ── IMAGE AREA ── #}
+                    <div class="card-img-wrapper">
+                        {% if service.imgUrl is defined and service.imgUrl %}
+                            <img
+                                src="{{ asset(service.imgUrl) }}"
+                                alt="{{ service.nom }}"
+                                class="card-img"
+                            />
+                        {% else %}
+                            <div class="card-img-placeholder">
+                                {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                            </div>
+                        {% endif %}
+
+                        {# Type badge overlaid on image #}
+                        <span class="card-type-badge card-type-badge--{{ service.type }}">
+                            {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
+                        </span>
+
+                        {# Availability dot #}
+                        <span class="card-dispo-dot {% if service.disponibilite == '1' or service.disponibilite == true %}dispo-available{% else %}dispo-unavailable{% endif %}">
+                            {{ service.disponibilite == '1' or service.disponibilite == true ? 'Disponible' : 'Indisponible' }}
+                        </span>
+                    </div>
+
+                    {# ── CARD BODY ── #}
+                    <div class="card-body">
+
+                        {# Extra info line depending on type #}
+                        <p class="card-meta">
+                            {% if service.type == 'hotel' %}
+                                📍 {{ service.localisation }}
+                                &nbsp;·&nbsp;
+                                {% for i in 1..service.nombreEtoiles %}⭐{% endfor %}
+                            {% else %}
+                                ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
+                                &nbsp;·&nbsp;
+                                🗓 {{ service.dateDepart ? service.dateDepart|date('d/m/Y') : '' }}
+                            {% endif %}
+                        </p>
+
+                        <h3 class="card-name">{{ service.nom }}</h3>
+
+                        <p class="card-description">
+                            {{ service.description|length > 80
+                                ? service.description|slice(0, 80) ~ '…'
+                                : service.description }}
+                        </p>
+
+                        <div class="card-footer">
+                            <span class="card-price">{{ service.prix }} <small>TND</small></span>
+                            <span class="card-capacity">👥 {{ service.capacite }}</span>
+                        </div>
+
+                        <div class="card-actions">
+                            {% if service.type == 'hotel' %}
+                                <a href="{{ path('hotel_show', { id: service.idService }) }}" class="btn-detail">
+                                    Voir détails →
+                                </a>
+                            {% else %}
+                                <a href="{{ path('vol_show', { id: service.idService }) }}" class="btn-detail">
+                                    Voir détails →
+                                </a>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+
+            {% endfor %}
+        </div>
+    {% endif %}
+
+{% endblock %}

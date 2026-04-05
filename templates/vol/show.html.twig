@@ -1,0 +1,85 @@
+{# templates/vol/show.html.twig #}
+{# Converted from: volsDetails.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Détails du Vol{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        {# Header #}
+        <div class="detail-header">
+            <h2 class="form-title">✈ Détails du Vol</h2>
+            <h3 class="detail-name">{{ vol.nom }}</h3>
+        </div>
+
+        <hr class="separator" />
+
+        {# Details Grid #}
+        <div class="detail-grid">
+
+            <div class="detail-row">
+                <span class="form-label">Numéro Vol :</span>
+                <span class="detail-value">{{ vol.numeroVol }}</span>
+
+                <span class="form-label">Prix :</span>
+                <span class="detail-value">{{ vol.prix }} TND</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="form-label">Ville Départ :</span>
+                <span class="detail-value">
+                    {{ vol.villeDepart }}
+                    {% if tempDepart is defined %}
+                        <span class="weather-badge">{{ tempDepart }}°C</span>
+                    {% endif %}
+                </span>
+
+                <span class="form-label">Ville Arrivée :</span>
+                <span class="detail-value">
+                    {{ vol.villeArrivee }}
+                    {% if tempArrivee is defined %}
+                        <span class="weather-badge">{{ tempArrivee }}°C</span>
+                    {% endif %}
+                </span>
+            </div>
+
+            <div class="detail-row">
+                <span class="form-label">Date Départ :</span>
+                <span class="detail-value">{{ vol.dateDepart|date('d/m/Y') }}</span>
+
+                <span class="form-label">Date Arrivée :</span>
+                <span class="detail-value">{{ vol.dateArrive|date('d/m/Y') }}</span>
+            </div>
+
+            <div class="detail-row">
+                <span class="form-label">Capacité :</span>
+                <span class="detail-value">{{ vol.capacite }}</span>
+
+                <span class="form-label">Statut :</span>
+                <span class="detail-value badge {% if vol.disponibilite %}badge-success{% else %}badge-danger{% endif %}">
+                    {{ vol.disponibilite ? 'Disponible' : 'Indisponible' }}
+                </span>
+            </div>
+
+            <div class="detail-row detail-row-full">
+                <span class="form-label">Description :</span>
+                <span class="detail-value">{{ vol.description }}</span>
+            </div>
+
+        </div>
+
+        <hr class="separator" />
+
+        {# Action Buttons #}
+        <div class="form-actions">
+            <a href="{{ path('services_index') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_new', { serviceId: vol.idService, serviceType: 'vol' }) }}" class="btn-submit">
+                Réserver ce Vol
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{# templates/reservation/new.html.twig #}
+{# Converted from: ReservationForm.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Nouvelle Réservation{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">📅 Nouvelle Réservation</h2>
+
+        {{ form_start(form, { attr: { novalidate: 'novalidate', id: 'reservationForm' } }) }}
+
+            <div class="form-grid form-grid-1col">
+
+                {# Nom du Client #}
+                <div class="form-group">
+                    <label class="form-label">Nom du Client :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Prénom et Nom' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date de Réservation #}
+                <div class="form-group">
+                    <label class="form-label">Date de Réservation :</label>
+                    {{ form_widget(form.dateReservation, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateReservation.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateReservation) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Mode de Paiement #}
+                <div class="form-group">
+                    <label class="form-label">Mode de Paiement :</label>
+                    {{ form_widget(form.modePaiement, { attr: { class: 'form-input', placeholder: 'Choisir une méthode...' } }) }}
+                    {% if form.modePaiement.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.modePaiement) }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            {# ===== SEAT MAP (only shown for Vols) ===== #}
+            {% if serviceType == 'vol' %}
+            <div class="seat-map-container" id="seatMapContainer">
+
+                {# Plane nose #}
+                <div class="plane-nose">✈ AVANT DE L'AVION ✈</div>
+
+                {# Legend #}
+                <div class="seat-legend">
+                    <span class="legend-item legend-available">Disponible</span>
+                    <span class="legend-item legend-occupied">Occupé</span>
+                    <span class="legend-item legend-selected">Sélectionné</span>
+                </div>
+
+                {# Hidden input that stores the selected seat value #}
+                {{ form_widget(form.siege, { attr: { id: 'selectedSeatInput' } }) }}
+
+                {# Seat grid — 6 seats per row with aisle gap between col 3 and 4 #}
+                <div class="seat-grid" id="seatGrid">
+                    {% for seat in seats %}
+                        {# Add row label at the start of each row (every 6 seats) #}
+                        {% if loop.index0 % 6 == 0 %}
+                            <div class="seat-row-label">{{ loop.index0 // 6 + 1 }}</div>
+                        {% endif %}
+
+                        {# colPos: 0-2 = left side, 3-5 = right side #}
+                        {% set colPos = loop.index0 % 6 %}
+
+                        <button
+                            type="button"
+                            class="seat-btn {% if seat.occupied %}seat-occupied{% else %}seat-available{% endif %}{% if colPos == 3 %} seat-aisle{% endif %}"
+                            data-seat="{{ seat.label }}"
+                            data-number="{{ seat.number }}"
+                            {% if seat.occupied %}disabled{% endif %}
+                        >
+                            {{ seat.label }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                {# Selected seat display #}
+                <div class="seat-selected-label" id="lblSelectedSeat">
+                    Aucun siège sélectionné
+                </div>
+
+                {% if form.siege.vars.errors|length %}
+                    <span class="error-label">{{ form_errors(form.siege) }}</span>
+                {% endif %}
+
+            </div>
+            {% endif %}
+
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Créer la Réservation</button>
+                <a href="{{ path('services_index') }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if serviceType == 'vol' %}
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            const seatGrid      = document.getElementById('seatGrid');
+            const selectedInput = document.getElementById('selectedSeatInput');
+            const lblSelected   = document.getElementById('lblSelectedSeat');
+
+            if (!seatGrid) return;
+
+            seatGrid.querySelectorAll('.seat-btn.seat-available').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Deselect all
+                    seatGrid.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('seat-selected'));
+
+                    // Select this one
+                    btn.classList.add('seat-selected');
+
+                    // Store the seat NUMBER in the hidden input
+                    selectedInput.value = btn.dataset.number;
+
+                    // Update label
+                    lblSelected.textContent = '💺 Siège sélectionné : ' + btn.dataset.seat;
+                    lblSelected.classList.add('seat-selected-active');
+                });
+            });
+        });
+    </script>
+    {% endif %}
+{% endblock %}

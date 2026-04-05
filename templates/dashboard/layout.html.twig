@@ -1,0 +1,47 @@
+{# templates/dashboard/layout.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="root-pane">
+
+    {# ===== LEFT SIDEBAR ===== #}
+    {% include 'partials/_sidebar.html.twig' with { active_page: active_page|default('dashboard') } %}
+
+    {# ===== MAIN CONTENT ===== #}
+    <div class="content-area">
+
+        {# Top Bar #}
+        <header class="top-bar">
+            <h1 class="page-title">{% block page_title %}Dashboard Overview{% endblock %}</h1>
+
+            <div class="top-bar-spacer"></div>
+
+            {% block top_bar_actions %}
+            <form method="GET" action="" class="search-form">
+                <input
+                    type="text"
+                    name="q"
+                    class="search-box"
+                    placeholder="Search service..."
+                    value="{{ app.request.query.get('q') }}"
+                />
+                <button type="submit" class="action-btn">Search</button>
+            </form>
+            {% endblock %}
+        </header>
+
+        {# Flash Messages #}
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ type }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {# Page Content #}
+        <main class="main-scroll">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+{% endblock %}
