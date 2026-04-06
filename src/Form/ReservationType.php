@@ -38,7 +38,10 @@ class ReservationType extends AbstractType
             ->add('dateReservation', DateType::class, [
                 'label'       => 'Date de Réservation',
                 'widget'      => 'single_text',
+                'invalid_message' => 'La date est invalide.',
+                'empty_data'     => null,
                 'constraints' => [
+                    new Assert\NotNull(message: 'La date de réservation est obligatoire.'),
                     new Assert\NotBlank(message: 'La date de réservation est obligatoire.'),
                     new Assert\GreaterThanOrEqual(
                         value: 'today',
@@ -58,22 +61,26 @@ class ReservationType extends AbstractType
             ])
         ;
 
-        // Seat selection is only relevant for vols
         if ($options['service_type'] === 'vol') {
             $builder->add('siege', HiddenType::class, [
-                'mapped'      => false,   // Stored manually via seatNb in the controller
+                'mapped'      => false,   
+                'required'    => true,
                 'constraints' => [
                     new Assert\NotBlank(message: 'Veuillez sélectionner un siège.'),
+                    new Assert\NotNull(message: 'Veuillez sélectionner un siège.'),
+
+                    
                 ],
             ]);
         }
+    
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class'   => Reservations::class,
-            'service_type' => 'hotel',   // 'hotel' or 'vol'
+            'service_type' => 'hotel',   
         ]);
 
         $resolver->setAllowedValues('service_type', ['hotel', 'vol']);

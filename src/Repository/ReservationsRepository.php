@@ -39,9 +39,9 @@ class ReservationsRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('r')
             ->where('LOWER(r.nom) LIKE :q')
-            ->orWhere('LOWER(r.modePaiement) LIKE :q')
+            ->orWhere('LOWER(r.	mode_paiement) LIKE :q')
             ->setParameter('q', $q)
-            ->orderBy('r.dateReservation', 'DESC')
+            ->orderBy('r.date_reservation', 'DESC')
             ->getQuery()
             ->getResult();
     }

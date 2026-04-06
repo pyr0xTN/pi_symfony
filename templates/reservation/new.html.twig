@@ -65,7 +65,7 @@
                     {% for seat in seats %}
                         {# Add row label at the start of each row (every 6 seats) #}
                         {% if loop.index0 % 6 == 0 %}
-                            <div class="seat-row-label">{{ loop.index0 // 6 + 1 }}</div>
+                            <div class="seat-row-label">{{ (loop.index0 // 6) + 1 }}</div>
                         {% endif %}
 
                         {# colPos: 0-2 = left side, 3-5 = right side #}
@@ -74,11 +74,11 @@
                         <button
                             type="button"
                             class="seat-btn {% if seat.occupied %}seat-occupied{% else %}seat-available{% endif %}{% if colPos == 3 %} seat-aisle{% endif %}"
-                            data-seat="{{ seat.label }}"
+                            data-seat="{{ seat.number }}"
                             data-number="{{ seat.number }}"
                             {% if seat.occupied %}disabled{% endif %}
                         >
-                            {{ seat.label }}
+                            {{ seat.number }}
                         </button>
                     {% endfor %}
                 </div>
@@ -105,36 +105,124 @@
 
     </div>
 </div>
+
+{# Inline script - executed immediately after form is rendered #}
+{% if serviceType == 'vol' %}
+<script>
+(function() {
+    'use strict';
+    
+    console.log('[SEAT MAP] Script loading...');
+    
+    function initSeatMap() {
+        const seatGrid      = document.getElementById('seatGrid');
+        const selectedInput = document.getElementById('selectedSeatInput');
+        const lblSelected   = document.getElementById('lblSelectedSeat');
+        const form          = document.getElementById('reservationForm');
+
+        console.log('[SEAT MAP] Elements check:');
+        console.log('  - seatGrid:', seatGrid ? 'FOUND ✓' : 'NOT FOUND ✗');
+        console.log('  - selectedInput:', selectedInput ? 'FOUND ✓' : 'NOT FOUND ✗');
+        console.log('  - lblSelected:', lblSelected ? 'FOUND ✓' : 'NOT FOUND ✗');
+        console.log('  - form:', form ? 'FOUND ✓' : 'NOT FOUND ✗');
+
+        if (!seatGrid  || !lblSelected || !form) {
+            console.error('[SEAT MAP] ERROR: Missing required elements!');
+            return;
+        }
+
+        // Get all available seat buttons
+        const availableSeats = seatGrid.querySelectorAll('.seat-btn.seat-available');
+        console.log('[SEAT MAP] Available seats found:', availableSeats.length);
+
+        if (availableSeats.length === 0) {
+            console.warn('[SEAT MAP] WARNING: No available seats found!');
+            return;
+        }
+
+        // Attach click handlers to available seats
+        let handlerCount = 0;
+        availableSeats.forEach(function(btn) {
+            const seatNum = btn.dataset.number;
+            
+            btn.onclick = function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                console.log('[SEAT MAP] ✓ Seat clicked:', seatNum);
+
+                // Deselect all seats
+                seatGrid.querySelectorAll('.seat-btn').forEach(function(b) {
+                    b.classList.remove('seat-selected');
+                });
+
+                // Select this seat
+                this.classList.add('seat-selected');
+
+                // Update hidden input
+                selectedInput.value = seatNum;
+                console.log('[SEAT MAP] ✓ Hidden input updated to:', selectedInput.value);
+
+                // Update label
+                lblSelected.textContent = '💺 Siège sélectionné : #' + seatNum;
+                lblSelected.classList.add('seat-selected-active');
+                lblSelected.classList.remove('error-label');
+                
+                return false;
+            };
+            
+            handlerCount++;
+        });
+        
+        console.log('[SEAT MAP] ✓ Attached', handlerCount, 'click handlers');
+
+        // Validate seat selection on form submit
+        form.onsubmit = function(e) {
+            console.log('[SEAT MAP] Form submit triggered');
+            console.log('[SEAT MAP] Selected input value:', selectedInput.value);
+            
+            if (!selectedInput.value || selectedInput.value === '' || selectedInput.value === '0') {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                console.log('[SEAT MAP] ✗ No seat selected - preventing submit');
+                
+                lblSelected.textContent = '❌ Erreur : Veuillez sélectionner un siège';
+                lblSelected.classList.remove('seat-selected-active');
+                lblSelected.classList.add('error-label');
+                
+                // Scroll to seat map
+                var seatMapContainer = document.getElementById('seatMapContainer');
+                if (seatMapContainer) {
+                    seatMapContainer.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }
+                
+                return false;
+            } else {
+                console.log('[SEAT MAP] ✓ Seat selected, allowing form submit with seat:', selectedInput.value);
+                return true;
+            }
+        };
+        
+        console.log('[SEAT MAP] ✓✓✓ Initialization complete!');
+    }
+
+    // Initialize immediately or when DOM is ready
+    if (document.readyState === 'loading') {
+        console.log('[SEAT MAP] Waiting for DOM...');
+        document.addEventListener('DOMContentLoaded', initSeatMap);
+    } else {
+        console.log('[SEAT MAP] DOM already loaded, initializing now...');
+        initSeatMap();
+    }
+})();
+</script>
+{% endif %}
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    {% if serviceType == 'vol' %}
-    <script type="module">
-        document.addEventListener('DOMContentLoaded', () => {
-            const seatGrid      = document.getElementById('seatGrid');
-            const selectedInput = document.getElementById('selectedSeatInput');
-            const lblSelected   = document.getElementById('lblSelectedSeat');
-
-            if (!seatGrid) return;
-
-            seatGrid.querySelectorAll('.seat-btn.seat-available').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Deselect all
-                    seatGrid.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('seat-selected'));
-
-                    // Select this one
-                    btn.classList.add('seat-selected');
-
-                    // Store the seat NUMBER in the hidden input
-                    selectedInput.value = btn.dataset.number;
-
-                    // Update label
-                    lblSelected.textContent = '💺 Siège sélectionné : ' + btn.dataset.seat;
-                    lblSelected.classList.add('seat-selected-active');
-                });
-            });
-        });
-    </script>
-    {% endif %}
 {% endblock %}

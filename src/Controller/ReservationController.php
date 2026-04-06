@@ -75,8 +75,21 @@ class ReservationController extends AbstractController
 
             // For vols: the seat number comes from the seat map selection
             if ($serviceType === 'vol') {
-                $seatNb = (int) $form->get('siege')->getData();
-                $reservation->setSeatNb($seatNb);
+                $seatNb = $form->get('siege')->getData();
+                
+                // Validate that a seat was selected
+                if (empty($seatNb)) {
+                    $this->addFlash('error', 'Veuillez sélectionner un siège.');
+                    return $this->render('reservation/new.html.twig', [
+                        'active_page' => 'reservations',
+                        'form'        => $form,
+                        'service'     => $service,
+                        'serviceType' => $serviceType,
+                        'seats'       => $this->buildSeatMap($service),
+                    ]);
+                }
+                
+                $reservation->setSeatNb((int) $seatNb);
             } else {
                 $reservation->setSeatNb(0); // Hotels don't use seat numbers
             }
@@ -163,31 +176,24 @@ class ReservationController extends AbstractController
     private function buildSeatMap(Services $vol): array
     {
         $capacity = $vol->getCapacite();
-
+ 
         // Fetch already-reserved seat numbers for this vol
         $takenSeats = array_map(
             fn(Reservations $r) => $r->getSeatNb(),
             $this->reservationsRepo->findBy(['idService' => $vol])
         );
-
-        $rows    = range('A', 'Z');
+ 
         $cols    = 6; // seats per row (3+3 aircraft style)
         $seats   = [];
-        $counter = 1;
-
-        foreach ($rows as $row) {
-            for ($col = 1; $col <= $cols; $col++) {
-                if ($counter > $capacity) break 2;
-
-                $seats[] = [
-                    'label'    => $row . $col,
-                    'number'   => $counter,
-                    'occupied' => in_array($counter, $takenSeats, true),
-                ];
-                $counter++;
-            }
+ 
+        for ($seatNumber = 1; $seatNumber <= $capacity; $seatNumber++) {
+            $seats[] = [
+                'number'   => $seatNumber,
+                'occupied' => in_array($seatNumber, $takenSeats, true),
+            ];
         }
-
+ 
         return $seats;
     }
+
 }
