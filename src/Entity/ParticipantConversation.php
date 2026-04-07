@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 class ParticipantConversation
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'NONE')]
     #[ORM\Column(name: 'idParticipant')]
     private ?int $id = null;
 
@@ -28,12 +28,19 @@ class ParticipantConversation
     #[ORM\Column(name: 'estActif',nullable: true)]
     private ?bool $estActif = null;
 
-    #[ORM\Column(name:'dateSortie', nullable: true)]
+    // Not persisted: current DB schema has no dateSortie column.
     private ?\DateTime $dateSortie = null;
 
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getIdConversation(): ?Conversation

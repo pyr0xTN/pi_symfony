@@ -13,7 +13,7 @@ use Doctrine\Common\Collections\Collection;
 class Conversation
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: "IDENTITY")]
+    #[ORM\GeneratedValue(strategy: 'NONE')]
     #[ORM\Column(name: 'idConversation', type: 'integer')]
     private ?int $id = null;
 
@@ -38,6 +38,13 @@ class Conversation
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getType(): ?TypeConversation

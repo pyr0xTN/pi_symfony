@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Messages
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
+    #[ORM\GeneratedValue(strategy: 'NONE')]
     #[ORM\Column(name: 'idMessage')]
     private ?int $id = null;
 
@@ -48,6 +48,13 @@ class Messages
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getContenu(): ?string

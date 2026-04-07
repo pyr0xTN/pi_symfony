@@ -35,9 +35,8 @@ class ParticipantController extends AbstractController
             return new JsonResponse(['error' => 'Participant not found'], 404);
         }
 
-        // Equivalent to your Java UPDATE logic
+        // Equivalent to your Java UPDATE logic (soft leave via estActif)
         $participant->setEstActif(false);
-        $participant->setDateSortie(new \DateTime()); // Replaces LocalDateTime.now()
 
         $em->flush();
 

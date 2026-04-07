@@ -36,6 +36,7 @@ class MessagesController extends AbstractController
         $user = $this->getUser();
 
         $message = new Messages();
+        $message->setId($this->nextMessageId($em));
         $message->setContenu($content);
         $message->setIdConversation($conversation);
         $message->setIdExpediteur($user);
@@ -148,5 +149,18 @@ class MessagesController extends AbstractController
             ];
         }
         return new JsonResponse($data);
+    }
+
+    private function nextMessageId(EntityManagerInterface $em): int
+    {
+        $maxId = (int) $em->createQueryBuilder()
+            ->select('COALESCE(MAX(m.id), 0)')
+            ->from(Messages::class, 'm')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $next = $maxId + 1;
+
+        return max(1, $next);
     }
 }

@@ -78,12 +78,16 @@ class ConversationController extends AbstractController
 
         // Create new Private Conversation
         $conversation = new Conversation();
+        $conversation->setId($this->nextConversationId($entityManager));
         $conversation->setType(TypeConversation::PRIVEE);
         $conversation->setDateCreation(new \DateTime());
         $entityManager->persist($conversation);
 
+        $nextParticipantId = $this->nextParticipantId($entityManager);
+
         // Add Me as Participant
         $p1 = new ParticipantConversation();
+        $p1->setId($nextParticipantId++);
         $p1->setIdUtilisateur($me);
         $p1->setIdConversation($conversation);
         $p1->setDateAjout(new \DateTime());
@@ -92,6 +96,7 @@ class ConversationController extends AbstractController
 
         // Add Recipient as Participant
         $p2 = new ParticipantConversation();
+        $p2->setId($nextParticipantId++);
         $p2->setIdUtilisateur($recipient);
         $p2->setIdConversation($conversation);
         $p2->setDateAjout(new \DateTime());
@@ -128,13 +133,17 @@ class ConversationController extends AbstractController
         }
 
         $conversation = new Conversation();
+        $conversation->setId($this->nextConversationId($em));
         $conversation->setType(TypeConversation::GROUPE);
         $conversation->setTitre($name);
         $conversation->setDateCreation(new \DateTime());
         $em->persist($conversation);
 
+        $nextParticipantId = $this->nextParticipantId($em);
+
         // Add Creator
         $pCreator = new ParticipantConversation();
+        $pCreator->setId($nextParticipantId++);
         $pCreator->setIdUtilisateur($creator);
         $pCreator->setIdConversation($conversation);
         $pCreator->setDateAjout(new \DateTime());
@@ -145,6 +154,7 @@ class ConversationController extends AbstractController
             $member = $userRepo->find($id);
             if ($member && $member->getId() !== $creator->getId()) {
                 $pNew = new ParticipantConversation();
+                $pNew->setId($nextParticipantId++);
                 $pNew->setIdUtilisateur($member);
                 $pNew->setIdConversation($conversation);
                 $pNew->setDateAjout(new \DateTime());
@@ -261,5 +271,31 @@ class ConversationController extends AbstractController
         $conversation->setTitre($data['title']);
         $em->flush();
         return new JsonResponse(['status' => 'ok']);
+    }
+
+    private function nextConversationId(EntityManagerInterface $em): int
+    {
+        $maxId = (int) $em->createQueryBuilder()
+            ->select('COALESCE(MAX(c.id), 0)')
+            ->from(Conversation::class, 'c')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $next = $maxId + 1;
+
+        return max(1, $next);
+    }
+
+    private function nextParticipantId(EntityManagerInterface $em): int
+    {
+        $maxId = (int) $em->createQueryBuilder()
+            ->select('COALESCE(MAX(p.id), 0)')
+            ->from(ParticipantConversation::class, 'p')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        $next = $maxId + 1;
+
+        return max(1, $next);
     }
 }
