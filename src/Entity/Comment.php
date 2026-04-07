@@ -18,9 +18,9 @@ class Comment
     #[ORM\JoinColumn(name: 'publicationID', referencedColumnName: 'publicationID', nullable: false)]
     private ?Publication $publication = null;
 
-    #[ORM\ManyToOne(targetEntity: Client::class)]
-    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'clientID', nullable: false)]
-    private ?Client $client = null;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
+    private ?User $user = null;
 
     #[ORM\Column(name: 'content', type: 'text')]
     private ?string $content = null;
@@ -38,8 +38,8 @@ class Comment
     public function getPublication(): ?Publication { return $this->publication; }
     public function setPublication(?Publication $publication): static { $this->publication = $publication; return $this; }
 
-    public function getClient(): ?Client { return $this->client; }
-    public function setClient(?Client $client): static { $this->client = $client; return $this; }
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 
     public function getContent(): ?string { return $this->content; }
     public function setContent(string $content): static { $this->content = $content; return $this; }

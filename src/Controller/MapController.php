@@ -34,7 +34,7 @@ class MapController extends AbstractController
                     'lon'     => $coords['lon'],
                     'place'   => $post->getPlace(),
                     'content' => mb_substr($post->getContent(), 0, 100) . (mb_strlen($post->getContent()) > 100 ? '…' : ''),
-                    'author'  => $post->getClient()?->getUsername() ?? 'Anonymous',
+                    'author'  => $post->getUser()?->getUsername() ?? 'Anonymous',
                     'image'   => $post->getImagePath(),
                     'date'    => $post->getTimeAgo(),
                 ];

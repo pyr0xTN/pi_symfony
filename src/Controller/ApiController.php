@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Comment;
 use App\Entity\Like;
-use App\Repository\ClientRepository;
+use App\Repository\UserRepository;
 use App\Repository\CommentRepository;
 use App\Repository\LikeRepository;
 use App\Repository\PublicationRepository;
@@ -28,7 +28,7 @@ class ApiController extends AbstractController
     public function toggleLike(
         Request $request,
         PublicationRepository $pubRepo,
-        ClientRepository $clientRepo,
+        UserRepository $userRepo,
         LikeRepository $likeRepo,
         EntityManagerInterface $em,
     ): JsonResponse {
@@ -43,12 +43,21 @@ class ApiController extends AbstractController
             $em->flush();
             $liked = false;
         } else {
-            $client = $clientRepo->find(self::CURRENT_CLIENT_ID);
-            if (!$client) return $this->json(['error' => 'Client not found'], 404);
+            $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+            if (!$user) {
+                $user = new \App\Entity\User();
+                $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
+                $user->setName('Demo');
+                $user->setLastName('Traveller');
+                $user->setPassword('123456');
+                $user->setUsername('demo_traveller');
+                $em->persist($user);
+                $em->flush();
+            }
 
             $like = new Like();
             $like->setPublication($post);
-            $like->setClient($client);
+            $like->setUser($user);
             $em->persist($like);
             $em->flush();
             $liked = true;
@@ -64,7 +73,7 @@ class ApiController extends AbstractController
     public function addComment(
         Request $request,
         PublicationRepository $pubRepo,
-        ClientRepository $clientRepo,
+        UserRepository $userRepo,
         EntityManagerInterface $em,
         CommentRepository $commentRepo,
     ): JsonResponse {
@@ -76,12 +85,21 @@ class ApiController extends AbstractController
         $post = $pubRepo->find($publicationId);
         if (!$post) return $this->json(['error' => 'Post not found'], 404);
 
-        $client = $clientRepo->find(self::CURRENT_CLIENT_ID);
-        if (!$client) return $this->json(['error' => 'Client not found'], 404);
+        $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+        if (!$user) {
+            $user = new \App\Entity\User();
+            $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
+            $user->setName('Demo');
+            $user->setLastName('Traveller');
+            $user->setPassword('123456');
+            $user->setUsername('demo_traveller');
+            $em->persist($user);
+            $em->flush();
+        }
 
         $comment = new Comment();
         $comment->setPublication($post);
-        $comment->setClient($client);
+        $comment->setUser($user);
         $comment->setContent($content);
         $em->persist($comment);
         $em->flush();
@@ -89,8 +107,8 @@ class ApiController extends AbstractController
         return $this->json([
             'id'           => $comment->getId(),
             'content'      => $comment->getContent(),
-            'username'     => $client->getUsername() ?? 'User',
-            'avatarPath'   => $client->getAvatarPath(),
+            'username'     => $user->getUsername() ?? 'User',
+            'avatarPath'   => null, // Handled differently in User.php or Profile
             'timeAgo'      => 'Just now',
             'commentCount' => $commentRepo->countByPublication($publicationId),
             'isOwner'      => true,

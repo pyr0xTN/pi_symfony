@@ -26,9 +26,9 @@ class Publication
     #[ORM\Column(name: 'datePublication', type: 'datetime')]
     private ?\DateTimeInterface $datePublication = null;
 
-    #[ORM\ManyToOne(targetEntity: Client::class)]
-    #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'clientID', nullable: false)]
-    private ?Client $client = null;
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false)]
+    private ?User $user = null;
 
     #[ORM\Column(name: 'image_path', type: 'string', length: 500, nullable: true)]
     private ?string $imagePath = null;
@@ -36,8 +36,7 @@ class Publication
     #[ORM\Column(name: 'place', type: 'string', length: 255, nullable: true)]
     private ?string $place = null;
 
-    #[ORM\Column(name: 'agency_id', type: 'integer', options: ['default' => 0])]
-    private int $agencyId = 0;
+    // agencyId removed, as User entity handles roles
 
     #[ORM\Column(name: 'status', type: 'string', length: 20, options: ['default' => 'APPROVED'])]
     private string $status = self::STATUS_APPROVED;
@@ -64,8 +63,8 @@ class Publication
     public function getDatePublication(): ?\DateTimeInterface { return $this->datePublication; }
     public function setDatePublication(\DateTimeInterface $date): static { $this->datePublication = $date; return $this; }
 
-    public function getClient(): ?Client { return $this->client; }
-    public function setClient(?Client $client): static { $this->client = $client; return $this; }
+    public function getUser(): ?User { return $this->user; }
+    public function setUser(?User $user): static { $this->user = $user; return $this; }
 
     public function getImagePath(): ?string { return $this->imagePath; }
     public function setImagePath(?string $imagePath): static { $this->imagePath = $imagePath; return $this; }
@@ -73,14 +72,7 @@ class Publication
     public function getPlace(): ?string { return $this->place; }
     public function setPlace(?string $place): static { $this->place = $place; return $this; }
 
-    public function getAgencyId(): int { return $this->agencyId; }
-    public function setAgencyId(int $agencyId): static {
-        $this->agencyId = $agencyId;
-        if ($agencyId > 0 && $this->status === self::STATUS_APPROVED) {
-            $this->status = self::STATUS_PENDING;
-        }
-        return $this;
-    }
+    // removed getAgencyId and setAgencyId
 
     public function getStatus(): string { return $this->status; }
     public function setStatus(string $status): static { $this->status = $status; return $this; }
@@ -94,7 +86,7 @@ class Publication
     public function isPending(): bool  { return $this->status === self::STATUS_PENDING; }
     public function isApproved(): bool { return $this->status === self::STATUS_APPROVED; }
     public function isRejected(): bool { return $this->status === self::STATUS_REJECTED; }
-    public function hasAgency(): bool  { return $this->agencyId > 0; }
+    public function hasAgency(): bool  { return $this->user && in_array('ROLE_AGENCY', $this->user->getRoles()); }
     public function hasImage(): bool   { return $this->imagePath !== null && trim($this->imagePath) !== ''; }
     public function hasPlace(): bool   { return $this->place !== null && trim($this->place) !== ''; }
 

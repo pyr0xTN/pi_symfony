@@ -26,19 +26,19 @@ class LikeRepository extends ServiceEntityRepository
             ->getSingleScalarResult();
     }
 
-    public function findUserLike(int $publicationId, int $clientId): ?Like
+    public function findUserLike(int $publicationId, int $userId): ?Like
     {
         return $this->createQueryBuilder('l')
             ->where('l.publication = :pubId')
-            ->andWhere('l.client = :clientId')
+            ->andWhere('l.user = :userId')
             ->setParameter('pubId', $publicationId)
-            ->setParameter('clientId', $clientId)
+            ->setParameter('userId', $userId)
             ->getQuery()
             ->getOneOrNullResult();
     }
 
-    public function hasUserLiked(int $publicationId, int $clientId): bool
+    public function hasUserLiked(int $publicationId, int $userId): bool
     {
-        return $this->findUserLike($publicationId, $clientId) !== null;
+        return $this->findUserLike($publicationId, $userId) !== null;
     }
 }

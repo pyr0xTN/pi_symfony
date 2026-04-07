@@ -1,17 +1,17 @@
 {# Single comment item — mirrors comment_item.fxml #}
 <div class="comment-item" id="comment-{{ comment.id }}">
     <div class="comment-top-row">
-        <div class="avatar avatar-sm">{{ comment.client.username|first|upper|default('U') }}</div>
+        <div class="avatar avatar-sm">{{ comment.user.username|first|upper|default('U') }}</div>
         <div class="comment-body">
             <div class="comment-meta-row">
-                <span class="comment-username">{{ comment.client.username|default('User') }}</span>
+                <span class="comment-username">{{ comment.user.username|default('User') }}</span>
                 <span class="comment-time">{{ comment.timeAgo }}</span>
             </div>
             <p class="comment-content" id="commentContent-{{ comment.id }}">{{ comment.content }}</p>
         </div>
     </div>
 
-    {% if comment.client and comment.client.id == clientId|default(1) %}
+    {% if comment.user and comment.user.id == clientId|default(1) %}
         <div class="comment-owner-actions">
             <button class="comment-action-edit" onclick="startEditComment({{ comment.id }})">Edit</button>
             <span class="comment-action-dot">·</span>

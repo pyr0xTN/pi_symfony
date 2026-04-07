@@ -20,9 +20,9 @@
 
             <div class="detail-content-card">
                 <div class="detail-author-row">
-                    <div class="avatar">{{ post.client.username|first|upper|default('U') }}</div>
+                    <div class="avatar">{{ post.user.username|first|upper|default('U') }}</div>
                     <div>
-                        <span class="detail-author-name">{{ post.client.username|default('Anonymous') }}</span>
+                        <span class="detail-author-name">{{ post.user.username|default('Anonymous') }}</span>
                         <span class="post-meta">{{ post.timeAgo }}</span>
                     </div>
                 </div>

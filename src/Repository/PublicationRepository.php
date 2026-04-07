@@ -17,13 +17,13 @@ class PublicationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Front office: only APPROVED posts, newest first (with client eager-loaded).
+     * Front office: only APPROVED posts, newest first (with user eager-loaded).
      * @return Publication[]
      */
     public function findAllApproved(): array
     {
         return $this->createQueryBuilder('p')
-            ->leftJoin('p.client', 'c')->addSelect('c')
+            ->leftJoin('p.user', 'u')->addSelect('u')
             ->leftJoin('p.likes', 'l')->addSelect('l')
             ->where('p.status = :status')
             ->setParameter('status', Publication::STATUS_APPROVED)
@@ -39,7 +39,7 @@ class PublicationRepository extends ServiceEntityRepository
     public function findByAgency(int $agencyId): array
     {
         return $this->createQueryBuilder('p')
-            ->leftJoin('p.client', 'c')->addSelect('c')
+            ->leftJoin('p.user', 'u')->addSelect('u')
             ->where('p.agencyId = :agencyId')
             ->setParameter('agencyId', $agencyId)
             ->orderBy('p.status', 'ASC')
@@ -55,7 +55,7 @@ class PublicationRepository extends ServiceEntityRepository
     public function searchByKeyword(string $keyword): array
     {
         return $this->createQueryBuilder('p')
-            ->leftJoin('p.client', 'c')->addSelect('c')
+            ->leftJoin('p.user', 'u')->addSelect('u')
             ->where('p.content LIKE :kw OR p.place LIKE :kw')
             ->andWhere('p.status = :status')
             ->setParameter('kw', '%' . $keyword . '%')
@@ -66,15 +66,15 @@ class PublicationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Posts by a specific client.
+     * Posts by a specific user.
      * @return Publication[]
      */
-    public function findByClient(int $clientId): array
+    public function findByUser(int $userId): array
     {
         return $this->createQueryBuilder('p')
-            ->leftJoin('p.client', 'c')->addSelect('c')
-            ->where('c.id = :clientId')
-            ->setParameter('clientId', $clientId)
+            ->leftJoin('p.user', 'u')->addSelect('u')
+            ->where('u.id = :userId')
+            ->setParameter('userId', $userId)
             ->orderBy('p.datePublication', 'DESC')
             ->getQuery()
             ->getResult();
@@ -87,7 +87,7 @@ class PublicationRepository extends ServiceEntityRepository
     public function findWithPlaces(): array
     {
         return $this->createQueryBuilder('p')
-            ->leftJoin('p.client', 'c')->addSelect('c')
+            ->leftJoin('p.user', 'u')->addSelect('u')
             ->where('p.place IS NOT NULL AND p.place != :empty')
             ->andWhere('p.status = :status')
             ->setParameter('empty', '')

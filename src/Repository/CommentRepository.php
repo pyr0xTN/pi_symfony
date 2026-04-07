@@ -17,13 +17,13 @@ class CommentRepository extends ServiceEntityRepository
     }
 
     /**
-     * Get comments for a publication, chronological, with client data.
+     * Get comments for a publication, chronological, with user data.
      * @return Comment[]
      */
     public function findByPublication(int $publicationId): array
     {
         return $this->createQueryBuilder('cm')
-            ->leftJoin('cm.client', 'c')->addSelect('c')
+            ->leftJoin('cm.user', 'u')->addSelect('u')
             ->where('cm.publication = :pubId')
             ->setParameter('pubId', $publicationId)
             ->orderBy('cm.commentDate', 'ASC')

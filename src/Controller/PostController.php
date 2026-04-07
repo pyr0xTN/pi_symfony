@@ -5,11 +5,11 @@ namespace App\Controller;
 use App\Entity\Comment;
 use App\Entity\Like;
 use App\Entity\Publication;
-use App\Repository\ClientRepository;
+use App\Entity\User;
 use App\Repository\CommentRepository;
 use App\Repository\LikeRepository;
 use App\Repository\PublicationRepository;
-use App\Repository\AgencyRepository;
+use App\Repository\UserRepository;
 use App\Service\ImageUploadService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,13 +36,16 @@ class PostController extends AbstractController
             ? $pubRepo->searchByKeyword($search)
             : $pubRepo->findAllApproved();
 
+        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+
         // Build metadata for each post
         $postMeta = [];
         foreach ($posts as $post) {
             $postMeta[$post->getId()] = [
                 'likeCount'    => $likeRepo->countByPublication($post->getId()),
                 'commentCount' => $commentRepo->countByPublication($post->getId()),
-                'userLiked'    => $likeRepo->hasUserLiked($post->getId(), self::CURRENT_CLIENT_ID),
+                'userLiked'    => $likeRepo->hasUserLiked($post->getId(), $clientId),
             ];
         }
 
@@ -51,7 +54,7 @@ class PostController extends AbstractController
             'postMeta'  => $postMeta,
             'search'    => $search,
             'viewMode'  => $view,
-            'clientId'  => self::CURRENT_CLIENT_ID,
+            'clientId'  => $clientId,
         ]);
     }
 
@@ -65,13 +68,16 @@ class PostController extends AbstractController
         $post = $pubRepo->find($id);
         if (!$post) throw $this->createNotFoundException('Post not found');
 
+        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+
         return $this->render('front/post_detail.html.twig', [
             'post'         => $post,
             'comments'     => $commentRepo->findByPublication($id),
             'likeCount'    => $likeRepo->countByPublication($id),
             'commentCount' => $commentRepo->countByPublication($id),
-            'userLiked'    => $likeRepo->hasUserLiked($id, self::CURRENT_CLIENT_ID),
-            'clientId'     => self::CURRENT_CLIENT_ID,
+            'userLiked'    => $likeRepo->hasUserLiked($id, $clientId),
+            'clientId'     => $clientId,
         ]);
     }
 
@@ -79,24 +85,26 @@ class PostController extends AbstractController
     public function new(
         Request $request,
         EntityManagerInterface $em,
-        ClientRepository $clientRepo,
-        AgencyRepository $agencyRepo,
+        UserRepository $userRepo,
         ImageUploadService $imageUpload,
     ): Response {
         if ($request->isMethod('POST')) {
-            $client = $clientRepo->find(self::CURRENT_CLIENT_ID);
-            if (!$client) throw $this->createNotFoundException('Client not found');
+            $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+            if (!$user) {
+                $user = new User();
+                $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
+                $user->setName('Demo');
+                $user->setLastName('Traveller');
+                $user->setPassword('123456');
+                $user->setUsername('demo_traveller');
+                $em->persist($user);
+                $em->flush();
+            }
 
             $post = new Publication();
             $post->setContent($request->request->get('content', ''));
-            $post->setClient($client);
+            $post->setUser($user);
             $post->setPlace($request->request->get('place', ''));
-
-            $agencyId = (int) $request->request->get('agency_id', 0);
-            if ($agencyId > 0) {
-                $post->setAgencyId($agencyId);
-                $post->setStatus(Publication::STATUS_PENDING);
-            }
 
             // Handle image upload
             $imageFile = $request->files->get('image');
@@ -112,10 +120,12 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_feed');
         }
 
+        $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+
         return $this->render('front/create_post.html.twig', [
-            'agencies' => $agencyRepo->findAll(),
             'post'     => null,
-            'clientId' => self::CURRENT_CLIENT_ID,
+            'clientId' => $clientId,
         ]);
     }
 
@@ -124,7 +134,6 @@ class PostController extends AbstractController
         int $id,
         Request $request,
         PublicationRepository $pubRepo,
-        AgencyRepository $agencyRepo,
         EntityManagerInterface $em,
         ImageUploadService $imageUpload,
     ): Response {
@@ -146,10 +155,12 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_post_detail', ['id' => $id]);
         }
 
+        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
+        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+
         return $this->render('front/create_post.html.twig', [
-            'agencies' => $agencyRepo->findAll(),
             'post'     => $post,
-            'clientId' => self::CURRENT_CLIENT_ID,
+            'clientId' => $clientId,
         ]);
     }
 

@@ -48,28 +48,7 @@
                     </div>
                 </div>
 
-                <div class="cpd-inner-divider"></div>
-
-                {# ── AGENCY ── #}
-                <div class="cpd-field-row">
-                    <label class="cpd-field-icon">Agency</label>
-                    <select name="agency_id" id="agencyCombo" class="cpd-agency-combo" onchange="onAgencyChange()">
-                        <option value="0">No agency (public)</option>
-                        {% for agency in agencies %}
-                            <option value="{{ agency.id }}" 
-                                {{ post and post.agencyId == agency.id ? 'selected' : '' }}>
-                                {{ agency.displayName }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            {# ── AGENCY BANNER ── #}
-            <div id="agencyBanner" class="cpd-agency-banner" style="display:none">
-                <span class="cpd-banner-text">This post will be reviewed by the agency before appearing publicly.</span>
-            </div>
-
+                {# Agency inputs removed securely #}
             {# ── TOOLBAR ── #}
             <div class="cpd-toolbar">
                 <span class="cpd-toolbar-label">Add to post:</span>
@@ -117,12 +96,6 @@ function selectPlace(name) {
     document.getElementById('placeDropdown').style.display = 'none';
 }
 
-function onAgencyChange() {
-    const val = document.getElementById('agencyCombo').value;
-    document.getElementById('agencyBanner').style.display = val > 0 ? 'flex' : 'none';
-    document.getElementById('audienceLabel').textContent = val > 0 ? 'Agency Review' : 'Public Feed';
-}
-
 function previewImage(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
@@ -138,7 +111,5 @@ function removeImagePreview() {
     document.getElementById('imagePreview').src = '';
     document.getElementById('imagePreviewBox').style.display = 'none';
 }
-
-onAgencyChange();
 </script>
 {% endblock %}
