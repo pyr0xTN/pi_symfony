@@ -207,18 +207,56 @@ class ConversationController extends AbstractController
     /**
      * Delete conversation.
      */
-    #[Route('/delete/{idConversation}', name: 'app_conversation_delete', methods: ['POST'])]
-    public function delete(Conversation $conversation, EntityManagerInterface $entityManager): Response
+    #[Route('/delete/{id}', name: 'app_conversation_delete', methods: ['POST'])]
+    public function delete(Conversation $conversation, EntityManagerInterface $entityManager, ParticipantConversationRepository $participantRepo): JsonResponse
     {
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        // Check if user is a participant in this conversation
+        $isParticipant = false;
+        foreach ($conversation->getParticipants() as $participant) {
+            if ($participant->getIdUtilisateur()->getId() === $user->getId()) {
+                $isParticipant = true;
+                break;
+            }
+        }
+
+        if (!$isParticipant) {
+            return new JsonResponse(['error' => 'Not authorized'], 403);
+        }
+
         $entityManager->remove($conversation);
         $entityManager->flush();
 
-        return $this->redirectToRoute('app_messenger');
+        return new JsonResponse(['status' => 'success'], 200);
     }
 
     #[Route('/rename/{id}', name: 'app_conversation_rename', methods: ['POST'])]
-    public function rename(Conversation $conversation, Request $request, EntityManagerInterface $em): JsonResponse
+    public function rename(Conversation $conversation, Request $request, EntityManagerInterface $em, ParticipantConversationRepository $participantRepo): JsonResponse
     {
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        // Check if user is a participant in this conversation
+        $isParticipant = false;
+        foreach ($conversation->getParticipants() as $participant) {
+            if ($participant->getIdUtilisateur()->getId() === $user->getId()) {
+                $isParticipant = true;
+                break;
+            }
+        }
+
+        if (!$isParticipant) {
+            return new JsonResponse(['error' => 'Not authorized'], 403);
+        }
+
         $data = json_decode($request->getContent(), true);
         $conversation->setTitre($data['title']);
         $em->flush();

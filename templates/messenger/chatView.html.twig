@@ -2,8 +2,8 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-		         LEFT SIDEBAR
-		    ══════════════════════════════════ -->
+																										         LEFT SIDEBAR
+																										    ══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -55,8 +55,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-		         RIGHT MAIN AREA
-		    ══════════════════════════════════ -->
+																										         RIGHT MAIN AREA
+																										    ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -75,13 +75,13 @@
 				<h1>Welcome to Rehletna</h1>
 				<p>Connect with travelers and plan your next adventure together.</p>
 				<div class="welcome-btns">
-					<button class="btn-w btn-dark" onclick="openModal('contact')">
+					<button class="btn-w btn-dark" onclick="openModals('contact')">
 						<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
 						</svg>
 						New Contact
 					</button>
-					<button class="btn-w btn-teal" onclick="openModal('group')">
+					<button class="btn-w btn-teal" onclick="openModals('group')">
 						<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
 						</svg>
@@ -92,8 +92,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-				             CHAT INTERFACE
-				        ══════════════════════════════════ -->
+																																																				             CHAT INTERFACE
+																																																				        ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -157,6 +157,9 @@
 						</svg>
 					</button>
 					<input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)" autocomplete="off">
+					<span id="message-error" style="color: #dc3545; font-size: 11px; margin-top: 5px; display: none;">
+						Oops! You need to type something before sending.
+					</span>
 					<button class="input-emoji-btn" title="Emoji">
 						<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
 							<circle cx="12" cy="12" r="10"/>
@@ -178,8 +181,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-		         OVERLAY + MODALS
-		    ══════════════════════════════════ -->
+																										         OVERLAY + MODALS
+																										    ══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
@@ -251,6 +254,9 @@
 			<div class="modal-group-name">
 				<label for="group-name-input">Group name</label>
 				<input type="text" id="group-name-input" placeholder="e.g. Tunisia Road Trip 2025">
+				<span id="group-name-error" style="color: #dc3545; font-size: 11px; margin-top: 5px; display: none;">
+					Oops! Please add a title for your group.
+				</span>
 			</div>
 			<div class="modal-search">
 				<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1448,6 +1454,272 @@
 		color: var(--muted);
 		cursor: default;
 	}
+
+	/* ══ DROPDOWN WRAPPER ══ */
+	.dropdown-wrap {
+		flex-shrink: 0;
+		position: relative;
+
+	}
+
+	/* ══ DROPDOWN MENU ══ */
+	.msng-dropdown {
+		position: absolute;
+		top: calc(100% + 8px);
+		right: 0;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 14px;
+		box-shadow: 0 8px 32px rgba(13, 42, 74, 0.14), 0 2px 8px rgba(13, 42, 74, 0.06);
+		min-width: 190px;
+		padding: 6px;
+		z-index: 100;
+
+		/* hidden by default */
+		opacity: 0;
+		pointer-events: none;
+		transform: scale(0.95) translateY(-6px);
+		transform-origin: top right;
+		transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+	}
+
+	.msng-dropdown.open {
+		opacity: 1;
+		pointer-events: all;
+		transform: scale(1) translateY(0);
+	}
+
+	/* ══ DROPDOWN ITEMS ══ */
+	.msng-dropdown a {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 9px 12px;
+		border-radius: 10px;
+		font-family: var(--font-body);
+		font-size: 13px;
+		font-weight: 500;
+		color: #1a2733;
+		text-decoration: none;
+		transition: background 0.15s, color 0.15s;
+		white-space: nowrap;
+	}
+
+	.msng-dropdown a:hover {
+		background: var(--hover);
+		color: var(--brand);
+	}
+
+	/* danger item (Delete Conversation) */
+	.msng-dropdown a.text-danger {
+		color: #c0392b;
+	}
+	.msng-dropdown a.text-danger:hover {
+		background: #fdf2f2;
+		color: #a93226;
+	}
+
+	/* separator between danger and rest */
+	.msng-dropdown a.text-danger + a {
+		margin-top: 4px;
+		padding-top: 11px;
+		border-top: 1px solid var(--border);
+		border-radius: 0 0 10px 10px;
+	}
+
+	/* ── bubble row ── */
+	.msg-bubble-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		position: relative;
+	}
+	.message.mine .msg-bubble-row {
+		flex-direction: row-reverse;
+	}
+
+	/* ── action button ── */
+	.msg-action-btn {
+		width: 26px;
+		height: 26px;
+		border-radius: 8px;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--muted);
+		opacity: 0;
+		flex-shrink: 0;
+		transition: opacity 0.15s, background 0.15s, color 0.15s;
+		position: relative;
+	}
+	.msg-action-btn svg {
+		width: 13px;
+		height: 13px;
+	}
+	.msg-action-btn:hover {
+		background: rgba(30, 178, 166, 0.12);
+		color: var(--teal);
+	}
+	.message:hover .msg-action-btn {
+		opacity: 1;
+	}
+	.message.editing .msg-action-btn {
+		opacity: 0 !important;
+		pointer-events: none;
+	}
+
+	/* ── dropdown ── */
+	.msg-menu {
+		position: absolute;
+		top: 100%;
+		background: #fff;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		box-shadow: 0 8px 28px rgba(13, 42, 74, 0.14), 0 2px 6px rgba(13, 42, 74, 0.06);
+		padding: 5px;
+		z-index: 50;
+		min-width: 150px;
+		opacity: 0;
+		pointer-events: none;
+		transform: scale(0.93) translateY(-4px);
+		transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.34,1.56,0.64,1);
+	}
+	.message.mine .msg-menu {
+		right: 0;
+		transform-origin: top right;
+	}
+	.message:not(.mine) .msg-menu {
+		left: 0;
+		transform-origin: top left;
+	}
+	.msg-menu.open {
+		opacity: 1;
+		pointer-events: all;
+		transform: scale(1) translateY(4px);
+	}
+
+	.msg-menu-item {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		padding: 8px 11px;
+		border-radius: 8px;
+		font-size: 13px;
+		font-weight: 500;
+		color: #1a2733;
+		cursor: pointer;
+		transition: background 0.12s, color 0.12s;
+		white-space: nowrap;
+		user-select: none;
+	}
+	.msg-menu-item:hover {
+		background: var(--hover);
+		color: var(--brand);
+	}
+	.msg-menu-item.danger {
+		color: #c0392b;
+	}
+	.msg-menu-item.danger:hover {
+		background: #fdf2f2;
+		color: #a93226;
+	}
+	.msg-menu-item svg {
+		width: 14px;
+		height: 14px;
+		flex-shrink: 0;
+	}
+
+	/* ── inline edit ── */
+	.msg-edit-input {
+		padding: 9px 13px;
+		border-radius: 18px;
+		font-size: 14px;
+		line-height: 1.55;
+		font-family: var(--font-body);
+		outline: none;
+		min-width: 160px;
+		display: none;
+		border: 2px solid var(--teal);
+		box-shadow: 0 0 0 3px rgba(30, 178, 166, 0.15);
+	}
+	.message.mine .msg-edit-input {
+		background: var(--brand);
+		color: #fff;
+		border-bottom-right-radius: 5px;
+		caret-color: var(--teal);
+	}
+	.message:not(.mine) .msg-edit-input {
+		background: #fff;
+		color: #1a2733;
+		border-bottom-left-radius: 5px;
+	}
+	.message.editing .msg-content {
+		display: none;
+	}
+	.message.editing .msg-edit-input {
+		display: block;
+	}
+
+	.msg-edit-actions {
+		display: none;
+		align-items: center;
+		gap: 6px;
+		margin-top: 5px;
+	}
+	.message.mine .msg-edit-actions {
+		justify-content: flex-end;
+	}
+	.message.editing .msg-edit-actions {
+		display: flex;
+	}
+
+	.edit-save-btn,
+	.edit-cancel-btn {
+		padding: 4px 12px;
+		border-radius: 8px;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		border: none;
+		transition: 0.15s;
+		font-family: var(--font-body);
+	}
+	.edit-save-btn {
+		background: var(--teal);
+		color: #fff;
+	}
+	.edit-save-btn:hover {
+		background: var(--teal-hover);
+	}
+	.edit-cancel-btn {
+		background: var(--border);
+		color: var(--muted);
+	}
+	.edit-cancel-btn:hover {
+		background: #e0e6eb;
+		color: #4a6070;
+	}
+	.edited-label {
+		font-size: 10px;
+		color: var(--muted);
+		font-style: italic;
+	}
+
+	/* Styling for deleted messages */
+	.message.deleted .msg-content {
+		background: #f1f3f5 !important;
+		color: #adb5bd !important;
+		font-style: italic;
+		border: 1px dashed #dee2e6;
+	}
+
+	.message.mine.deleted .msg-content {
+		background: #e9ecef !important;
+		color: #6c757d !important;
+	}
 </style>
 
 
@@ -1500,13 +1772,44 @@
     function toggleMoreOptions(e) {
         e.stopPropagation();
         const menu = document.getElementById('chat-options-menu');
-        menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        menu.classList.toggle('open');
     }
 
     document.addEventListener('click', () => {
-        document.getElementById('chat-options-menu').style.display = 'none';
+        document.getElementById('chat-options-menu').classList.remove('open');
     });
 
+function addConversationToSidebar(conv) {
+    const list = document.getElementById('conversation-list');
+    
+    // Vérifier si elle existe déjà pour éviter les doublons
+    if (document.querySelector(`.conv-item[data-id="${conv.id}"]`)) return;
+
+    // Supprimer le message "No conversations yet" si c'est la première
+    const emptyMsg = list.querySelector('.empty-side');
+    if (emptyMsg) emptyMsg.remove();
+
+    const newItem = document.createElement('div');
+    newItem.className = `conv-item ${conv.type.toLowerCase()} active`;
+    newItem.setAttribute('onclick', `loadConversation(${conv.id})`);
+    newItem.setAttribute('data-id', conv.id);
+    newItem.setAttribute('data-type', conv.type);
+
+    newItem.innerHTML = `
+        <div class="avatar ${conv.type === 'GROUPE' ? 'group' : ''}">
+            ${conv.displayName.charAt(0).toUpperCase()}
+        </div>
+        <div class="conv-body">
+            <div class="conv-row">
+                <span class="conv-name">${conv.displayName}</span>
+                <span class="conv-time">Now</span>
+            </div>
+            <p class="conv-preview">New conversation started</p>
+        </div>
+    `;
+
+    list.prepend(newItem); // Ajouter en haut de la liste
+}
     /* ══ LOAD CHAT ══ */
     function loadConversation(id) {
         currentConversationId = id;
@@ -1525,47 +1828,140 @@
                 document.getElementById('opt-rename').style.display = isGroup ? 'block' : 'none';
                 document.getElementById('opt-members').style.display = isGroup ? 'block' : 'none';
                 
-                document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
-                const active = document.querySelector(`.conv-item[data-id="${id}"]`);
-                if (active) active.classList.add('active');
+
+				addConversationToSidebar(conv);
+            document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
+            const active = document.querySelector(`.conv-item[data-id="${id}"]`);
+            if (active) active.classList.add('active');
                 loadMessages(id);
             });
     }
 
     function handleDeleteChat() {
-        if (!confirm("Are you sure you want to delete this conversation?")) return;
-        fetch(`/conversation/delete/${currentConversationId}`, { method: 'POST' })
-            .then(() => window.location.reload());
-    }
+    if (!confirm("Are you sure you want to delete this conversation?")) return;
 
+    // On garde une référence à l'ID avant de fermer la vue
+    const idToDelete = currentConversationId;
+
+    fetch(`/conversation/delete/${idToDelete}`, { 
+        method: 'POST',
+        headers: { 
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json' 
+         } 
+    })
+    .then(response => {
+        if (response.ok) {
+            // 1. Retourner à l'écran d'accueil du chat
+            goBackToWelcome();
+
+            // 2. Supprimer l'élément de la liste latérale (le DOM)
+            const sideItem = document.querySelector(`.conv-item[data-id="${idToDelete}"]`);
+            if (sideItem) {
+                sideItem.remove(); // Supprime physiquement la ligne de la liste
+            }
+
+            // 3. Optionnel : si la liste est vide, afficher le message "No conversations"
+            const list = document.getElementById('conversation-list');
+            if (list && list.querySelectorAll('.conv-item').length === 0) {
+                list.innerHTML = `
+                    <div class="empty-side">
+                        <p>No conversations yet.</p>
+                    </div>`;
+            }
+        } else {
+            alert('Failed to delete conversation');
+        }
+    })
+    .catch(err => console.error('Error deleting conversation:', err));
+}
     function openModal(type) {
-        if (type === 'members') loadMembersList();
-        if (type === 'rename') document.getElementById('rename-input').value = currentConversationData.title;
+    const overlay = document.getElementById('msng-overlay');
+    const targetModal = document.getElementById('modal-' + type);
 
-        document.getElementById('msng-overlay').style.display = 'flex';
-        setTimeout(() => document.getElementById('msng-overlay').classList.add('visible'), 10);
-        document.querySelectorAll('.msng-modal').forEach(m => m.style.display = 'none');
-        document.getElementById('modal-' + type).style.display = 'flex';
+    if (!targetModal) return; // Sécurité si l'ID est faux
+
+    // 1. Cacher toutes les autres modales d'abord
+    document.querySelectorAll('.msng-modal').forEach(m => {
+        m.classList.remove('active');
+        m.style.display = 'none';
+    });
+
+    // 2. Afficher l'overlay et la modale cible
+    overlay.style.display = 'flex';
+    targetModal.style.display = 'flex';
+
+    // 3. Un petit délai pour que la transition CSS (opacity/scale) se déclenche
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        targetModal.classList.add('active'); // <--- TRÈS IMPORTANT pour le CSS
+    }, 10);
+
+    // 4. Charger les données spécifiques
+    if (type === 'members') {
+        loadMembersList();
+    }
+    
+    if (type === 'rename' && currentConversationData) {
+        document.getElementById('rename-input').value = currentConversationData.title || "";
+    }
+}
+
+   function loadMembersList() {
+    const list = document.getElementById('members-list-content');
+    
+    // Check if we have data
+    if (!currentConversationData || !currentConversationData.participants) {
+        list.innerHTML = '<div class="p-4 text-center">Loading members...</div>';
+        return;
     }
 
-    function loadMembersList() {
-        const list = document.getElementById('members-list-content');
-        list.innerHTML = currentConversationData.participants.map(p => `
-            <div class="modal-user-row">
-                <div class="m-avatar">${p.name.charAt(0)}</div>
-                <div class="m-name">${p.name}</div>
+    // Logic similar to your Java "for (Person u : membres)"
+    list.innerHTML = currentConversationData.participants.map(p => `
+        <div class="modal-user-row" style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #f8fafc;">
+            <div class="m-avatar" style="width:38px; height:38px; background:#dff0ee; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:700; color:#0d7a72;">
+                ${p.name.charAt(0).toUpperCase()}
             </div>
-        `).join('');
-    }
+            <div class="m-info">
+                <div class="m-name" style="font-weight:600; color:#0d2a4a;">
+                    ${p.name}
+                </div>
+                <div style="font-size:11px; color:#1eb2a6;">Active Member</div>
+            </div>
+        </div>
+    `).join('');
+	}
 
     function submitRenameGroup() {
         const newName = document.getElementById('rename-input').value.trim();
         if (!newName) return;
+
         fetch(`/conversation/rename/${currentConversationId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title: newName })
-        }).then(() => window.location.reload());
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                closeModal();
+                // 1. Mettre à jour le titre dans le header
+                document.getElementById('chat-name').textContent = newName;
+                document.getElementById('chat-header-avatar').textContent = newName.charAt(0).toUpperCase();
+
+                // 2. Mettre à jour le titre dans la liste latérale
+                const sideItem = document.querySelector(`.conv-item[data-id="${currentConversationId}"]`);
+                if (sideItem) {
+                    sideItem.querySelector('.conv-name').textContent = newName;
+                    sideItem.querySelector('.avatar').textContent = newName.charAt(0).toUpperCase();
+                }
+                
+                // 3. Mettre à jour l'objet local en mémoire
+                currentConversationData.displayName = newName;
+                currentConversationData.title = newName;
+            }
+        })
+        .catch(err => console.error('Error renaming:', err));
     }
 
 
@@ -1595,7 +1991,7 @@
                     const prev      = msgs[i - 1];
                     const isConsec  = prev && prev.isMine === m.isMine;
                     const showAvatar = !m.isMine && !isConsec;
-                    container.innerHTML += `
+                    /*container.innerHTML += `
                         <div class="message ${m.isMine ? 'mine' : ''} ${isConsec ? 'consecutive' : ''}">
                             ${showAvatar
                                 ? `<div class="msg-avatar">${m.sender.charAt(0).toUpperCase()}</div>`
@@ -1608,7 +2004,41 @@
                                     ${m.isMine ? `<svg class="read-tick ${m.seen ? 'seen':''}" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
                                 </div>
                             </div>
-                        </div>`;
+                        </div>`;*/
+						// Remplace le template de chaque message par celui-ci :
+                        const menuSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="19" r="1.2" fill="currentColor"/></svg>`;
+                        const editSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>`;
+                        const trashSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>`;
+
+                        const actionBtn = `
+                            <button class="msg-action-btn" onclick="toggleMsgMenu(event,this)">
+                                ${menuSvg}
+                                <div class="msg-menu">
+                                    <div class="msg-menu-item" onclick="startMsgEdit(event,this)">${editSvg} Edit message</div>
+                                    <div class="msg-menu-item danger" onclick="deleteMsgItem(event,this,${m.id})">${trashSvg} Delete</div>
+                                </div>
+                            </button>`;
+
+                        container.innerHTML += `
+                            <div class="message ${m.isMine ? 'mine' : ''} ${isConsec ? 'consecutive' : ''}" data-msg-id="${m.id}">
+                                ${showAvatar ? `<div class="msg-avatar">${m.sender.charAt(0).toUpperCase()}</div>` : (!m.isMine ? `<div class="msg-spacer"></div>` : '')}
+                                <div class="msg-bubble-wrap">
+                                    <div class="msg-bubble-row">
+                                        ${m.isMine ? actionBtn : ''}
+                                        <div class="msg-content">${escapeHtml(m.content)}${m.edited ? ' <span class="edited-label">(edited)</span>' : ''}</div>
+                                        <input class="msg-edit-input" type="text" value="${escapeHtml(m.content)}">
+                                        ${!m.isMine ? actionBtn : ''}
+                                    </div>
+                                    <div class="msg-edit-actions">
+                                        <button class="edit-cancel-btn" onclick="cancelMsgEdit(event,this)">Cancel</button>
+                                        <button class="edit-save-btn" onclick="saveMsgEdit(event,this,${m.id})">Save</button>
+                                    </div>
+                                    <div class="msg-meta">
+                                        <span>${m.time}</span>
+                                        ${m.isMine ? `<svg class="read-tick ${m.seen?'seen':''}" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
+                                    </div>
+                                </div>
+                            </div>`;
                 });
                 container.scrollTop = container.scrollHeight;
             })
@@ -1633,7 +2063,21 @@
     /* ══ SEND MESSAGE ══ */
     function sendMessage() {
         const input = document.getElementById('message-input');
+		const contentError = document.getElementById('message-error');
         const content = input.value.trim();
+		if (!content) {
+        contentError.style.display = 'block'; // Affiche le message d'erreur
+        contentInput.style.borderColor = '#dc3545'; // Optionnel : met la bordure en rouge
+        input.focus();
+		setTimeout(() => {
+            errorMsg.style.display = 'none';
+            wrap.style.borderColor = 'var(--border)';
+        }, 3000);
+        return;
+    } else {
+        contentError.style.display = 'none'; // Cache l'erreur si c'est rempli
+        input.style.borderColor = 'var(--border)';
+    }
         if (!content || !currentConversationId) return;
 
         fetch(`/api/messages/send/${currentConversationId}`, {
@@ -1661,10 +2105,14 @@
         .catch(err => console.error('Error sending message:', err));
     }
 
+document.getElementById('message-input').addEventListener('input', function() {
+    document.getElementById('message-error').style.display = 'none';
+    document.getElementById('chat-input-wrap').style.borderColor = 'var(--border)';
+});
     function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
     /* ══ MODALS ══ */
-    function openModal(type) {
+    function openModals(type) {
         document.querySelectorAll('.msng-modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
         if (type === 'group') resetGroupModal();
         if (type === 'contact') {
@@ -1707,7 +2155,7 @@
                 else loadConversation(data.conversationId);
             }
         })
-        .catch(() => window.location.reload());
+        .catch(err => console.error('Error starting new chat:', err));
     }
 
     function toggleGroupMember(row, id) {
@@ -1733,20 +2181,173 @@
         updateGroupFooter();
     }
 
-    function submitCreateGroup() {
-        const name    = document.getElementById('group-name-input').value.trim();
+    /*function submitCreateGroup() {
+        const name = document.getElementById('group-name-input').value.trim();
         const members = [...selectedMembers];
-        if (!members.length) return;
-        const btn = document.getElementById('btn-create-group');
-        btn.disabled = true;
-        btn.innerHTML = `<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg> Creating…`;
+        if (!name || !members.length) return;
         fetch('/conversation/create-group', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-            body: JSON.stringify({ name: name || 'New Group', members })
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            body: JSON.stringify({ name, members })
         })
         .then(res => res.json())
-        .then(data => { closeModal(); if (data.conversationId) window.location.reload(); })
-        .catch(() => window.location.reload());
+        .then(data => {
+            closeModal();
+            if (data.conversationId) loadConversation(data.conversationId);
+        });
+    }*/
+
+	function submitCreateGroup() {
+    const nameInput = document.getElementById('group-name-input');
+    const nameError = document.getElementById('group-name-error');
+    const name = nameInput.value.trim();
+    const members = [...selectedMembers];
+
+    // 1. Contrôle de saisie sur le titre
+    if (!name) {
+        nameError.style.display = 'block'; // Affiche le message d'erreur
+        nameInput.style.borderColor = '#dc3545'; // Optionnel : met la bordure en rouge
+        nameInput.focus();
+        return;
+    } else {
+        nameError.style.display = 'none'; // Cache l'erreur si c'est rempli
+        nameInput.style.borderColor = 'var(--border)';
     }
+
+    // 2. Contrôle sur les membres (optionnel mais recommandé)
+    if (!members.length) {
+        alert("Please select at least one member for the group.");
+        return;
+    }
+
+    // 3. Envoi au serveur
+    fetch('/conversation/create-group', {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ name: name, members: members })
+    })
+    .then(res => res.json())
+    .then(data => {
+        closeModal();
+        if (data.conversationId) loadConversation(data.conversationId);
+    })
+    .catch(err => console.error('Error:', err));
+}
+document.getElementById('group-name-input').addEventListener('input', function() {
+    document.getElementById('group-name-error').style.display = 'none';
+    this.style.borderColor = 'var(--border)';
+});
+
+	function toggleMsgMenu(e, btn) {
+    e.stopPropagation();
+    const menu = btn.querySelector('.msg-menu');
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.msg-menu.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', () => {
+    document.querySelectorAll('.msg-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+function startMsgEdit(e, item) {
+    e.stopPropagation();
+    const msg = item.closest('.message');
+    document.querySelectorAll('.msg-menu.open').forEach(m => m.classList.remove('open'));
+    msg.classList.add('editing');
+    const input = msg.querySelector('.msg-edit-input');
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+    input.onkeydown = (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); saveMsgEdit(ev, input, msg.dataset.msgId); }
+        if (ev.key === 'Escape') cancelMsgEdit(ev, input);
+    };
+}
+
+function cancelMsgEdit(e, btn) {
+    e.stopPropagation();
+    const msg = btn.closest('.message');
+    msg.classList.remove('editing');
+    const content = msg.querySelector('.msg-content').textContent.replace('(edited)', '').trim();
+    msg.querySelector('.msg-edit-input').value = content;
+}
+
+function saveMsgEdit(e, btn, msgId) {
+    e.stopPropagation();
+    const msg = btn.closest('.message');
+    const input = msg.querySelector('.msg-edit-input');
+    const newText = input.value.trim();
+    if (!newText) return;
+
+    fetch(`/api/messages/update/${msgId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ content: newText })
+    })
+    .then(res => res.json())
+    .then(() => {
+        msg.querySelector('.msg-content').innerHTML = escapeHtml(newText) + ' <span class="edited-label">(edited)</span>';
+        msg.classList.remove('editing');
+    })
+    .catch(() => msg.classList.remove('editing'));
+}
+
+/*function deleteMsgItem(e, item, msgId) {
+    e.stopPropagation();
+    const msg = item.closest('.message');
+    document.querySelectorAll('.msg-menu.open').forEach(m => m.classList.remove('open'));
+
+    fetch(`/api/messages/delete/${msgId}`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(res => { if (res.ok) {
+        msg.style.transition = 'opacity .25s, transform .25s';
+        msg.style.opacity = '0';
+        msg.style.transform = 'scale(.95)';
+        setTimeout(() => msg.remove(), 260);
+    }});
+}*/
+/*function deleteMsgItem(e, item, msgId) {
+    e.stopPropagation();
+    
+    if (!confirm("Are you sure you want to delete this message?")) return;
+
+    const msgElement = item.closest('.message');
+    // Close any open menus
+    document.querySelectorAll('.msg-menu.active').forEach(m => m.classList.remove('active'));
+
+    // FIX: Full URL with prefix /api/messages
+    fetch(`/api/messages/delete/${msgId}`, {
+        method: 'DELETE', // Matches the allowed methods in Controller
+        headers: { 
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => {
+        if (res.ok) {
+            // UI Update: Instead of removing, we transform the bubble
+            msgElement.classList.add('deleted');
+            
+            const contentDiv = msgElement.querySelector('.msg-content');
+            if (contentDiv) {
+                contentDiv.innerHTML = "<em>This message was deleted</em>";
+            }
+            
+            // Remove the action button (dots) so it can't be edited/deleted again
+            const actionBtn = msgElement.querySelector('.msg-action-btn');
+            if (actionBtn) actionBtn.remove();
+        } else {
+            alert('Error: Could not delete the message.');
+        }
+    })
+    .catch(err => console.error('Delete error:', err));
+}*/
+
+function deleteMsgItem(e, item, msgId) {
+        e.stopPropagation();
+        if (!confirm("Delete this message?")) return;
+        fetch(`/api/messages/delete/${msgId}`, { method: 'DELETE' })
+        .then(() => loadMessages(currentConversationId));
+    }
+
 </script>

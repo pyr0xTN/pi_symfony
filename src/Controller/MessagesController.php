@@ -57,7 +57,7 @@ class MessagesController extends AbstractController
     /**
      * Edits an existing message.
      */
-    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['PUT'])]
+    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['POST','PUT'])]
     public function updateOne(
         int $idMessage,
         MessagesRepository $repo,
@@ -83,7 +83,7 @@ class MessagesController extends AbstractController
     /**
      * Soft deletes a message.
      */
-    #[Route('/delete/{idMessage}', name: 'app_message_delete', methods: ['DELETE'])]
+    #[Route('/delete/{idMessage}', name: 'app_message_delete', methods: ['POST', 'DELETE'])]
     public function deleteOne(int $idMessage, MessagesRepository $repo, EntityManagerInterface $em): JsonResponse
     {
         $message = $repo->find($idMessage);
@@ -101,10 +101,10 @@ class MessagesController extends AbstractController
     /**
      * Fetches all messages for a specific conversation.
      */
-    #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
+   /* #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
     public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
     {
-        /** @var User $user */
+        /** @var User $user 
         $user = $this->getUser();
         $messages = $repo->findBy(
             ['idConversation' => $conversation, 'isDeleted' => false],
@@ -120,6 +120,31 @@ class MessagesController extends AbstractController
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
                 'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu()
+            ];
+        }
+        return new JsonResponse($data);
+    }*/
+
+    #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
+    public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        // Récupère tous les messages (grâce au repo modifié au dessus)
+        $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
+
+        $data = [];
+        foreach ($messages as $msg) {
+            $data[] = [
+                'id' => $msg->getId(),
+                // LOGIQUE ICI : Si supprimé, on remplace le contenu
+                'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
+                'time' => $msg->getDateEnvoi()->format('H:i'),
+                'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
+                //'isMine' => $msg->getIdExpediteur()->getId() === $user->getId(),
+                'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
+                'lu' => $msg->isLu(),
+                'isDeleted' => $msg->isDeleted() 
             ];
         }
         return new JsonResponse($data);
