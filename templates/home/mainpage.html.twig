@@ -1,0 +1,1751 @@
+{# templates/home/mainpage.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Main Page - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
+
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            background: var(--vision-main-background, radial-gradient(1400px 500px at 10% -20%, rgba(10, 160, 159, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(252, 186, 48, 0.20), transparent 55%), linear-gradient(180deg, #f4f9ff 0%, #eff6fb 100%));
+            font-family: 'Sora', 'Segoe UI', sans-serif;
+        }
+
+        .main-container.vision-support {
+            background: var(--vision-support-background, radial-gradient(1400px 500px at 10% -20%, rgba(37, 130, 150, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(226, 169, 52, 0.2), transparent 55%), linear-gradient(180deg, #edf7fb 0%, #e6f2f8 100%));
+        }
+
+        .main-container.vision-support .top-bar {
+            background: var(--vision-top-bar-background, rgba(240, 251, 255, 0.95));
+        }
+
+        .main-container.vision-support .nav-tab.active {
+            background: var(--vision-nav-active-background, linear-gradient(135deg, #0b8e8b, #1a6ea0));
+            color: var(--vision-nav-active-color, #f1fcff);
+        }
+
+        .main-container.vision-support .profile-section {
+            border-color: var(--vision-profile-hover-border, rgba(31, 136, 171, 0.35));
+        }
+
+        .side-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: var(--vision-side-menu-background, linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%));
+            box-shadow: 10px 0 32px rgba(3, 39, 75, 0.15);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            border-right: none;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .side-menu-content {
+            padding: 28px 22px;
+        }
+
+        .user-info {
+            text-align: center;
+            padding-bottom: 18px;
+            border-bottom: none;
+            margin-bottom: 18px;
+        }
+
+        .avatar {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            background: linear-gradient(145deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.25);
+        }
+
+        .avatar-img {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #11406f;
+            margin: 0;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #d29a16;
+            font-weight: 700;
+            margin: 2px 0 0;
+            text-transform: capitalize;
+        }
+
+        .side-menu-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            color: #33506f;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .side-menu-btn:hover {
+            background: var(--vision-hover-background, rgba(10, 160, 159, 0.10));
+            border-color: var(--vision-hover-border, rgba(10, 160, 159, 0.22));
+            color: var(--vision-hover-color, #0b8e8b);
+        }
+
+        .logout-btn {
+            margin-top: 18px;
+            background: #fff2f2;
+            color: #d94a5a;
+            font-weight: 700;
+            border-color: #ffd9de;
+        }
+
+        .logout-btn:hover {
+            background: #ffe9ec;
+            border-color: #ffccd4;
+            color: #c03b4d;
+        }
+
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 30, 58, 0.40);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+        }
+
+        .menu-overlay.show {
+            display: block;
+        }
+
+        .top-bar {
+            background: var(--vision-top-bar-background, rgba(255, 255, 255, 0.90));
+            backdrop-filter: blur(10px);
+            padding: 16px 28px;
+            box-shadow: 0 8px 24px rgba(10, 46, 88, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: none;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            height: 40px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo .reh {
+            color: #0FA5A2;
+        }
+
+        .logo .let {
+            color: #FEC74C;
+        }
+
+        .logo .na {
+            color: #1D4D7C;
+        }
+
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 12px;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: var(--vision-hover-background, rgba(10, 160, 159, 0.10));
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--vision-accent-strong, #1D4D7C);
+            margin: 5px 0;
+            transition: 0.3s;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 6px 8px 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(80, 149, 198, 0.16);
+            transition: all 0.25s ease;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-1px);
+            border-color: var(--vision-profile-hover-border, rgba(86, 218, 255, 0.92));
+            background: var(--vision-profile-hover-background, linear-gradient(135deg, rgba(219, 247, 255, 0.98), rgba(192, 238, 255, 0.94)));
+            box-shadow: var(--vision-profile-hover-shadow, 0 0 0 1px rgba(129, 230, 255, 0.72), 0 0 16px rgba(65, 203, 255, 0.46), 0 10px 24px rgba(10, 98, 141, 0.24));
+        }
+
+        .profile-info {
+            text-align: right;
+        }
+
+        .profile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1D4D7C;
+            margin: 0;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #d19a1a;
+            font-weight: 700;
+            margin: 0;
+            text-transform: capitalize;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(7, 57, 107, 0.20);
+        }
+
+        .profile-avatar img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .premium-crown-badge {
+            position: absolute;
+            top: -8px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: linear-gradient(135deg, #ffd66e, #f3b019);
+            border: 2px solid #ffffff;
+            box-shadow: 0 6px 14px rgba(90, 63, 0, 0.28);
+            z-index: 3;
+        }
+
+        .online-status {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(10, 160, 159, 0.2);
+            border-radius: 999px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            margin: 0 12px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(10, 160, 159, 0.4);
+            box-shadow: 0 6px 16px rgba(10, 160, 159, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle:active {
+            transform: translateY(0);
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #1a1a2e !important;
+        }
+
+        body.dark-mode .main-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+        }
+
+        body.dark-mode .top-bar {
+            background: rgba(30, 30, 50, 0.95) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        body.dark-mode .menu-toggle span {
+            background: #e8f0f6 !important;
+        }
+
+        body.dark-mode .nav-tab {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #b8d4f1 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .nav-tab:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .nav-tab.active {
+            background: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .profile-section {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .profile-section:hover {
+            background: linear-gradient(135deg, rgba(14, 79, 110, 0.95), rgba(7, 118, 139, 0.9)) !important;
+            border-color: rgba(108, 229, 255, 0.92) !important;
+            box-shadow:
+                0 0 0 1px rgba(108, 229, 255, 0.54),
+                0 0 18px rgba(54, 185, 235, 0.44),
+                0 10px 24px rgba(3, 22, 38, 0.62) !important;
+        }
+
+        body.dark-mode .profile-name {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .profile-role {
+            color: #ffd89b !important;
+        }
+
+        body.dark-mode .premium-crown-badge {
+            border-color: #1b2b3e;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+        }
+
+        body.dark-mode .theme-toggle {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(10, 160, 159, 0.3) !important;
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(10, 160, 159, 0.5) !important;
+        }
+
+        body.dark-mode .side-menu {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        body.dark-mode .side-menu-btn {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .side-menu-btn:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            border-color: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .user-name {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .user-role {
+            color: #ffd89b !important;
+        }
+
+        /* Dark mode content styles */
+        body.dark-mode .content-area {
+            background: transparent !important;
+        }
+
+        body.dark-mode .welcome-section {
+            background: linear-gradient(135deg, rgba(30, 30, 50, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%) !important;
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        body.dark-mode .welcome-title {
+            color: #d4e4f0 !important;
+        }
+
+        body.dark-mode .welcome-subtitle {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .feature-card {
+            background: linear-gradient(155deg, rgba(30, 30, 50, 0.8), rgba(22, 33, 62, 0.8)) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        body.dark-mode .feature-card:hover {
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        body.dark-mode .feature-title {
+            color: #d4e4f0 !important;
+        }
+
+        body.dark-mode .feature-text {
+            color: #9cb3d4 !important;
+        }
+
+        body.dark-mode .chat-modal {
+            background: rgba(30, 30, 50, 0.98) !important;
+            box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        body.dark-mode .menu-overlay {
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        .nav-tabs {
+            background: transparent;
+            padding: 10px 28px 0;
+            border-bottom: 0;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-tab {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.75);
+            border: none;
+            border-radius: 999px;
+            color: #49617a;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover {
+            background: #ffffff;
+            border-color: rgba(10, 160, 159, 0.30);
+            color: #0FA5A2;
+        }
+
+        .nav-tab.active {
+            background: var(--vision-nav-active-background, linear-gradient(135deg, #0FA5A2 0%, #1788b6 100%));
+            color: var(--vision-nav-active-color, white);
+            border-color: transparent;
+            box-shadow: 0 8px 18px rgba(15, 165, 162, 0.26);
+        }
+
+        .main-container.theme-blue {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(34, 132, 222, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(129, 196, 255, 0.18), transparent 55%), linear-gradient(180deg, #f1f8ff 0%, #eaf4ff 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(37, 130, 150, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(129, 196, 255, 0.16), transparent 55%), linear-gradient(180deg, #edf7fb 0%, #e6f2f8 100%);
+            --vision-top-bar-background: rgba(244, 250, 255, 0.94);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #156fd1, #0f4c9a);
+            --vision-nav-active-color: #f6fbff;
+            --vision-hover-background: rgba(34, 132, 222, 0.10);
+            --vision-hover-border: rgba(34, 132, 222, 0.22);
+            --vision-hover-color: #156fd1;
+            --vision-profile-hover-border: rgba(88, 154, 209, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(232, 244, 255, 0.98), rgba(213, 234, 255, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(134, 196, 255, 0.72), 0 0 16px rgba(63, 165, 255, 0.40), 0 10px 24px rgba(14, 82, 138, 0.22);
+            --vision-accent-strong: #0f4c9a;
+        }
+
+        .main-container.theme-red {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(220, 82, 82, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 191, 191, 0.16), transparent 55%), linear-gradient(180deg, #fff4f4 0%, #ffecec 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(220, 82, 82, 0.18), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 191, 191, 0.12), transparent 55%), linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%);
+            --vision-top-bar-background: rgba(255, 246, 246, 0.95);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #d33f49, #8f2433);
+            --vision-nav-active-color: #fff8f8;
+            --vision-hover-background: rgba(220, 82, 82, 0.10);
+            --vision-hover-border: rgba(220, 82, 82, 0.22);
+            --vision-hover-color: #d33f49;
+            --vision-profile-hover-border: rgba(224, 114, 114, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 237, 237, 0.98), rgba(255, 225, 225, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(255, 170, 170, 0.72), 0 0 16px rgba(255, 124, 124, 0.34), 0 10px 24px rgba(152, 50, 50, 0.20);
+            --vision-accent-strong: #8f2433;
+        }
+
+        .main-container.theme-yellow {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(232, 177, 38, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 238, 181, 0.18), transparent 55%), linear-gradient(180deg, #fffaf0 0%, #fff3d6 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(232, 177, 38, 0.20), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 238, 181, 0.14), transparent 55%), linear-gradient(180deg, #fffdf6 0%, #fff6dd 100%);
+            --vision-top-bar-background: rgba(255, 251, 240, 0.95);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff7e4 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #d39a15, #8e5f09);
+            --vision-nav-active-color: #fffdf7;
+            --vision-hover-background: rgba(232, 177, 38, 0.12);
+            --vision-hover-border: rgba(232, 177, 38, 0.24);
+            --vision-hover-color: #c98f00;
+            --vision-profile-hover-border: rgba(230, 194, 86, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), rgba(255, 242, 194, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(248, 214, 123, 0.72), 0 0 16px rgba(255, 204, 84, 0.34), 0 10px 24px rgba(162, 124, 22, 0.18);
+            --vision-accent-strong: #8e5f09;
+        }
+
+        .main-container.theme-black {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(68, 74, 88, 0.30), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(156, 163, 175, 0.16), transparent 55%), linear-gradient(180deg, #1f2733 0%, #121822 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(68, 74, 88, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(156, 163, 175, 0.12), transparent 55%), linear-gradient(180deg, #1b232f 0%, #121822 100%);
+            --vision-top-bar-background: rgba(25, 32, 44, 0.96);
+            --vision-side-menu-background: linear-gradient(180deg, #1f2733 0%, #151b24 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #586174, #262d3a);
+            --vision-nav-active-color: #f8fafc;
+            --vision-hover-background: rgba(148, 163, 184, 0.12);
+            --vision-hover-border: rgba(148, 163, 184, 0.24);
+            --vision-hover-color: #d8e0ea;
+            --vision-profile-hover-border: rgba(114, 128, 145, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(33, 41, 53, 0.98), rgba(24, 31, 42, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(86, 95, 109, 0.70), 0 0 16px rgba(74, 85, 104, 0.30), 0 10px 24px rgba(0, 0, 0, 0.38);
+            --vision-accent-strong: #e2e8f0;
+        }
+
+        .main-container.theme-white {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(203, 213, 225, 0.34), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(241, 245, 249, 0.22), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(203, 213, 225, 0.20), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(241, 245, 249, 0.14), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+            --vision-top-bar-background: rgba(255, 255, 255, 0.96);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #7a8798, #475569);
+            --vision-nav-active-color: #ffffff;
+            --vision-hover-background: rgba(148, 163, 184, 0.10);
+            --vision-hover-border: rgba(148, 163, 184, 0.24);
+            --vision-hover-color: #475569;
+            --vision-profile-hover-border: rgba(203, 213, 225, 0.95);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(250, 251, 252, 0.98), rgba(243, 246, 249, 0.95));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(226, 232, 240, 0.9), 0 0 16px rgba(203, 213, 225, 0.30), 0 10px 24px rgba(148, 163, 184, 0.18);
+            --vision-accent-strong: #334155;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 22px 28px 36px;
+            background: transparent;
+        }
+
+        .welcome-section {
+            margin-bottom: 24px;
+            padding: 28px;
+            border-radius: 24px;
+            background:
+                radial-gradient(300px 120px at 10% 0%, rgba(10, 160, 159, 0.18), transparent 80%),
+                radial-gradient(360px 140px at 90% 100%, rgba(252, 186, 48, 0.20), transparent 85%),
+                linear-gradient(120deg, #ffffff 0%, #f7fbff 100%);
+            border: none;
+            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.09);
+            text-align: left;
+        }
+
+        .welcome-title {
+            font-size: clamp(2rem, 3.8vw, 3rem);
+            font-weight: 800;
+            color: #133f6a;
+            margin-bottom: 8px;
+            line-height: 1.06;
+            letter-spacing: -1px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #4f657c;
+            margin-bottom: 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-card {
+            background: linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(248, 252, 255, 0.92));
+            border: none;
+            padding: 24px 20px;
+            border-radius: 18px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            box-shadow: 0 8px 20px rgba(7, 57, 107, 0.06);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 28px rgba(7, 57, 107, 0.14);
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .feature-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #173f69;
+            margin-bottom: 6px;
+        }
+
+        .feature-text {
+            font-size: 12px;
+            color: #5c7087;
+        }
+
+        /* Chat Button */
+        .chat-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(6, 44, 82, 0.2);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-button span {
+            font-size: 24px;
+            color: white;
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff5e62;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .chat-modal {
+            position: fixed;
+            right: 20px;
+            bottom: 94px;
+            width: min(380px, calc(100vw - 24px));
+            height: min(560px, calc(100vh - 140px));
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 18px;
+            box-shadow: 0 22px 46px rgba(6, 44, 82, 0.26);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1200;
+        }
+
+        .chat-modal.show {
+            display: flex;
+            animation: chatPopupIn 0.2s ease;
+        }
+
+        .chat-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+        }
+
+        .chat-modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .chat-modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .chat-modal-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            background: linear-gradient(180deg, #f7fbff 0%, #eef6fd 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .chat-message.mine {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .chat-message.other {
+            align-self: flex-start;
+            background: #ffffff;
+            color: #2a4460;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 6px 14px rgba(7, 57, 107, 0.1);
+        }
+
+        .chat-message-meta {
+            margin-top: 6px;
+            font-size: 10px;
+            opacity: 0.75;
+        }
+
+        .chat-empty {
+            margin: auto;
+            text-align: center;
+            color: #6a7f95;
+            font-size: 13px;
+        }
+
+        .chat-modal-input {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #fff;
+            border-top: 1px solid rgba(15, 80, 128, 0.12);
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid rgba(10, 118, 160, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: rgba(10, 160, 159, 0.6);
+            box-shadow: 0 0 0 3px rgba(10, 160, 159, 0.14);
+        }
+
+        .chat-send-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 0 14px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chat-status {
+            min-height: 18px;
+            font-size: 11px;
+            color: #d94a5a;
+            padding: 0 12px 8px;
+            background: #fff;
+        }
+
+        @keyframes chatPopupIn {
+            from {
+                transform: translateY(12px) scale(0.98);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Profile Popup */
+        .profile-popup {
+            position: absolute;
+            background:
+                radial-gradient(260px 120px at 100% 0%, rgba(123, 233, 255, 0.34), transparent 72%),
+                linear-gradient(145deg, rgba(245, 253, 255, 0.99), rgba(222, 247, 255, 0.97));
+            border-radius: 16px;
+            padding: 14px;
+            min-width: 248px;
+            border: 1px solid rgba(86, 218, 255, 0.72);
+            box-shadow:
+                0 0 0 1px rgba(164, 240, 255, 0.7),
+                0 14px 28px rgba(8, 67, 104, 0.2),
+                0 0 24px rgba(95, 222, 255, 0.32);
+            z-index: 1000;
+            display: none;
+        }
+
+        .profile-popup.show {
+            display: block;
+        }
+
+        .profile-popup .popup-username {
+            margin: 0 0 10px;
+            color: #0f3f63;
+            font-size: 18px;
+            line-height: 1.1;
+        }
+
+        .profile-popup .popup-stats {
+            display: grid;
+            gap: 7px;
+        }
+
+        .profile-popup .popup-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 9px;
+            border-radius: 10px;
+            border: 1px solid rgba(130, 221, 246, 0.42);
+            background: rgba(255, 255, 255, 0.56);
+            color: #194a71;
+            font-size: 13px;
+        }
+
+        .profile-popup .popup-label {
+            font-weight: 700;
+            color: #4a6d89;
+        }
+
+        .profile-popup .popup-value {
+            font-weight: 800;
+            color: #0e3f67;
+            text-align: right;
+        }
+
+        body.dark-mode .profile-popup {
+            background:
+                radial-gradient(260px 120px at 100% 0%, rgba(84, 218, 255, 0.34), transparent 72%),
+                linear-gradient(145deg, rgba(8, 28, 42, 0.98), rgba(11, 44, 63, 0.98));
+            border-color: rgba(98, 227, 255, 0.8);
+            box-shadow:
+                0 0 0 1px rgba(98, 227, 255, 0.54),
+                0 14px 28px rgba(0, 0, 0, 0.5),
+                0 0 24px rgba(60, 198, 255, 0.32);
+        }
+
+        body.dark-mode .profile-popup .popup-username,
+        body.dark-mode .profile-popup .popup-value {
+            color: #ddf6ff;
+        }
+
+        body.dark-mode .profile-popup .popup-row {
+            background: rgba(7, 31, 44, 0.75);
+            border-color: rgba(96, 222, 255, 0.34);
+            color: #bee8fb;
+        }
+
+        body.dark-mode .profile-popup .popup-label {
+            color: #9ccde3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .top-bar {
+                padding: 10px 15px;
+            }
+
+            .profile-info {
+                display: none;
+            }
+
+            .nav-tabs {
+                padding: 0 15px 10px 15px;
+            }
+
+            .content-area {
+                padding: 15px;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .feature-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .chat-modal {
+                right: 12px;
+                bottom: 86px;
+                width: calc(100vw - 24px);
+                height: min(560px, calc(100vh - 120px));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Menu toggle
+            let isMenuOpen = false;
+            
+            $('.menu-toggle').click(function() {
+                if (isMenuOpen) {
+                    $('.side-menu').removeClass('open');
+                    $('.menu-overlay').removeClass('show');
+                } else {
+                    $('.side-menu').addClass('open');
+                    $('.menu-overlay').addClass('show');
+                }
+                isMenuOpen = !isMenuOpen;
+            });
+            
+            $('.menu-overlay').click(function() {
+                $('.side-menu').removeClass('open');
+                $('.menu-overlay').removeClass('show');
+                isMenuOpen = false;
+            });
+            
+            // Profile popup on hover
+            let hoverTimer;
+            const $profileSection = $('.profile-section');
+            const $profilePopup = $('.profile-popup');
+            
+            $profileSection.hover(
+                function() {
+                    hoverTimer = setTimeout(function() {
+                        $profilePopup.addClass('show');
+                        // Position popup near avatar
+                        const offset = $profileSection.offset();
+                        $profilePopup.css({
+                            top: offset.top + 60,
+                            right: 20
+                        });
+                    }, 120);
+                },
+                function() {
+                    clearTimeout(hoverTimer);
+                    $profilePopup.removeClass('show');
+                }
+            );
+            
+            // Nav tab switching (load content dynamically)
+            $('.nav-tab').click(function() {
+                if ($(this).is('a') && $(this).attr('href')) {
+                    return;
+                }
+                $('.nav-tab').removeClass('active');
+                $(this).addClass('active');
+                
+                const view = $(this).data('view');
+                loadContentView(view);
+            });
+            
+            function loadContentView(view) {
+                $.ajax({
+                    url: '{{ path('app_load_content') }}',
+                    type: 'POST',
+                    data: { view: view },
+                    success: function(response) {
+                        $('.content-area').html(response);
+                        if (view === 'shop') {
+                            initializeShopModule();
+                        }
+                        if (view === 'messenger') {
+                            initializeMessengerModule();
+                        }
+                    },
+                    error: function() {
+                        console.error('Failed to load content');
+                    }
+                });
+            }
+
+            function loadModuleFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const moduleView = params.get('module');
+                if (!moduleView) {
+                    return;
+                }
+
+                const $targetTab = $('.nav-tab[data-view="' + moduleView + '"]');
+                if ($targetTab.length) {
+                    $('.nav-tab').removeClass('active');
+                    $targetTab.addClass('active');
+                }
+
+                loadContentView(moduleView);
+            }
+
+            loadModuleFromUrl();
+
+            window.loadMainpageModule = loadContentView;
+
+            function initializeShopModule() {
+                const $module = $('.shop-module');
+                if (!$module.length) {
+                    return;
+                }
+
+                const availableCoins = Number($module.data('availableCoins') || 0);
+                const mapboxToken = String($module.data('mapboxToken') || '');
+                const mapHintNoToken = String($module.data('mapHintNoToken') || '');
+                const mapHintError = String($module.data('mapHintError') || '');
+                const $overlay = $module.find('.shop-order-modal');
+                const $productId = $module.find('.js-product-id');
+                const $productName = $module.find('.js-product-name');
+                const $productPrice = $module.find('.js-product-price');
+                const $totalCoins = $module.find('.js-total-coins');
+                const $locationText = $module.find('.js-location-text');
+                const $locationLat = $module.find('.js-location-lat');
+                const $locationLng = $module.find('.js-location-lng');
+                const mapContainer = $module.find('.js-order-map')[0];
+                const $mapHint = $module.find('.map-hint');
+                const $submitButton = $module.find('.btn-submit');
+                let currentPrice = 0;
+                let currentStock = 1;
+                let map = null;
+                let marker = null;
+
+                function updateTotal() {
+                    const total = currentPrice;
+                    $totalCoins.text(String(total));
+                    $submitButton.prop('disabled', total > availableCoins || currentStock <= 0);
+                }
+
+                function closeModal() {
+                    $overlay.removeClass('show').attr('aria-hidden', 'true');
+                }
+
+                function openModal() {
+                    $overlay.addClass('show').attr('aria-hidden', 'false');
+                    if (map && typeof map.resize === 'function') {
+                        setTimeout(function () {
+                            map.resize();
+                        }, 120);
+                    } else if (map && typeof map.invalidateSize === 'function') {
+                        setTimeout(function () {
+                            map.invalidateSize();
+                        }, 120);
+                    }
+                }
+
+                function setLocation(lat, lng, label) {
+                    $locationLat.val(lat.toFixed(6));
+                    $locationLng.val(lng.toFixed(6));
+                    $locationText.val(label || (lat.toFixed(6) + ', ' + lng.toFixed(6)));
+                }
+
+                function loadLeafletAssets() {
+                    return new Promise(function (resolve, reject) {
+                        if (typeof window.L !== 'undefined') {
+                            resolve();
+                            return;
+                        }
+
+                        const existingScript = document.getElementById('leaflet-js');
+                        if (existingScript) {
+                            existingScript.addEventListener('load', function () { resolve(); }, { once: true });
+                            existingScript.addEventListener('error', function () { reject(new Error('Leaflet failed to load.')); }, { once: true });
+                            return;
+                        }
+
+                        if (!document.getElementById('leaflet-css')) {
+                            const leafletCss = document.createElement('link');
+                            leafletCss.id = 'leaflet-css';
+                            leafletCss.rel = 'stylesheet';
+                            leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                            leafletCss.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+                            leafletCss.crossOrigin = '';
+                            document.head.appendChild(leafletCss);
+                        }
+
+                        const leafletScript = document.createElement('script');
+                        leafletScript.id = 'leaflet-js';
+                        leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                        leafletScript.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+                        leafletScript.crossOrigin = '';
+                        leafletScript.onload = function () { resolve(); };
+                        leafletScript.onerror = function () { reject(new Error('Leaflet failed to load.')); };
+                        document.body.appendChild(leafletScript);
+                    });
+                }
+
+                function initMap() {
+                    if (map || !mapContainer) {
+                        return;
+                    }
+
+                    if (mapboxToken && typeof window.mapboxgl !== 'undefined') {
+                        window.mapboxgl.accessToken = mapboxToken;
+                        map = new window.mapboxgl.Map({
+                            container: mapContainer,
+                            style: 'mapbox://styles/mapbox/streets-v12',
+                            center: [10.1815, 36.8065],
+                            zoom: 10,
+                        });
+
+                        map.on('click', function (event) {
+                            const lng = event.lngLat.lng;
+                            const lat = event.lngLat.lat;
+
+                            if (!marker) {
+                                marker = new window.mapboxgl.Marker({ color: '#0fa5a2' }).setLngLat([lng, lat]).addTo(map);
+                            } else {
+                                marker.setLngLat([lng, lat]);
+                            }
+
+                            fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + mapboxToken)
+                                .then((response) => response.ok ? response.json() : null)
+                                .then((payload) => {
+                                    const place = payload && payload.features && payload.features[0] ? payload.features[0].place_name : '';
+                                    setLocation(lat, lng, place);
+                                })
+                                .catch(() => {
+                                    setLocation(lat, lng, '');
+                                });
+                        });
+
+                        return;
+                    }
+
+                    $mapHint.text(mapHintNoToken);
+
+                    loadLeafletAssets()
+                        .then(function () {
+                            if (map || typeof window.L === 'undefined') {
+                                return;
+                            }
+
+                            map = window.L.map(mapContainer).setView([36.8065, 10.1815], 10);
+
+                            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '&copy; OpenStreetMap contributors'
+                            }).addTo(map);
+
+                            map.on('click', function (event) {
+                                const lat = event.latlng.lat;
+                                const lng = event.latlng.lng;
+
+                                if (!marker) {
+                                    marker = window.L.marker([lat, lng]).addTo(map);
+                                } else {
+                                    marker.setLatLng([lat, lng]);
+                                }
+
+                                fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng)
+                                    .then((response) => response.ok ? response.json() : null)
+                                    .then((payload) => {
+                                        const label = payload && payload.display_name ? payload.display_name : '';
+                                        setLocation(lat, lng, label);
+                                    })
+                                    .catch(() => {
+                                        setLocation(lat, lng, '');
+                                    });
+                            });
+                        })
+                        .catch(function () {
+                            $mapHint.text(mapHintError);
+                        });
+                }
+
+                $(document).off('click.shopModule').on('click.shopModule', '.shop-module .order-btn', function () {
+                    const $button = $(this);
+                    currentPrice = Number($button.data('productPrice') || 0);
+                    currentStock = Math.max(1, Number($button.data('productStock') || 1));
+
+                    $productId.val(String($button.data('productId') || ''));
+                    $productName.text(String($button.data('productName') || 'Product'));
+                    $productPrice.text(String(currentPrice));
+                    $locationLat.val('');
+                    $locationLng.val('');
+                    $locationText.val('');
+                    updateTotal();
+                    openModal();
+                    initMap();
+                });
+
+                $(document).off('click.shopModuleClose').on('click.shopModuleClose', '.shop-module .order-close', function () {
+                    closeModal();
+                });
+
+                $(document).off('click.shopModuleOverlay').on('click.shopModuleOverlay', '.shop-module .shop-order-modal', function (event) {
+                    if (event.target === this) {
+                        closeModal();
+                    }
+                });
+
+                $(document).off('input.shopModule').on('input.shopModule', '.shop-module .js-location-text', function () {
+                    $locationText.val($(this).val());
+                });
+
+                if (!mapboxToken) {
+                    $mapHint.text(mapHintNoToken);
+                }
+            }
+
+            let messengerPoller = null;
+            let currentConversationId = null;
+
+            function initializeMessengerModule() {
+                const messagesArea = document.getElementById('messagesArea');
+                const messageInput = document.getElementById('messageInput');
+                const sendMessageBtn = document.getElementById('sendMessageBtn');
+                const inputStatus = document.getElementById('inputStatus');
+                const conversationViewContent = document.getElementById('conversationViewContent');
+                const noConversationView = document.getElementById('noConversationView');
+                const selectedConvName = document.getElementById('selectedConvName');
+                const selectedConvStatus = document.getElementById('selectedConvStatus');
+
+                if (!messagesArea) return;
+
+                function escapeHtml(val) {
+                    const div = document.createElement('div');
+                    div.textContent = val;
+                    return div.innerHTML;
+                }
+
+                function loadMessages() {
+                    if (!currentConversationId) return;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_messages') }}',
+                        type: 'GET',
+                        success: function(response) {
+                            if (!Array.isArray(response.messages) || response.messages.length === 0) {
+                                messagesArea.innerHTML = '<div class="messages-empty">Aucun message. Commencez la conversation!</div>';
+                                return;
+                            }
+
+                            const html = response.messages.map(function(msg) {
+                                const groupClass = msg.isMine ? 'sent' : 'received';
+                                const bubbleClass = msg.isMine ? 'sent' : 'received';
+                                const senderLabel = msg.isMine ? 'Vous' : escapeHtml(msg.senderName || 'Support');
+                                const timestamp = escapeHtml(msg.timestamp || '');
+                                const content = escapeHtml(msg.message || '');
+
+                                return `
+                                    <div class="message-group ${groupClass}">
+                                        <div class="message-bubble ${bubbleClass}">${content}</div>
+                                        <div class="message-time">${timestamp}</div>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            messagesArea.innerHTML = html;
+                            messagesArea.scrollTop = messagesArea.scrollHeight;
+                        }
+                    });
+                }
+
+                function sendMessage() {
+                    const text = (messageInput.value || '').trim();
+                    if (!text) {
+                        return;
+                    }
+
+                    inputStatus.textContent = '';
+                    messageInput.disabled = true;
+                    sendMessageBtn.disabled = true;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_send') }}',
+                        type: 'POST',
+                        data: { message: text },
+                        success: function() {
+                            messageInput.value = '';
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            loadMessages();
+                            messageInput.focus();
+                        },
+                        error: function(xhr) {
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                            inputStatus.textContent = payload && payload.error ? payload.error : 'Erreur lors de l\'envoi.';
+                        }
+                    });
+                }
+
+                if (sendMessageBtn) {
+                    sendMessageBtn.addEventListener('click', sendMessage);
+                }
+
+                if (messageInput) {
+                    messageInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    });
+                }
+
+                // Afficher la conversation et charger les messages
+                if (conversationViewContent && noConversationView) {
+                    conversationViewContent.style.display = 'flex';
+                    noConversationView.style.display = 'none';
+                    currentConversationId = 1;
+                    selectedConvName.textContent = 'Support Admin';
+                    selectedConvStatus.textContent = 'En ligne';
+                    loadMessages();
+                }
+
+                if (messengerPoller) {
+                    clearInterval(messengerPoller);
+                }
+                messengerPoller = setInterval(loadMessages, 8000);
+            }
+            
+            // Refresh unread badge periodically
+            function refreshBadge() {
+                $.ajax({
+                    url: '{{ path('app_unread_count') }}',
+                    type: 'GET',
+                    success: function(response) {
+                        const count = response.unreadCount;
+                        if (count > 0) {
+                            $('.chat-badge').text(count > 99 ? '99+' : count).show();
+                        } else {
+                            $('.chat-badge').hide();
+                        }
+                    }
+                });
+            }
+            
+            refreshBadge();
+            setInterval(refreshBadge, 10000);
+
+            const $chatModal = $('#chatModal');
+            const $chatMessages = $('#chatMessages');
+            const $chatInput = $('#chatInput');
+            const $chatStatus = $('#chatStatus');
+            let chatPoller = null;
+            let lastMessagesSignature = '';
+
+            function escapeHtml(value) {
+                return $('<div>').text(value || '').html();
+            }
+
+            function renderChatMessages(messages) {
+                if (!Array.isArray(messages) || messages.length === 0) {
+                    $chatMessages.html('<div class="chat-empty">No messages yet. Start the conversation with an admin.</div>');
+                    lastMessagesSignature = 'empty';
+                    return;
+                }
+
+                const signature = messages.map(m => `${m.id}:${m.isRead ? 1 : 0}`).join('|');
+                if (signature === lastMessagesSignature) {
+                    return;
+                }
+                lastMessagesSignature = signature;
+
+                const html = messages.map(function(msg) {
+                    const sideClass = msg.isMine ? 'mine' : 'other';
+                    const senderLabel = msg.isMine ? 'You' : escapeHtml(msg.senderName || 'Admin');
+                    const timeLabel = escapeHtml(msg.timestamp || '');
+                    const content = escapeHtml(msg.message || '');
+
+                    return `
+                        <div class="chat-message ${sideClass}">
+                            <div>${content}</div>
+                            <div class="chat-message-meta">${senderLabel} • ${timeLabel}</div>
+                        </div>
+                    `;
+                }).join('');
+
+                $chatMessages.html(html);
+                $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+            }
+
+            function loadChatMessages() {
+                $.ajax({
+                    url: '{{ path('app_chat_messages') }}',
+                    type: 'GET',
+                    success: function(response) {
+                        renderChatMessages(response.messages || []);
+                        refreshBadge();
+                    },
+                    error: function() {
+                        $chatStatus.text('Unable to load chat messages right now.');
+                    }
+                });
+            }
+
+            function openChatModal() {
+                $chatStatus.text('');
+                $chatModal.addClass('show');
+                loadChatMessages();
+                if (chatPoller) {
+                    clearInterval(chatPoller);
+                }
+                chatPoller = setInterval(loadChatMessages, 5000);
+                setTimeout(function() {
+                    $chatInput.trigger('focus');
+                }, 50);
+            }
+
+            function closeChatModal() {
+                $chatModal.removeClass('show');
+                if (chatPoller) {
+                    clearInterval(chatPoller);
+                    chatPoller = null;
+                }
+            }
+
+            window.showChatPopup = openChatModal;
+
+            $('#chatCloseBtn').on('click', closeChatModal);
+
+            $(document).on('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeChatModal();
+                }
+            });
+
+            $('#chatSendBtn').on('click', function() {
+                const text = ($chatInput.val() || '').trim();
+                if (!text) {
+                    return;
+                }
+
+                $chatStatus.text('');
+                $.ajax({
+                    url: '{{ path('app_chat_send') }}',
+                    type: 'POST',
+                    data: { message: text },
+                    success: function() {
+                        $chatInput.val('');
+                        loadChatMessages();
+                    },
+                    error: function(xhr) {
+                        const fallback = 'Unable to send message now.';
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : fallback);
+                    }
+                });
+            });
+
+            $chatInput.on('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    $('#chatSendBtn').trigger('click');
+                }
+            });
+            
+            // Side menu actions
+            $('.side-menu-btn').click(function() {
+                const action = $(this).data('action');
+                if (action === 'logout') {
+                    if (typeof window.showGlobalLoader === 'function') {
+                        window.showGlobalLoader('Signing you out...');
+                    }
+                    setTimeout(function() {
+                        window.location.href = '{{ path('app_logout') }}';
+                    }, 120);
+                } else if (action === 'dashboard') {
+                    window.location.href = '{{ path('app_dashboard') }}';
+                } else if (action === 'guide-dashboard') {
+                    window.location.href = '{{ path('app_guide_dashboard') }}';
+                } else if (action === 'reservations') {
+                    window.location.href = '{{ path('app_reservations') }}';
+                } else if (action === 'my-reservations') {
+                    window.location.href = '{{ path('app_my_reservations') }}';
+                } else if (action === 'my-orders') {
+                    window.location.href = '{{ path('app_my_orders') }}';
+                } else if (action === 'offers-grid') {
+                    window.location.href = '{{ path('app_offers_grid') }}';
+                }
+            });
+
+            window.addEventListener('pageshow', function () {
+                $('.side-menu').removeClass('open');
+                $('.menu-overlay').removeClass('show');
+                isMenuOpen = false;
+            });
+        });
+        
+        function showChatPopup() {
+            // This global function is replaced in document.ready with modal opening logic.
+        }
+    </script>
+{% endblock %}
+
+{% block body %}
+    {% set membershipTier = profile.member_premium|default('standard')|lower|trim %}
+    {% set hasPremiumCrown = membershipTier in ['premium', 'premuim', 'vip', 'vip+', 'vip plus', 'vip_plus'] %}
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+    
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <div class="side-menu-content">
+            <div class="user-info">
+                {% if app.user %}
+                    <div class="avatar">
+                        {{ app.user.username|first|upper }}
+                    </div>
+                    <p class="user-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                    <p class="user-role">
+                        {% if 'ROLE_ADMIN' in app.user.roles %}
+                            {{ 'main.role.administrator'|trans }}
+                        {% elseif 'ROLE_GUIDE' in app.user.roles %}
+                            {{ 'main.role.guide'|trans }}
+                        {% else %}
+                            {{ 'main.role.member'|trans }}
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            
+            {% if is_granted('ROLE_ADMIN') %}
+                <button class="side-menu-btn" data-action="dashboard">🏠 {{ 'main.menu.dashboard'|trans }}</button>
+            {% endif %}
+            
+            {% if is_granted('ROLE_GUIDE') %}
+                <button class="side-menu-btn" data-action="guide-dashboard">👤 {{ 'main.menu.guide_dashboard'|trans }}</button>
+            {% endif %}
+            
+            <button class="side-menu-btn" data-action="my-reservations">👤 {{ 'main.menu.my_reservations'|trans }}</button>
+            <button class="side-menu-btn" data-action="my-orders">🧾 {{ 'main.menu.my_orders'|trans }}</button>
+            <button class="side-menu-btn" data-action="reservations">💻 {{ 'main.menu.reservations'|trans }}</button>
+            <button class="side-menu-btn" data-action="reservation-details">📋 {{ 'main.menu.reservation_details'|trans }}</button>
+            
+            {% if is_granted('ROLE_AGENCY') %}
+                <button class="side-menu-btn" data-action="offers-grid">📋 {{ 'main.menu.offers_grid'|trans }}</button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-container theme-{{ visionTheme|default('default') }}{% if visionAccessibleMode|default(false) %} vision-support{% endif %}">
+        <div style="flex: 1;">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="profile-section">
+                        <div class="profile-info">
+                            <p class="profile-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                            <p class="profile-role">
+                                {% if 'ROLE_ADMIN' in app.user.roles %}
+                                    {{ 'main.role.administrator'|trans }}
+                                {% elseif 'ROLE_GUIDE' in app.user.roles %}
+                                    {{ 'main.role.guide'|trans }}
+                                {% else %}
+                                    {{ 'main.role.member'|trans }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="profile-avatar">
+                            <img src="{{ profile.image_url|default(asset('images/default_image.png')) }}" alt="Profile" class="profile-img" />
+                            {% if hasPremiumCrown %}
+                                <div class="premium-crown-badge" title="Premium Member">👑</div>
+                            {% endif %}
+                            <div class="online-status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
+                <button class="nav-tab" data-view="activities">🏞 {{ 'main.tab.activities'|trans }}</button>
+                <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
+                <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
+                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
+                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
+                {% endif %}
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                <div class="welcome-section">
+                    <h1 class="welcome-title">{{ 'main.welcome.title'|trans }}</h1>
+                    <p class="welcome-subtitle">{{ 'main.welcome.subtitle'|trans }}</p>
+                </div>
+                
+                <div class="feature-grid">
+                    <a href="{{ path('app_todo_index') }}" class="feature-card">
+                        <div class="feature-icon">🗺️</div>
+                        <div class="feature-title">{{ 'main.feature.activities.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.activities.text'|trans }}</div>
+                    </a>
+                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('shop'); return false;">
+                        <div class="feature-icon">🛒</div>
+                        <div class="feature-title">{{ 'main.feature.shop.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.shop.text'|trans }}</div>
+                    </a>
+                    <a href="{{ path('app_ai_guide') }}" class="feature-card">
+                        <div class="feature-icon">🤖</div>
+                        <div class="feature-title">{{ 'main.feature.ai_guide.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.ai_guide.text'|trans }}</div>
+                    </a>
+                    <a href="#" class="feature-card" onclick="showChatPopup(); return false;">
+                        <div class="feature-icon">💬</div>
+                        <div class="feature-title">{{ 'main.feature.chat.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.chat.text'|trans }}</div>
+                    </a>
+                    <a href="{{ path('app_post') }}" class="feature-card">
+                        <div class="feature-icon">✉️</div>
+                        <div class="feature-title">{{ 'main.feature.post.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.post.text'|trans }}</div>
+                    </a>
+                    <a href="{{ path('app_services') }}" class="feature-card">
+                        <div class="feature-icon">💼</div>
+                        <div class="feature-title">{{ 'main.feature.services.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.services.text'|trans }}</div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Button -->
+    <button class="chat-button" onclick="showChatPopup()">
+        <span>💬</span>
+        <span class="chat-badge" style="display: none;">0</span>
+    </button>
+
+    <div id="chatModal" class="chat-modal" aria-live="polite" aria-label="{{ 'main.chat.popup'|trans }}">
+        <div class="chat-modal-header">
+            <p class="chat-modal-title">{{ 'main.chat.title'|trans }}</p>
+            <button id="chatCloseBtn" class="chat-modal-close" type="button" aria-label="{{ 'main.chat.close'|trans }}">×</button>
+        </div>
+        <div id="chatMessages" class="chat-modal-messages">
+            <div class="chat-empty">{{ 'main.chat.loading'|trans }}</div>
+        </div>
+        <div class="chat-modal-input">
+            <input id="chatInput" class="chat-input" type="text" maxlength="1000" placeholder="{{ 'main.chat.placeholder'|trans }}" />
+            <button id="chatSendBtn" class="chat-send-btn" type="button">{{ 'main.chat.send'|trans }}</button>
+        </div>
+        <div id="chatStatus" class="chat-status"></div>
+    </div>
+    
+    <!-- Profile Popup -->
+    <div class="profile-popup">
+        <strong class="popup-username">{{ app.user.fullName|default(app.user.username) }}</strong>
+        <div class="popup-stats">
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.membership'|trans }}</span>
+                <span class="popup-value">{{ profile.member_premium|default('Standard') }}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.coins'|trans }}</span>
+                <span class="popup-value">{{ profile.coins|default(0) }}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.rate'|trans }}</span>
+                <span class="popup-value">
+                    {% set membership = profile.member_premium|default('Standard') %}
+                    {% if membership in ['Administrator', 'VIP', 'VIP+'] %}
+                        {{ 'main.popup.rate_vip'|trans }}
+                    {% elseif membership == 'Premium' %}
+                        {{ 'main.popup.rate_premium'|trans }}
+                    {% else %}
+                        {{ 'main.popup.rate_standard'|trans }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+{% endblock %}

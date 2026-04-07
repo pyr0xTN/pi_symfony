@@ -1,0 +1,701 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'admin.stats.title'|trans }}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap');
+
+        .stats-page {
+            min-height: 100vh;
+            background:
+                radial-gradient(900px 420px at 5% -10%, rgba(11, 164, 161, 0.2), transparent 62%),
+                radial-gradient(960px 460px at 95% 0%, rgba(15, 122, 176, 0.17), transparent 64%),
+                linear-gradient(180deg, #eef4fa 0%, #e7eff7 100%);
+            font-family: 'Sora', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #213142;
+        }
+
+        .topbar {
+            height: 86px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #e2e9f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+        }
+
+        .topbar img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .top-actions a {
+            border: 1px solid #c9d9e8;
+            color: #146291;
+            background: #eef7ff;
+            border-radius: 999px;
+            padding: 9px 15px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .top-actions a:hover {
+            transform: translateY(-1px);
+            background: #dff0ff;
+            box-shadow: 0 8px 16px rgba(20, 81, 123, 0.14);
+        }
+
+        .shell {
+            max-width: 1160px;
+            margin: 24px auto;
+            padding: 0 16px 24px;
+        }
+
+        .hero {
+            background:
+                linear-gradient(120deg, rgba(255, 255, 255, 0.96) 0%, rgba(243, 250, 255, 0.96) 100%);
+            border: 1px solid #d6e4ef;
+            border-radius: 18px;
+            padding: 20px 22px;
+            margin-bottom: 18px;
+            box-shadow: 0 14px 28px rgba(15, 45, 76, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .hero h1 {
+            margin: 0;
+            color: #173f69;
+            font-size: 36px;
+            letter-spacing: -0.6px;
+        }
+
+        .hero p {
+            margin: 7px 0 0;
+            color: #63819d;
+            font-size: 13px;
+        }
+
+        .hero-total-wrap {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .hero-total {
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #d7e8f5;
+            padding: 10px 14px;
+            text-align: right;
+            min-width: 140px;
+        }
+
+        .hero-total small {
+            color: #5c738b;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .hero-total strong {
+            display: block;
+            font-size: 30px;
+            color: #173f69;
+            line-height: 1;
+        }
+
+        .hero-total.accent strong {
+            color: #0a7e8b;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .summary-card {
+            border-radius: 14px;
+            border: 1px solid #d8e6f1;
+            background: linear-gradient(150deg, #ffffff 0%, #f3f8fd 100%);
+            padding: 12px 14px;
+            box-shadow: 0 8px 16px rgba(15, 45, 76, 0.06);
+        }
+
+        .summary-card small {
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 10px;
+            color: #627f99;
+            font-weight: 700;
+        }
+
+        .summary-card strong {
+            display: block;
+            margin-top: 6px;
+            font-size: 28px;
+            line-height: 1;
+            color: #184b78;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .panel {
+            background: linear-gradient(150deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 250, 255, 0.96) 100%);
+            border: 1px solid #d8e5f0;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 20px rgba(15, 45, 76, 0.08);
+        }
+
+        .panel h2 {
+            margin: 0 0 14px;
+            color: #194575;
+            font-size: 24px;
+            letter-spacing: -0.4px;
+        }
+
+        .panel-subtitle {
+            margin: -4px 0 14px;
+            color: #6b8298;
+            font-size: 13px;
+        }
+
+        .age-chart-wrap {
+            border: 1px solid #d8e5f0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #f7fbff 0%, #f2f8fd 100%);
+            padding: 14px;
+        }
+
+        .age-chart {
+            width: 100%;
+            height: 230px;
+            border-radius: 12px;
+            background:
+                repeating-linear-gradient(
+                    to top,
+                    rgba(83, 110, 135, 0.09) 0,
+                    rgba(83, 110, 135, 0.09) 1px,
+                    transparent 1px,
+                    transparent 25%
+                );
+            border: 1px solid #d9e6f1;
+        }
+
+        .age-curve-area {
+            fill: rgba(11, 164, 161, 0.2);
+        }
+
+        .age-curve-line {
+            fill: none;
+            stroke: #0f7ab0;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 4px 6px rgba(15, 122, 176, 0.25));
+        }
+
+        .age-curve-dots circle {
+            fill: #0BA4A1;
+            stroke: #ffffff;
+            stroke-width: 3;
+        }
+
+        .age-x-axis {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .age-x-axis span {
+            text-align: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #5c7690;
+        }
+
+        .age-breakdown {
+            margin-top: 12px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .age-pill {
+            border-radius: 10px;
+            border: 1px solid #d6e4ef;
+            background: #ffffff;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        .age-pill small {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #67829d;
+            font-weight: 700;
+        }
+
+        .age-pill strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 18px;
+            color: #174a76;
+        }
+
+        .tier-grid {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border-radius: 18px;
+            padding: 40px 24px 24px;
+            min-height: 300px;
+            box-shadow: 0 15px 35px rgba(15, 45, 76, 0.3);
+            position: relative;
+        }
+
+        .tier-grid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 30%);
+            border-radius: 18px;
+            pointer-events: none;
+        }
+
+        .tier-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            flex: 1;
+            height: 100%;
+            min-height: 200px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .tier-card::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #f4d26b 0%, #e8c539 50%, #dab930 100%);
+            border-radius: 8px 8px 0 0;
+            width: 100%;
+            height: var(--bar-height);
+            box-shadow: 
+                0 -8px 20px rgba(244, 210, 107, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4),
+                inset 0 -2px 4px rgba(139, 110, 0, 0.2);
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+
+        .tier-card:hover::before {
+            height: calc(var(--bar-height) * 1.05);
+            box-shadow: 
+                0 -12px 28px rgba(244, 210, 107, 0.4),
+                inset 0 2px 6px rgba(255, 255, 255, 0.5),
+                inset 0 -2px 6px rgba(139, 110, 0, 0.3);
+            filter: brightness(1.1);
+        }
+
+        .tier-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #b8d4f1;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tier-value {
+            margin-bottom: 6px;
+            font-size: 32px;
+            line-height: 1;
+            font-weight: 900;
+            color: #fef5e7;
+            position: relative;
+            z-index: 2;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .tier-count {
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e8c539;
+            position: relative;
+            z-index: 2;
+        }
+
+        .tier-card:nth-child(1)::before {
+            --bar-height: 60%;
+        }
+
+        .tier-card:nth-child(2)::before {
+            --bar-height: 75%;
+        }
+
+        .tier-card:nth-child(3)::before {
+            --bar-height: 85%;
+        }
+
+        .tier-card:nth-child(4)::before {
+            --bar-height: 100%;
+        }
+
+        .tier-hint {
+            margin-bottom: 8px;
+            color: #9cb3d4;
+            font-size: 10px;
+            font-weight: 700;
+            position: relative;
+            z-index: 2;
+            letter-spacing: 0.3px;
+        }
+
+        body.dark-mode .stats-page {
+            background:
+                radial-gradient(900px 420px at 5% -10%, rgba(45, 212, 191, 0.16), transparent 62%),
+                radial-gradient(960px 460px at 95% 0%, rgba(56, 189, 248, 0.14), transparent 64%),
+                linear-gradient(180deg, #0f1724 0%, #131d2d 100%);
+            color: #d8e2ef;
+        }
+
+        body.dark-mode .topbar,
+        body.dark-mode .hero,
+        body.dark-mode .summary-card,
+        body.dark-mode .panel,
+        body.dark-mode .age-chart-wrap,
+        body.dark-mode .age-pill,
+        body.dark-mode .hero-total,
+        body.dark-mode .tier-grid {
+            background: #182232;
+            border-color: #2a374b;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .hero h1,
+        body.dark-mode .panel h2,
+        body.dark-mode .summary-card strong,
+        body.dark-mode .hero-total strong,
+        body.dark-mode .age-pill strong {
+            color: #dbe8f6;
+        }
+
+        body.dark-mode .hero p,
+        body.dark-mode .panel-subtitle,
+        body.dark-mode .summary-card small,
+        body.dark-mode .hero-total small,
+        body.dark-mode .age-pill small,
+        body.dark-mode .age-x-axis span {
+            color: #9fb2c7;
+        }
+
+        body.dark-mode .top-actions a {
+            background: #132431;
+            border-color: #2a3b51;
+            color: #66d8d5;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .age-chart {
+                height: 200px;
+            }
+
+            .hero h1 {
+                font-size: 30px;
+            }
+
+            .hero-total strong {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .topbar {
+                padding: 0 14px;
+            }
+
+            .top-actions {
+                gap: 6px;
+            }
+
+            .top-actions a {
+                padding: 7px 10px;
+                font-size: 12px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .age-x-axis {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                row-gap: 6px;
+            }
+
+            .age-breakdown {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="stats-page">
+        <div class="topbar">
+            <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
+            <div class="top-actions">
+                <a href="{{ path('app_dashboard') }}">{{ 'admin.back_dashboard'|trans }}</a>
+                <a href="{{ path('app_mainpage') }}">{{ 'admin.back_main'|trans }}</a>
+            </div>
+        </div>
+
+        {% set ageTotal = 0 %}
+        {% for count in ageRanges %}
+            {% set ageTotal = ageTotal + count %}
+        {% endfor %}
+
+        {% set tierTotal = 0 %}
+        {% for count in membershipTiers %}
+            {% set tierTotal = tierTotal + count %}
+        {% endfor %}
+
+        <main class="shell">
+            <section class="hero">
+                <div>
+                    <h1>{{ 'admin.stats.user_statistics'|trans }}</h1>
+                    <p>{{ 'admin.stats.subtitle'|trans }}</p>
+                </div>
+                <div class="hero-total-wrap">
+                    <div class="hero-total">
+                        <small>{{ 'admin.stats.total_profiles'|trans }}</small>
+                        <strong>{{ tierTotal }}</strong>
+                    </div>
+                    <div class="hero-total accent">
+                        <small>{{ 'admin.stats.age_entries'|trans }}</small>
+                        <strong>{{ ageTotal }}</strong>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-grid">
+                <article class="summary-card">
+                    <small>{{ 'admin.stats.summary.13_24'|trans }}</small>
+                    <strong>{{ (ageRanges['13-17']|default(0)) + (ageRanges['18-24']|default(0)) }}</strong>
+                </article>
+                <article class="summary-card">
+                    <small>{{ 'admin.stats.summary.25_44'|trans }}</small>
+                    <strong>{{ (ageRanges['25-34']|default(0)) + (ageRanges['35-44']|default(0)) }}</strong>
+                </article>
+                <article class="summary-card">
+                    <small>{{ 'admin.stats.summary.45_plus'|trans }}</small>
+                    <strong>{{ (ageRanges['45-54']|default(0)) + (ageRanges['55+']|default(0)) }}</strong>
+                </article>
+                <article class="summary-card">
+                    <small>{{ 'admin.stats.summary.vip'|trans }}</small>
+                    <strong>{{ (membershipTiers.vip|default(0)) + (membershipTiers['vip+']|default(0)) }}</strong>
+                </article>
+            </section>
+
+            <div class="grid">
+                <section class="panel">
+                    <h2>{{ 'admin.stats.age_ranges'|trans }}</h2>
+                    <p class="panel-subtitle">{{ 'admin.stats.age_ranges_subtitle'|trans }}</p>
+                    {% set age13 = ageRanges['13-17']|default(0) %}
+                    {% set age18 = ageRanges['18-24']|default(0) %}
+                    {% set age25 = ageRanges['25-34']|default(0) %}
+                    {% set age35 = ageRanges['35-44']|default(0) %}
+                    {% set age45 = ageRanges['45-54']|default(0) %}
+                    {% set age55 = ageRanges['55+']|default(0) %}
+
+                    <div class="age-chart-wrap">
+                        <svg
+                            id="ageCurveChart"
+                            class="age-chart"
+                            viewBox="0 0 1000 260"
+                            preserveAspectRatio="none"
+                            data-values="{{ age13 }},{{ age18 }},{{ age25 }},{{ age35 }},{{ age45 }},{{ age55 }}"
+                        >
+                            <path id="ageCurveArea" class="age-curve-area" d=""></path>
+                            <path id="ageCurvePath" class="age-curve-line" d=""></path>
+                            <g id="ageCurveDots" class="age-curve-dots"></g>
+                        </svg>
+
+                        <div class="age-x-axis">
+                            <span>13-17</span>
+                            <span>18-24</span>
+                            <span>25-34</span>
+                            <span>35-44</span>
+                            <span>45-54</span>
+                            <span>55+</span>
+                        </div>
+
+                        <div class="age-breakdown">
+                            <div class="age-pill">
+                                <small>{{ 'admin.stats.largest_segment'|trans }}</small>
+                                <strong>{% set maxAge = ageRanges|reduce((carry, v) => v > carry ? v : carry, 0) %}{{ maxAge }}</strong>
+                            </div>
+                            <div class="age-pill">
+                                <small>{{ 'admin.stats.total_counted'|trans }}</small>
+                                <strong>{{ ageTotal }}</strong>
+                            </div>
+                            <div class="age-pill">
+                                <small>{{ 'admin.stats.average_segment'|trans }}</small>
+                                <strong>{{ (ageTotal / 6)|number_format(1) }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel">
+                    <h2>{{ 'admin.stats.membership_tiers'|trans }}</h2>
+                    <p class="panel-subtitle">{{ 'admin.stats.membership_tiers_subtitle'|trans }}</p>
+                    <div class="tier-grid">
+                        <article class="tier-card">
+                            <div class="tier-label">{{ 'admin.stats.tier.standard'|trans }}</div>
+                            <div class="tier-value">{{ membershipTiers.standard|default(0) }}</div>
+                            <div class="tier-count">{{ 'admin.stats.users_count'|trans({'%count%': membershipTiers.standard|default(0)}) }}</div>
+                            <div class="tier-hint">{{ tierTotal > 0 ? ((membershipTiers.standard|default(0) * 100 / tierTotal)|number_format(0)) : 0 }}%</div>
+                        </article>
+                        <article class="tier-card">
+                            <div class="tier-label">{{ 'admin.stats.tier.premium'|trans }}</div>
+                            <div class="tier-value">{{ membershipTiers.premium|default(0) }}</div>
+                            <div class="tier-count">{{ 'admin.stats.users_count'|trans({'%count%': membershipTiers.premium|default(0)}) }}</div>
+                            <div class="tier-hint">{{ tierTotal > 0 ? ((membershipTiers.premium|default(0) * 100 / tierTotal)|number_format(0)) : 0 }}%</div>
+                        </article>
+                        <article class="tier-card">
+                            <div class="tier-label">{{ 'admin.stats.tier.vip'|trans }}</div>
+                            <div class="tier-value">{{ membershipTiers.vip|default(0) }}</div>
+                            <div class="tier-count">{{ 'admin.stats.users_count'|trans({'%count%': membershipTiers.vip|default(0)}) }}</div>
+                            <div class="tier-hint">{{ tierTotal > 0 ? ((membershipTiers.vip|default(0) * 100 / tierTotal)|number_format(0)) : 0 }}%</div>
+                        </article>
+                        <article class="tier-card">
+                            <div class="tier-label">{{ 'admin.stats.tier.vip_plus'|trans }}</div>
+                            <div class="tier-value">{{ membershipTiers['vip+']|default(0) }}</div>
+                            <div class="tier-count">{{ 'admin.stats.users_count'|trans({'%count%': membershipTiers['vip+']|default(0)}) }}</div>
+                            <div class="tier-hint">{{ tierTotal > 0 ? ((membershipTiers['vip+']|default(0) * 100 / tierTotal)|number_format(0)) : 0 }}%</div>
+                        </article>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            const svg = document.getElementById('ageCurveChart');
+            const linePath = document.getElementById('ageCurvePath');
+            const areaPath = document.getElementById('ageCurveArea');
+            const dotsGroup = document.getElementById('ageCurveDots');
+
+            if (!svg || !linePath || !areaPath || !dotsGroup) {
+                return;
+            }
+
+            const values = (svg.getAttribute('data-values') || '')
+                .split(',')
+                .map(function (v) { return Number(v.trim()); })
+                .filter(function (v) { return Number.isFinite(v); });
+
+            if (values.length < 2) {
+                return;
+            }
+
+            const width = 1000;
+            const height = 260;
+            const leftPad = 36;
+            const rightPad = 36;
+            const topPad = 20;
+            const bottomPad = 34;
+            const usableW = width - leftPad - rightPad;
+            const usableH = height - topPad - bottomPad;
+
+            const maxVal = Math.max.apply(null, values.concat([1]));
+            const stepX = usableW / (values.length - 1);
+
+            const points = values.map(function (v, i) {
+                const x = leftPad + (i * stepX);
+                const y = topPad + (usableH - ((v / maxVal) * usableH));
+                return { x: x, y: y, v: v };
+            });
+
+            function makeSmoothPath(pts) {
+                if (pts.length === 2) {
+                    return 'M ' + pts[0].x + ' ' + pts[0].y + ' L ' + pts[1].x + ' ' + pts[1].y;
+                }
+
+                let d = 'M ' + pts[0].x + ' ' + pts[0].y;
+                for (let i = 0; i < pts.length - 1; i++) {
+                    const p0 = pts[i === 0 ? i : i - 1];
+                    const p1 = pts[i];
+                    const p2 = pts[i + 1];
+                    const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+
+                    const cp1x = p1.x + (p2.x - p0.x) / 6;
+                    const cp1y = p1.y + (p2.y - p0.y) / 6;
+                    const cp2x = p2.x - (p3.x - p1.x) / 6;
+                    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+                    d += ' C ' + cp1x + ' ' + cp1y + ', ' + cp2x + ' ' + cp2y + ', ' + p2.x + ' ' + p2.y;
+                }
+                return d;
+            }
+
+            const lineD = makeSmoothPath(points);
+            linePath.setAttribute('d', lineD);
+
+            const first = points[0];
+            const last = points[points.length - 1];
+            const baselineY = height - bottomPad;
+            const areaD = lineD + ' L ' + last.x + ' ' + baselineY + ' L ' + first.x + ' ' + baselineY + ' Z';
+            areaPath.setAttribute('d', areaD);
+
+            dotsGroup.innerHTML = points
+                .map(function (p) { return '<circle cx="' + p.x + '" cy="' + p.y + '" r="7"></circle>'; })
+                .join('');
+        })();
+    </script>
+{% endblock %}

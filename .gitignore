@@ -9,12 +9,12 @@
 /vendor/
 ###< symfony/framework-bundle ###
 
-# Environment files
-.env
-.env.dev
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
 
-# Documentation (local only)
-CODE_WALKTHROUGH.md
-COMMANDS.md
-FUTURE_FEATURES.md
-SYMFONY_DB_CHEAT_SHEET.md
+###> symfony/asset-mapper ###
+/public/assets/
+/assets/vendor/
+###< symfony/asset-mapper ###
