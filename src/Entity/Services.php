@@ -222,7 +222,10 @@ private ?\DateTimeInterface $date_arrive = null;
     {
         $this->date_arrive = $value;
     }
-
+    public function isDisponibilite(): bool
+    {
+        return in_array($this->disponibilite, [true, 1, '1', 'true', 'Disponible'], true);
+    }
     #[ORM\OneToMany(mappedBy: "idService", targetEntity: Reservations::class)]
     private Collection $reservationss;
 

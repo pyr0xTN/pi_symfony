@@ -107,12 +107,12 @@ class HotelController extends AbstractController
     public function edit(Request $request, int $id): Response
     {
         $hotel = $this->findHotelOrFail($id);
-
+      
         $form = $this->createForm(HotelType::class, $hotel);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-
+         
             $photoFile = $form->get('photo')->getData();
             if ($photoFile) {
                 $hotel->setImgUrl($this->uploadPhoto($photoFile, 'hotels'));
@@ -135,36 +135,33 @@ class HotelController extends AbstractController
     // DELETE
     // ──────────────────────────────────────────────
 
-    #[Route('/{id}/delete', name: 'hotel_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'hotel_delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, int $id): Response
     {
         $hotel = $this->findHotelOrFail($id);
-
-        if ($this->isCsrfTokenValid('delete_hotel_' . $id, $request->request->get('_token'))) {
-            $this->em->remove($hotel);
-            $this->em->flush();
-            $this->addFlash('success', 'Hôtel supprimé.');
+        if (!$hotel) {
+            throw $this->createNotFoundException("vol #$id introuvable.");
         }
 
-        return $this->redirectToRoute('dashboard');
+        // Accept both GET (with confirm dialog in Twig) and POST (with CSRF)
+        if ($request->isMethod('POST')) {
+            if ($this->isCsrfTokenValid('delete_hotel_' . $id, $request->request->get('_token'))) {
+                $this->em->remove($hotel);
+                $this->em->flush();
+                $this->addFlash('success', 'Hôtel supprimé.');
+            }
+    
+        } else {
+            // GET — simple confirmation via JS confirm() in the Twig link
+            $this->em->remove($hotel);
+            $this->em->flush();
+            $this->addFlash('success', 'hotel supprimée.');
+        }
+
+        return $this->redirectToRoute('services_index');
     }
 
-    // ──────────────────────────────────────────────
-    // COUNTRY INFO (🌍 button on detail page)
-    // Mirrors: handleCountryInfo in HotelDetailsController
-    // ──────────────────────────────────────────────
-
-    #[Route('/{id}/country-info', name: 'hotel_country_info', methods: ['GET'])]
-    public function countryInfo(int $id): Response
-    {
-        $hotel = $this->findHotelOrFail($id);
-
-        // TODO: call an external API (e.g. restcountries.com) with $hotel->getLocalisation()
-        // and pass the result to a dedicated template or return JSON for a modal.
-
-        $this->addFlash('info', 'Country info feature — connectez une API externe ici.');
-        return $this->redirectToRoute('hotel_show', ['id' => $id]);
-    }
+   
 
     // ──────────────────────────────────────────────
     // PRIVATE HELPERS
@@ -201,4 +198,5 @@ class HotelController extends AbstractController
 
         return 'uploads/' . $subfolder . '/' . $newFilename;
     }
+    
 }

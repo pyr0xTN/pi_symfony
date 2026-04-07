@@ -163,16 +163,7 @@ class ReservationController extends AbstractController
         return $this->redirectToRoute('reservations_index');
     }
 
-    // ──────────────────────────────────────────────
-    // PRIVATE HELPERS
-    // ──────────────────────────────────────────────
-
-    /**
-     * Builds the seat map array for a Vol.
-     * Mirrors the dynamic seat grid in ReservationForm.fxml (JavaFX).
-     *
-     * Returns an array of ['label' => 'A1', 'occupied' => false].
-     */
+  
     private function buildSeatMap(Services $vol): array
     {
         $capacity = $vol->getCapacite();

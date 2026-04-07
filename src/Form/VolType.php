@@ -50,6 +50,7 @@ class VolType extends AbstractType
             ->add('disponibilite', CheckboxType::class, [
                 'label'    => 'Disponible',
                 'required' => false,
+                
             ])
             ->add('capacite', IntegerType::class, [
                 'label'       => 'Capacité',

@@ -59,4 +59,5 @@ class ReservationsRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleColumnResult();
     }
+    
 }

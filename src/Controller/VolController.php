@@ -137,18 +137,31 @@ class VolController extends AbstractController
     // DELETE
     // ──────────────────────────────────────────────
 
-    #[Route('/{id}/delete', name: 'vol_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'vol_delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, int $id): Response
     {
+      
         $vol = $this->findVolOrFail($id);
-
-        if ($this->isCsrfTokenValid('delete_vol_' . $id, $request->request->get('_token'))) {
-            $this->em->remove($vol);
-            $this->em->flush();
-            $this->addFlash('success', 'Vol supprimé.');
+        if (!$vol) {
+            throw $this->createNotFoundException("vol #$id introuvable.");
         }
 
-        return $this->redirectToRoute('dashboard');
+        // Accept both GET (with confirm dialog in Twig) and POST (with CSRF)
+        if ($request->isMethod('POST')) {
+            if ($this->isCsrfTokenValid('delete_vol_' . $id, $request->request->get('_token'))) {
+                $this->em->remove($vol);
+                $this->em->flush();
+                $this->addFlash('success', 'Vol supprimé.');
+            }
+    
+        } else {
+            // GET — simple confirmation via JS confirm() in the Twig link
+            $this->em->remove($vol);
+            $this->em->flush();
+            $this->addFlash('success', 'vol supprimée.');
+        }
+
+        return $this->redirectToRoute('services_index');
     }
 
     // ──────────────────────────────────────────────

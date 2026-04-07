@@ -1,0 +1,209 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/styles/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
+{% endblock %}
+{% block body %}
+<body>
+    <!-- Preloader -->
+    <div class="preloader d-flex align-items-center justify-content-center">
+        <div class="cssload-container">
+            <div class="cssload-loading"><i></i><i></i><i></i><i></i></div>
+        </div>
+    </div>
+
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <!-- Navbar Area -->
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <!-- Menu -->
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+
+                        <!-- Nav brand -->
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>
+
+                        <!-- Navbar Toggler -->
+                        <div class="classy-navbar-toggler">
+                            <span class="navbarToggler"><span></span><span></span><span></span></span>
+                        </div>
+
+                        <!-- Menu -->
+                        <div class="classy-menu">
+
+                            <!-- close btn -->
+                            <div class="classycloseIcon">
+                                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
+                            </div>
+
+                            <!-- Nav Start -->
+                            <div class="classynav">
+                                <ul>
+                                    <li ><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li class="active"><a href="{{path('myreservations_index')}}">My reservations</a></li>
+                                </ul>
+                                <!-- Button -->
+                                <div class="menu-btn">
+                                    <a href="#" class="btn palatin-btn">Make a Reservation</a>
+                                </div>
+
+                            </div>
+                            <!-- Nav End -->
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ##### Header Area End ##### -->
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/styles/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>My reservations</h2>
+        </div>
+    </section>
+    <!-- ##### Breadcumb Area End ##### -->
+
+    
+
+
+
+    <!-- ##### Core Features Start ##### -->
+    <section class="core-features-area">
+     {% if reservations is empty %}
+        <p class="empty-state">Aucune réservation trouvée.</p>
+    {% else %}
+        <div class="cards-grid">
+            {% for reservation in reservations %}
+                <div class="reservation-card">
+                    
+                    {# Header: Name & Status #}
+                    <div class="rc-header">
+                        <h3 class="rc-name">{{ reservation.nom }}</h3>
+                        
+                        {# Dynamic badge color based on status #}
+                        {% set badgeClass = 'badge-info' %}
+                        {% if reservation.statut|lower == 'en attente' %}
+                            {% set badgeClass = 'badge-pending' %}
+                        {% elseif reservation.statut|lower == 'confirmée' %}
+                            {% set badgeClass = 'badge-success' %}
+                        {% elseif reservation.statut|lower == 'annulée' %}
+                            {% set badgeClass = 'badge-danger' %}
+                        {% endif %}
+                        
+                        <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
+                    </div>
+
+                    {# Body: Details #}
+                    <div class="rc-body">
+                        <div class="rc-detail-item">
+                            <span class="rc-icon">📅</span>
+                            <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                        </div>
+                        
+                        <div class="rc-detail-item">
+                            <span class="rc-icon">💳</span>
+                            <span>{{ reservation.modePaiement }}</span>
+                        </div>
+                           <div class="rc-detail-item">
+                            <span class="rc-icon">💳</span>
+                            <span>service name</span>
+                        </div>
+                        
+                        {# Only show if it has a value to avoid empty spacing #}
+                        {% if reservation.siege is defined and reservation.siege %}
+                            <div class="rc-detail-item">
+                                <span class="rc-icon">💺</span>
+                                <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {# Footer: Actions #}
+                    <div class="rc-footer">
+                        <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
+                            Voir détails
+                        </a>
+                        <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+                           class="rc-btn rc-btn-danger"
+                           onclick="return confirm('Confirmer la suppression ?')">
+                           Supprimer
+                        </a>
+                    </div>
+
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    </section>
+    <!-- ##### Core Features End ##### -->
+   
+   
+    <!-- ##### Footer Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Find us on the map</h6>
+                        <img src="{{asset('assets/styles/img/bg-img/footer-map.png')}}" alt="">
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Subscribe to our newsletter</h6>
+                        <form action="#" method="post" class="subscribe-form">
+                            <input type="email" name="subscribe-email" id="subscribeemail" placeholder="Your E-mail">
+                            <button type="submit">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Copywrite Text -->
+                <div class="col-12">
+                    <div class="copywrite-text mt-30">
+                        <p><a href="#"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+{% endblock %}
+
+
+{% block javascripts %}
+ {{ parent() }}
+    <!-- ##### All Javascript Script ##### -->
+    <!-- jQuery-2.2.4 js -->
+    <script src="{{asset('assets/styles/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <!-- Popper js -->
+    <script src="{{asset('assets/styles/js/bootstrap/popper.min.js')}}"></script>
+    <!-- Bootstrap js -->
+    <script src="{{asset('assets/styles/js/bootstrap/bootstrap.min.js')}}"></script>
+    <!-- All Plugins js -->
+    <script src="{{asset('assets/styles/js/plugins/plugins.js')}}"></script>
+    <!-- Active js -->
+    <script src="{{asset('assets/styles/js/active.js')}}"></script>
+{% endblock %}

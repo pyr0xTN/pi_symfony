@@ -89,11 +89,37 @@
                                 <a href="{{ path('hotel_show', { id: service.idService }) }}" class="btn-detail">
                                     Voir détails →
                                 </a>
+                               
                             {% else %}
                                 <a href="{{ path('vol_show', { id: service.idService }) }}" class="btn-detail">
                                     Voir détails →
                                 </a>
+                              
                             {% endif %}
+                             {% if service.type == 'hotel' %}
+                          <a href="{{ path('hotel_edit', { id: service.idService }) }}"
+                           class="rc-btn">
+                           edit
+                        </a>
+                        {% else %}
+                        <a href="{{ path('vol_edit', { id: service.idService }) }}"
+                           class="rc-btn">
+                           edit
+                        </a>
+                        {%endif%}
+                         {% if service.type == 'hotel' %}
+                          <a href="{{ path('hotel_delete', { id: service.idService }) }}"
+                           class="rc-btn rc-btn-danger"
+                           onclick="return confirm('Confirmer la suppression ?')">
+                           Supprimer
+                        </a>
+                        {% else %}
+                        <a href="{{ path('vol_delete', { id: service.idService  }) }}"
+                           class="rc-btn rc-btn-danger"
+                           onclick="return confirm('Confirmer la suppression ?')">
+                           Supprimer
+                        </a>
+                        {%endif%}
                         </div>
 
                     </div>
