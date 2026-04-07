@@ -13,8 +13,8 @@ use Doctrine\Common\Collections\Collection;
 class Conversation
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(name: 'idConversation')]
+    #[ORM\GeneratedValue(strategy: "IDENTITY")]
+    #[ORM\Column(name: 'idConversation', type: 'integer')]
     private ?int $id = null;
 
     #[ORM\Column(name: 'type', enumType: TypeConversation::class)]
@@ -75,9 +75,9 @@ class Conversation
 
         return $this;
     }
-        /**
-        * @return Collection<int, ParticipantConversation>
-        */  
+    /**
+     * @return Collection<int, ParticipantConversation>
+     */
     public function __construct()
     {
         // 2. Initialise la collection (TRÈS IMPORTANT)
@@ -141,5 +141,42 @@ class Conversation
         }
 
         return $this;
+    }
+
+    public function getDisplayName($currentUser): string
+    {
+        if ($this->getType()->value === 'GROUPE') {
+            return $this->getTitre() ?? 'Unnamed Group';
+        }
+
+        foreach ($this->getParticipants() as $participant) {
+            $user = $participant->getIdUtilisateur();
+
+            // FIX: Check if $user is NOT NULL before calling getId() or getName()
+            if ($user && $user->getId() !== $currentUser->getId()) {
+                return ($user->getLastName() ?? '') . ' ' . ($user->getName() ?? 'Unknown');
+            }
+        }
+
+        return 'Private Chat (Other user deleted)';
+    }
+
+    // src/Entity/Conversation.php
+
+    public function getLastMessage(): ?Messages
+    {
+        if ($this->messages->isEmpty()) {
+            return null;
+        }
+
+        // Convert to array to make sorting easier for the IDE
+        $msgArray = $this->messages->toArray();
+
+        // Sort: newest first
+        usort($msgArray, function ($a, $b) {
+            return $b->getDateEnvoi() <=> $a->getDateEnvoi();
+        });
+
+        return $msgArray[0];
     }
 }

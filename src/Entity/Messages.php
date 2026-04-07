@@ -8,40 +8,41 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MessagesRepository::class)]
+#[ORM\Table(name: 'message')]
 class Messages
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\Column(name: 'idMessage')]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::TEXT)]
+    #[ORM\Column(name: 'contenu', type: Types::TEXT)]
     private ?string $contenu = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: 'dateEnvoi')]
     private ?\DateTime $dateEnvoi = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: 'lu')]
     private ?bool $lu = null;
 
     #[ORM\ManyToOne(inversedBy: 'messages')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, name: 'idConversation', referencedColumnName: 'idConversation')]
     private ?Conversation $idConversation = null;
 
     #[ORM\ManyToOne(inversedBy: 'messagesEnvoyees')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, name: 'idExpediteur', referencedColumnName: 'id')] // <--- ADD name: 'idExpediteur'
     private ?User $idExpediteur = null;
 
-    #[ORM\Column(enumType: TypeMessage::class)]
+    #[ORM\Column(name: 'typeMessage', enumType: TypeMessage::class)]
     private ?TypeMessage $typeMessage = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: 'urlFichier', length: 255, nullable: true)]
     private ?string $urlFichier = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(name: 'reaction', length: 255, nullable: true)]
     private ?string $reaction = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name: 'isDeleted')]
     private ?bool $isDeleted = null;
 
     public function getId(): ?int

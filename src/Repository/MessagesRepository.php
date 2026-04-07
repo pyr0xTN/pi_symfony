@@ -16,28 +16,50 @@ class MessagesRepository extends ServiceEntityRepository
         parent::__construct($registry, Messages::class);
     }
 
-    //    /**
-    //     * @return Messages[] Returns an array of Messages objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('m')
-    //            ->andWhere('m.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('m.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Replaces 'selectByConversation'
+     */
+    public function findByConversation(int $idConversation): array
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.idConversation = :id')
+            ->andWhere('m.isDeleted = false')
+            ->setParameter('id', $idConversation)
+            ->orderBy('m.dateEnvoi', 'ASC') // Oldest to newest for chat flow
+            ->getQuery()
+            ->getResult();
+    }
 
-    //    public function findOneBySomeField($value): ?Messages
-    //    {
-    //        return $this->createQueryBuilder('m')
-    //            ->andWhere('m.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+    /**
+     * Replaces 'selectLastMessage'
+     */
+    public function findLastMessage(int $idConversation): ?Messages
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.idConversation = :id')
+            ->setParameter('id', $idConversation)
+            ->orderBy('m.dateEnvoi', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Replaces 'MarquerCommeLu'
+     * Marks all messages received by the current user in this conversation as read.
+     */
+    public function markAllAsRead(int $idConversation, int $currentUserId)
+    {
+        return $this->createQueryBuilder('m')
+            ->update()
+            ->set('m.lu', 'true')
+            ->where('m.idConversation = :idConv')
+            ->andWhere('m.idExpediteur != :userId') // Only mark messages sent by OTHERS
+            ->andWhere('m.lu = false')
+            ->setParameter('idConv', $idConversation)
+            ->setParameter('userId', $currentUserId)
+            ->getQuery()
+            ->execute();
+    }
+    
 }

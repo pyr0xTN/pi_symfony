@@ -4,6 +4,8 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\ConversationRepository;
+use App\Repository\UserRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
@@ -70,7 +72,7 @@ class HomeController extends AbstractController
         $visionAccessibleMode = (bool) $request->getSession()->get('vision_accessible_mode', false);
         $visionTheme = (string) $request->getSession()->get('vision_theme', 'default');
 
-        if ($user) {
+        if ($user instanceof User) {
             $defaults = [
                 'member_premium' => 'standard',
                 'language' => 'English',
@@ -397,9 +399,10 @@ class HomeController extends AbstractController
 
     #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function loadContent(Request $request, Connection $connection): Response
+    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo): Response
     {
         $view = $request->request->get('view');
+        $user = $this->getUser();
         
         // Load different views based on selection
         switch ($view) {
@@ -415,6 +418,16 @@ class HomeController extends AbstractController
                 return $this->render('partials/ai_guide.html.twig');
             case 'offers':
                 return $this->render('partials/offers.html.twig');
+            case 'messenger':
+                if (!$user instanceof User) {
+                    throw $this->createAccessDeniedException();
+                }
+                $conversations = $convRepo->findConversationsByUser($user->getId());
+                $allUsers = $userRepo->findAllExceptMe($user->getId());
+                return $this->render('messenger/chatView.html.twig', [
+                    'conversations' => $conversations,
+                    'users' => $allUsers
+                ]);
             default:
                 return $this->render('partials/welcome.html.twig');
         }

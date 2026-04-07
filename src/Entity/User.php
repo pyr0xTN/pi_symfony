@@ -110,7 +110,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     // ========== REQUIRED SYMFONY INTERFACE METHODS ==========
-    
+
     /**
      * @see UserInterface
      */
@@ -504,19 +504,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getAllMessages(): Collection
     {
-        $messages = new ArrayCollection(
-            array_merge(
-                $this->sentMessages->toArray(),
-                $this->receivedMessages->toArray()
-            )
+        $messages = array_merge(
+            $this->sentMessages->toArray(),
+            $this->receivedMessages->toArray()
         );
-        
-        $iterator = $messages->getIterator();
-        $iterator->uasort(fn(Message $a, Message $b) => 
+
+        usort(
+            $messages,
+            fn(Message $a, Message $b) =>
             $b->getSentAt() <=> $a->getSentAt()
         );
-        
-        return new ArrayCollection(iterator_to_array($iterator));
+
+        return new ArrayCollection($messages);
     }
 
     public function getUnreadMessagesCount(): int
@@ -545,14 +544,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->purchases->isEmpty()) {
             return null;
         }
-        
+
         $lastPurchase = $this->purchases->first();
         foreach ($this->purchases as $purchase) {
             if ($purchase->getPurchaseDate() > $lastPurchase->getPurchaseDate()) {
                 $lastPurchase = $purchase;
             }
         }
-        
+
         return $lastPurchase->getPurchaseDate();
     }
 
@@ -567,8 +566,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isProfileComplete(): bool
     {
-        return !empty($this->name) 
-            && !empty($this->last_name) 
+        return !empty($this->name)
+            && !empty($this->last_name)
             && !empty($this->email)
             && !empty($this->password);
     }
@@ -582,7 +581,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             'phone' => !empty($this->phone),
             'address' => !empty($this->address),
         ];
-        
+
         $completed = count(array_filter($fields));
         return (int) (($completed / count($fields)) * 100);
     }
@@ -614,7 +613,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isTwoFactorCodeValid(string $code): bool
     {
-        return $this->two_factor_code === $code 
+        return $this->two_factor_code === $code
             && $this->two_factor_expiry > new \DateTime();
     }
 
@@ -625,101 +624,100 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     // Add these methods to your User class (around line 300-320)
 
-/**
- * Alias for getName() to maintain template compatibility
- */
-public function getFirstName(): ?string
-{
-    return $this->name;
-}
-
-/**
- * Alias for getLastName() to maintain template compatibility
- */
-
-
-/**
- * Return null for fields that don't exist (to prevent template errors)
- */
-public function getPhone(): ?string
-{
-    return null;
-}
-
-/**
- * Return null for fields that don't exist (to prevent template errors)
- */
-public function getAddress(): ?string
-{
-    return null;
-}
-
-/**
- * Return date as createdAt (to maintain template compatibility)
- */
-public function getCreatedAt(): ?\DateTimeInterface
-{
-    return $this->date;
-}
-
-/**
- * @return Collection<int, ParticipantConversation>
- */
-public function getParticipantConversations(): Collection
-{
-    return $this->participantConversations;
-}
-
-public function addParticipantConversation(ParticipantConversation $participantConversation): static
-{
-    if (!$this->participantConversations->contains($participantConversation)) {
-        $this->participantConversations->add($participantConversation);
-        $participantConversation->setIdUtilisateur($this);
+    /**
+     * Alias for getName() to maintain template compatibility
+     */
+    public function getFirstName(): ?string
+    {
+        return $this->name;
     }
 
-    return $this;
-}
+    /**
+     * Alias for getLastName() to maintain template compatibility
+     */
 
-public function removeParticipantConversation(ParticipantConversation $participantConversation): static
-{
-    if ($this->participantConversations->removeElement($participantConversation)) {
-        // set the owning side to null (unless already changed)
-        if ($participantConversation->getIdUtilisateur() === $this) {
-            $participantConversation->setIdUtilisateur(null);
+
+    /**
+     * Return null for fields that don't exist (to prevent template errors)
+     */
+    public function getPhone(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Return null for fields that don't exist (to prevent template errors)
+     */
+    public function getAddress(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Return date as createdAt (to maintain template compatibility)
+     */
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->date;
+    }
+
+    /**
+     * @return Collection<int, ParticipantConversation>
+     */
+    public function getParticipantConversations(): Collection
+    {
+        return $this->participantConversations;
+    }
+
+    public function addParticipantConversation(ParticipantConversation $participantConversation): static
+    {
+        if (!$this->participantConversations->contains($participantConversation)) {
+            $this->participantConversations->add($participantConversation);
+            $participantConversation->setIdUtilisateur($this);
         }
+
+        return $this;
     }
 
-    return $this;
-}
-
-/**
- * @return Collection<int, Messages>
- */
-public function getMessagesEnvoyees(): Collection
-{
-    return $this->messagesEnvoyees;
-}
-
-public function addMessagesEnvoyee(Messages $messagesEnvoyee): static
-{
-    if (!$this->messagesEnvoyees->contains($messagesEnvoyee)) {
-        $this->messagesEnvoyees->add($messagesEnvoyee);
-        $messagesEnvoyee->setIdExpediteur($this);
-    }
-
-    return $this;
-}
-
-public function removeMessagesEnvoyee(Messages $messagesEnvoyee): static
-{
-    if ($this->messagesEnvoyees->removeElement($messagesEnvoyee)) {
-        // set the owning side to null (unless already changed)
-        if ($messagesEnvoyee->getIdExpediteur() === $this) {
-            $messagesEnvoyee->setIdExpediteur(null);
+    public function removeParticipantConversation(ParticipantConversation $participantConversation): static
+    {
+        if ($this->participantConversations->removeElement($participantConversation)) {
+            // set the owning side to null (unless already changed)
+            if ($participantConversation->getIdUtilisateur() === $this) {
+                $participantConversation->setIdUtilisateur(null);
+            }
         }
+
+        return $this;
     }
 
-    return $this;
-}
+    /**
+     * @return Collection<int, Messages>
+     */
+    public function getMessagesEnvoyees(): Collection
+    {
+        return $this->messagesEnvoyees;
+    }
 
+    public function addMessagesEnvoyee(Messages $messagesEnvoyee): static
+    {
+        if (!$this->messagesEnvoyees->contains($messagesEnvoyee)) {
+            $this->messagesEnvoyees->add($messagesEnvoyee);
+            $messagesEnvoyee->setIdExpediteur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMessagesEnvoyee(Messages $messagesEnvoyee): static
+    {
+        if ($this->messagesEnvoyees->removeElement($messagesEnvoyee)) {
+            // set the owning side to null (unless already changed)
+            if ($messagesEnvoyee->getIdExpediteur() === $this) {
+                $messagesEnvoyee->setIdExpediteur(null);
+            }
+        }
+
+        return $this;
+    }
 }

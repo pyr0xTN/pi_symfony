@@ -15,20 +15,20 @@ class ParticipantConversation
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Conversation::class, inversedBy: 'participants')]
-    #[ORM\JoinColumn(name: 'idConversation', referencedColumnName: 'idConversation',nullable: false)]
+    #[ORM\JoinColumn(name: 'idConversation', referencedColumnName: 'idConversation', nullable: false)]
     private ?Conversation $idConversation = null;
 
     #[ORM\ManyToOne(inversedBy: 'participantConversations')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(name: 'idUtilisateur', referencedColumnName: 'id', nullable: false)] 
     private ?User $idUtilisateur = null;
 
-    #[ORM\Column]
+    #[ORM\Column(name:'dateAjout', nullable: true)]
     private ?\DateTime $dateAjout = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(name: 'estActif',nullable: true)]
     private ?bool $estActif = null;
 
-    #[ORM\Column(nullable: true)]
+    #[ORM\Column(name:'dateSortie', nullable: true)]
     private ?\DateTime $dateSortie = null;
 
     public function getId(): ?int
