@@ -115,6 +115,71 @@ class ReservationController extends AbstractController
             'seats'       => $seats,
         ]);
     }
+    #[Route('/newreservation', name: 'reservation_newfront', methods: ['GET', 'POST'])]
+    public function newreservation(Request $request): Response
+    {
+        // The service (hotel or vol) is passed as a query param from the details page
+        $serviceId   = $request->query->getInt('serviceId');
+        $serviceType = $request->query->get('serviceType', '');
+
+        $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
+        if (!$service) {
+            throw $this->createNotFoundException('Service introuvable.');
+        }
+
+        $reservation = new Reservations();
+        $reservation->setStatut('En attente');
+        $reservation->setIdService($service);
+
+        $form = $this->createForm(ReservationType::class, $reservation, [
+            'service_type' => $serviceType,
+        ]);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+
+            // For vols: the seat number comes from the seat map selection
+            if ($serviceType === 'vol') {
+                $seatNb = $form->get('siege')->getData();
+                
+                // Validate that a seat was selected
+                if (empty($seatNb)) {
+                    $this->addFlash('error', 'Veuillez sélectionner un siège.');
+                    return $this->render('reservation/newreservation.html.twig', [
+                        'active_page' => 'reservations',
+                        'form'        => $form,
+                        'service'     => $service,
+                        'serviceType' => $serviceType,
+                        'seats'       => $this->buildSeatMap($service),
+                    ]);
+                }
+                
+                $reservation->setSeatNb((int) $seatNb);
+            } else {
+                $reservation->setSeatNb(0); // Hotels don't use seat numbers
+            }
+
+            $this->em->persist($reservation);
+            $this->em->flush();
+
+            $this->addFlash('success', 'Réservation créée avec succès !');
+            return $this->redirectToRoute('ourservices_index');
+        }
+
+        // Build the seat map for vols
+        $seats = [];
+        if ($serviceType === 'vol') {
+            $seats = $this->buildSeatMap($service);
+        }
+
+        return $this->render('reservation/newreservation.html.twig', [
+            'active_page' => 'reservations',
+            'form'        => $form,
+            'service'     => $service,
+            'serviceType' => $serviceType,
+            'seats'       => $seats,
+        ]);
+    }
 
     // ──────────────────────────────────────────────
     // SHOW DETAIL

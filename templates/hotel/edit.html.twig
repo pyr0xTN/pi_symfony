@@ -53,9 +53,9 @@
                 {# Nombre d'étoiles #}
                 <div class="form-group">
                     <label class="form-label">Nb Étoiles :</label>
-                    {{ form_widget(form.nbEtoiles, { attr: { class: 'form-input', placeholder: "Nombre d'étoiles" } }) }}
-                    {% if form.nbEtoiles.vars.errors|length %}
-                        <span class="error-label">{{ form_errors(form.nbEtoiles) }}</span>
+                    {{ form_widget(form.nombreEtoiles, { attr: { class: 'form-input', placeholder: "Nombre d'étoiles" } }) }}
+                    {% if form.nombreEtoiles.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nombreEtoiles) }}</span>
                     {% endif %}
                 </div>
 
@@ -86,16 +86,21 @@
                 {# Photo #}
                 <div class="form-group form-group-full">
                     <label class="form-label">Photo :</label>
-                    {% if hotel.photo %}
-                        <img src="{{ asset('uploads/hotels/' ~ hotel.photo) }}" alt="Photo actuelle" class="img-preview" />
+                    {% if hotel.img_url %}
+                        <img src="{{ asset('uploads/hotels/' ~ hotel.img_url) }}" alt="Photo actuelle" class="img-preview" />
                     {% endif %}
-                    <div class="file-upload-row">
-                        {{ form_widget(form.photo, { attr: { class: 'form-input-file', id: 'photoInput', accept: 'image/*' } }) }}
-                        <label for="photoInput" class="btn-submit">📁 Choisir une image</label>
-                        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none;" />
-                    </div>
+                      <div class="file-upload-row">
+        
+        {# We hide the default input using style="display:none;" (or use your CSS class) #}
+        {{ form_widget(form.photo, { attr: { class: 'form-input-file', accept: 'image/*', style: 'display:none;' } }) }}
+        
+        {# We dynamically link the label to Symfony's generated ID #}
+        <label for="{{ form.photo.vars.id }}" class="btn-submit">📁 Choisir une image</label>
+        
+        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none; max-width: 200px; margin-top: 10px;" />
+    </div>
                     {% if form.photo.vars.errors|length %}
-                        <span class="error-label">{{ form_errors(form.photo) }}</span>
+                        <span class="error-label">{{ form_errors(form.img_url) }}</span>
                     {% endif %}
                 </div>
 
@@ -104,7 +109,7 @@
             {# Buttons #}
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Modifier</button>
-                <a href="{{ path('hotel_show', { id: hotel.id }) }}" class="btn-back">← Retour</a>
+                <a href="{{ path('services_index', { id: hotel.idService }) }}" class="btn-back">← Retour</a>
             </div>
 
         {{ form_end(form) }}
@@ -113,15 +118,44 @@
 </div>
 {% endblock %}
 
+
 {% block javascripts %}
     {{ parent() }}
     <script>
-        document.getElementById('photoInput').addEventListener('change', function (e) {
+        // Wait for the HTML to fully load before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Get the exact ID Symfony generated for the input
+            const inputId = '{{ form.photo.vars.id }}';
+            const photoInput = document.getElementById(inputId);
             const preview = document.getElementById('imgPreview');
-            const file = e.target.files[0];
-            if (file) {
-                preview.src = URL.createObjectURL(file);
-                preview.style.display = 'block';
+
+            // Make sure the input exists on the page to prevent JS errors
+            if (photoInput) {
+                photoInput.addEventListener('change', function (e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Check if it's actually an image
+                        if (!file.type.startsWith('image/')) {
+                            alert('Veuillez sélectionner une image valide.');
+                            e.target.value = ''; 
+                            return;
+                        }
+
+                        preview.src = URL.createObjectURL(file);
+                        preview.style.display = 'block';
+
+                        // Free up memory
+                        preview.onload = function() {
+                            URL.revokeObjectURL(preview.src);
+                        };
+                    } else {
+                        // Hide preview if user cancels
+                        preview.src = '#';
+                        preview.style.display = 'none';
+                    }
+                });
             }
         });
     </script>

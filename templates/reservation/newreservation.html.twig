@@ -1,0 +1,242 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/styles/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
+{% endblock %}
+{% block body %}
+<body>
+    <!-- Preloader -->
+    <div class="preloader d-flex align-items-center justify-content-center">
+        <div class="cssload-container">
+            <div class="cssload-loading"><i></i><i></i><i></i><i></i></div>
+        </div>
+    </div>
+
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <!-- Navbar Area -->
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <!-- Menu -->
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+
+                        <!-- Nav brand -->
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>
+
+                        <!-- Navbar Toggler -->
+                        <div class="classy-navbar-toggler">
+                            <span class="navbarToggler"><span></span><span></span><span></span></span>
+                        </div>
+
+                        <!-- Menu -->
+                        <div class="classy-menu">
+
+                            <!-- close btn -->
+                            <div class="classycloseIcon">
+                                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
+                            </div>
+
+                            <!-- Nav Start -->
+                            <div class="classynav">
+                                <ul>
+                                    <li ><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li class="active"><a href="{{path('myreservations_index')}}">My reservations</a></li>
+                                </ul>
+                                <!-- Button -->
+                                <div class="menu-btn">
+                                    <a href="#" class="btn palatin-btn">Make a Reservation</a>
+                                </div>
+
+                            </div>
+                            <!-- Nav End -->
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ##### Header Area End ##### -->
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/styles/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>reservation</h2>
+        </div>
+    </section>
+    <!-- ##### Breadcumb Area End ##### -->
+
+    
+
+
+
+    <!-- ##### Core Features Start ##### -->
+  <div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">📅 Nouvelle Réservation</h2>
+
+        {{ form_start(form, { attr: { novalidate: 'novalidate', id: 'reservationForm' } }) }}
+
+            <div class="form-grid form-grid-1col">
+
+                {# Nom du Client #}
+                <div class="form-group">
+                    <label class="form-label">Nom du Client :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Prénom et Nom' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date de Réservation #}
+                <div class="form-group">
+                    <label class="form-label">Date de Réservation :</label>
+                    {{ form_widget(form.dateReservation, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateReservation.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateReservation) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Mode de Paiement #}
+                <div class="form-group">
+                    <label class="form-label">Mode de Paiement :</label>
+                    {{ form_widget(form.modePaiement, { attr: { class: 'form-input', placeholder: 'Choisir une méthode...' } }) }}
+                    {% if form.modePaiement.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.modePaiement) }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            {# ===== SEAT MAP (only shown for Vols) ===== #}
+            {% if serviceType == 'vol' %}
+            <div class="seat-map-container" id="seatMapContainer">
+
+                {# Plane nose #}
+                <div class="plane-nose">✈ AVANT DE L'AVION ✈</div>
+
+                {# Legend #}
+                <div class="seat-legend">
+                    <span class="legend-item legend-available">Disponible</span>
+                    <span class="legend-item legend-occupied">Occupé</span>
+                    <span class="legend-item legend-selected">Sélectionné</span>
+                </div>
+
+                {# Hidden input that stores the selected seat value #}
+                {{ form_widget(form.siege, { attr: { id: 'selectedSeatInput' } }) }}
+
+                {# Seat grid — 6 seats per row with aisle gap between col 3 and 4 #}
+                <div class="seat-grid" id="seatGrid">
+                    {% for seat in seats %}
+                        {# Add row label at the start of each row (every 6 seats) #}
+                        {% if loop.index0 % 6 == 0 %}
+                            <div class="seat-row-label">{{ (loop.index0 // 6) + 1 }}</div>
+                        {% endif %}
+
+                        {# colPos: 0-2 = left side, 3-5 = right side #}
+                        {% set colPos = loop.index0 % 6 %}
+
+                        <button
+                            type="button"
+                            class="seat-btn {% if seat.occupied %}seat-occupied{% else %}seat-available{% endif %}{% if colPos == 3 %} seat-aisle{% endif %}"
+                            data-seat="{{ seat.number }}"
+                            data-number="{{ seat.number }}"
+                            {% if seat.occupied %}disabled{% endif %}
+                        >
+                            {{ seat.number }}
+                        </button>
+                    {% endfor %}
+                </div>
+
+                {# Selected seat display #}
+                <div class="seat-selected-label" id="lblSelectedSeat">
+                    Aucun siège sélectionné
+                </div>
+
+                {% if form.siege.vars.errors|length %}
+                    <span class="error-label">{{ form_errors(form.siege) }}</span>
+                {% endif %}
+
+            </div>
+            {% endif %}
+
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Créer la Réservation</button>
+                <a href="{{ path('ourservices_index') }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+    <!-- ##### Core Features End ##### -->
+   
+   
+    <!-- ##### Footer Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Find us on the map</h6>
+                        <img src="{{asset('assets/styles/img/bg-img/footer-map.png')}}" alt="">
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Subscribe to our newsletter</h6>
+                        <form action="#" method="post" class="subscribe-form">
+                            <input type="email" name="subscribe-email" id="subscribeemail" placeholder="Your E-mail">
+                            <button type="submit">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Copywrite Text -->
+                <div class="col-12">
+                    <div class="copywrite-text mt-30">
+                        <p><a href="#"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+{% endblock %}
+
+
+{% block javascripts %}
+ {{ parent() }}
+    <!-- ##### All Javascript Script ##### -->
+    <!-- jQuery-2.2.4 js -->
+    <script src="{{asset('assets/styles/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <!-- Popper js -->
+    <script src="{{asset('assets/styles/js/bootstrap/popper.min.js')}}"></script>
+    <!-- Bootstrap js -->
+    <script src="{{asset('assets/styles/js/bootstrap/bootstrap.min.js')}}"></script>
+    <!-- All Plugins js -->
+    <script src="{{asset('assets/styles/js/plugins/plugins.js')}}"></script>
+    <!-- Active js -->
+    <script src="{{asset('assets/styles/js/active.js')}}"></script>
+{% endblock %}

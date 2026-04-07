@@ -27,8 +27,8 @@ class Services
     #[ORM\Column(type: "float")]
     private float $prix;
 
-    #[ORM\Column(type: "string", length: 255)]
-    private string $disponibilite;
+    #[ORM\Column(type: "boolean")]
+    private bool $disponibilite;
 
     #[ORM\Column(type: "integer")]
     private int $capacite;

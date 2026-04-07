@@ -262,11 +262,11 @@
 
                         <div class="card-actions">
                             {% if service.type == 'hotel' %}
-                                <a href="{{ path('hotel_show', { id: service.idService }) }}" class="btn-detail">
+                                <a href="{{ path('hotel_showdetails', { id: service.idService }) }}" class="btn-detail">
                                     Voir détails →
                                 </a>
                             {% else %}
-                                <a href="{{ path('vol_show', { id: service.idService }) }}" class="btn-detail">
+                                <a href="{{ path('vol_showdetails', { id: service.idService }) }}" class="btn-detail">
                                     Voir détails →
                                 </a>
                             {% endif %}

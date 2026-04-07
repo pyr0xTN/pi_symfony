@@ -98,6 +98,22 @@ class HotelController extends AbstractController
             // 'weather'  => $weather,
         ]);
     }
+    
+    #[Route('/details/{id}', name: 'hotel_showdetails', methods: ['GET'])]
+    public function showdetails(int $id): Response
+    {
+        $hotel = $this->findHotelOrFail($id);
+
+        // Optional: fetch live weather for the hotel's city
+        // $weather = $this->weatherService->getTemperature($hotel->getLocalisation());
+
+        return $this->render('hotel/showdetails.html.twig', [
+            'active_page' => 'services',
+            'hotel'       => $hotel,
+            // 'weather'  => $weather,
+        ]);
+    }
+
 
     // ──────────────────────────────────────────────
     // EDIT / UPDATE

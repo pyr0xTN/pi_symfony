@@ -100,6 +100,23 @@ class VolController extends AbstractController
             // 'tempArrivee' => $tempArrivee,
         ]);
     }
+    #[Route('/details/{id}', name: 'vol_showdetails', methods: ['GET'])]
+    public function details(int $id): Response
+    {
+        $vol = $this->findVolOrFail($id);
+
+        // Optional: fetch weather for departure & arrival cities
+        // $tempDepart  = $this->weatherService->getTemperature($vol->getVilleDepart());
+        // $tempArrivee = $this->weatherService->getTemperature($vol->getVilleArrivee());
+
+        return $this->render('vol/showdetails.html.twig', [
+            'active_page' => 'services',
+            'vol'         => $vol,
+            // 'tempDepart'  => $tempDepart,
+            // 'tempArrivee' => $tempArrivee,
+        ]);
+    }
+
 
     // ──────────────────────────────────────────────
     // EDIT / UPDATE
