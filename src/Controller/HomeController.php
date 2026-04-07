@@ -684,6 +684,9 @@ class HomeController extends AbstractController
                     'conversations' => $conversations,
                     'users' => $allUsers
                 ]);
+            case 'post':
+                $request->query->set('embed', true);
+                return $this->forward('App\Controller\PostController::feed');
             default:
                 return $this->render('partials/welcome.html.twig');
         }
@@ -2254,7 +2257,7 @@ class HomeController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function post(): Response
     {
-        return $this->render('post/index.html.twig');
+        return $this->redirectToRoute('app_feed');
     }
 
     #[Route('/services', name: 'app_services')]

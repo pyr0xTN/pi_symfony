@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+{% endblock %}
+{% block body %}
+<div class="dashboard-root">
+    {# Sidebar removed in favor of unified utilisateurs menu #}
+    {# ═══ MAIN AREA ═══ #}
+    <main class="main-area">
+        {% if not embed|default(false) %}
+        {# ═══ TOP NAV BAR ═══ #}
+        <header class="nav-bar">
+            <div class="nav-bar-brand" style="display:flex;align-items:center;gap:12px;">
+                <a href="{{ path('app_mainpage', {module: 'post'}) }}" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back to Dashboard">⬅</a>
+                <div>
+                    <span class="brand-text">Rehletna</span>
+                    <span class="brand-dot">.tn</span>
+                </div>
+            </div>
+
+            <div class="nav-bar-center">
+                <div class="view-toggle-container">
+                    <a href="{{ path('app_feed', {view: 'grid', q: search|default('')}) }}" 
+                       class="view-toggle-btn {{ viewMode|default('grid') == 'grid' ? 'active-view' : '' }}">Grid</a>
+                    <a href="{{ path('app_feed', {view: 'list', q: search|default('')}) }}" 
+                       class="view-toggle-btn {{ viewMode|default('grid') == 'list' ? 'active-view' : '' }}">Feed</a>
+                </div>
+                <form action="{{ path('app_feed') }}" method="get" class="search-form">
+                    <input type="hidden" name="view" value="{{ viewMode|default('grid') }}">
+                    <input type="text" name="q" value="{{ search|default('') }}" 
+                           placeholder="Search posts..." class="search-field" id="searchField">
+                </form>
+            </div>
+
+            <a href="{{ path('app_post_new') }}" class="primary-btn">+ New Post</a>
+            <button class="theme-toggle-nav" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+        </header>
+        {% endif %}
+
+        {# ═══ CONTENT AREA ═══ #}
+        <div class="content-container">
+            {% for message in app.flashes('success') %}
+                <div class="flash-success">{{ message }}</div>
+            {% endfor %}
+
+            {% block content %}{% endblock %}
+        </div>
+
+        {# ═══ FABs ═══ #}
+        <a href="{{ path('app_map') }}" class="fab map-fab-btn">Explore Map</a>
+        <button class="fab chat-fab-btn" onclick="toggleChatPanel()">✦ Ask Rihla</button>
+
+        {# ═══ AI CHAT PANEL ═══ #}
+        <div id="chatPanel" class="chat-panel" style="display:none;">
+            <div class="chat-panel-header">
+                <span class="chat-panel-title">Rihla — Travel Assistant</span>
+                <button class="chat-close-btn" onclick="toggleChatPanel()">✕</button>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <div class="chat-msg assistant">
+                    <p>Marhba! I'm Rihla, your travel assistant. Ask me anything about Tunisia or travel!</p>
+                </div>
+            </div>
+            <div class="chat-input-row">
+                <input type="text" id="chatInput" placeholder="Ask about travel..." 
+                       onkeydown="if(event.key==='Enter')sendChatMessage()">
+                <button onclick="sendChatMessage()" class="chat-send-btn">Send</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="{{ asset('js/app.js') }}"></script>
+{% endblock %}

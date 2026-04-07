@@ -7,6 +7,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.upload_dir: '%kernel.project_dir%/public/uploads/images'
 
 services:
     # default configuration for services in *this* file
@@ -18,6 +19,26 @@ services:
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # ── Service wiring ───────────────────────────────────────
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHERMAP_API_KEY)%'
+
+    App\Service\AiChatService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
+    App\Service\UnsplashService:
+        arguments:
+            $accessKey: '%env(UNSPLASH_ACCESS_KEY)%'
+
+    App\Service\ImageUploadService:
+        arguments:
+            $uploadDir: '%app.upload_dir%'
+
+
