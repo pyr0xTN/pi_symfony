@@ -65,7 +65,7 @@
             </div>
 
             <div class="comment-input-row">
-                <div class="avatar avatar-sm">W</div>
+                <div class="avatar avatar-sm">{{ app.user.username|first|upper|default('U') }}</div>
                 <input type="text" id="commentInput" placeholder="Write a comment…" 
                        data-publication-id="{{ post.id }}"
                        onkeydown="if(event.key==='Enter')submitComment({{ post.id }})">

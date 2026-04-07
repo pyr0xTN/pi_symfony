@@ -20,9 +20,9 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api')]
+#[IsGranted('ROLE_USER')]
 class ApiController extends AbstractController
 {
-    private const CURRENT_CLIENT_ID = 1;
 
     #[Route('/like/toggle', name: 'api_like_toggle', methods: ['POST'])]
     public function toggleLike(
@@ -36,24 +36,17 @@ class ApiController extends AbstractController
         $post = $pubRepo->find($publicationId);
         if (!$post) return $this->json(['error' => 'Post not found'], 404);
 
-        $existingLike = $likeRepo->findUserLike($publicationId, self::CURRENT_CLIENT_ID);
+        $user = $this->getUser();
+        if (!$user) return $this->json(['error' => 'Login required'], 401);
+
+        $existingLike = $likeRepo->findUserLike($publicationId, $user->getId());
 
         if ($existingLike) {
             $em->remove($existingLike);
             $em->flush();
             $liked = false;
         } else {
-            $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-            if (!$user) {
-                $user = new \App\Entity\User();
-                $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
-                $user->setName('Demo');
-                $user->setLastName('Traveller');
-                $user->setPassword('123456');
-                $user->setUsername('demo_traveller');
-                $em->persist($user);
-                $em->flush();
-            }
+            // User already fetched via $this->getUser()
 
             $like = new Like();
             $like->setPublication($post);
@@ -85,17 +78,8 @@ class ApiController extends AbstractController
         $post = $pubRepo->find($publicationId);
         if (!$post) return $this->json(['error' => 'Post not found'], 404);
 
-        $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-        if (!$user) {
-            $user = new \App\Entity\User();
-            $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
-            $user->setName('Demo');
-            $user->setLastName('Traveller');
-            $user->setPassword('123456');
-            $user->setUsername('demo_traveller');
-            $em->persist($user);
-            $em->flush();
-        }
+        $user = $this->getUser();
+        if (!$user) return $this->json(['error' => 'Login required'], 401);
 
         $comment = new Comment();
         $comment->setPublication($post);

@@ -397,7 +397,7 @@ img { max-width: 100%; height: auto; }
 }
 
 .action-btn {
-    flex: 1; padding: 10px; text-align: center;
+    padding: 10px 24px; text-align: center;
     font-size: 13px; font-weight: 600; border: none;
     background: none; cursor: pointer;
     color: var(--text-secondary); font-family: var(--font);
@@ -446,8 +446,9 @@ img { max-width: 100%; height: auto; }
 .detail-content-card { padding: 16px 24px; }
 
 .detail-author-row {
-    display: flex; align-items: center; gap: 10px;
-    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
+    justify-content: flex-start;
 }
 .detail-author-name { font-weight: 600; font-size: 15px; }
 
@@ -579,6 +580,7 @@ img { max-width: 100%; height: auto; }
 .cpd-user-strip {
     display: flex; align-items: center; gap: 12px;
     padding: 14px 20px;
+    justify-content: flex-start;
 }
 .cpd-username { font-weight: 600; font-size: 14px; display: block; }
 .cpd-audience { display: flex; gap: 6px; align-items: center; }

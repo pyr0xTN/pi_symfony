@@ -1652,6 +1652,7 @@
                 <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
                 <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
                 <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+                <button class="nav-tab" data-view="post">✉️ Posts</button>
                 {% if is_granted('ROLE_ADMIN') %}
                     <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
                 {% endif %}
@@ -1685,7 +1686,7 @@
                         <div class="feature-title">{{ 'main.feature.chat.title'|trans }}</div>
                         <div class="feature-text">{{ 'main.feature.chat.text'|trans }}</div>
                     </a>
-                    <a href="{{ path('app_post') }}" class="feature-card">
+                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('post'); return false;">
                         <div class="feature-icon">✉️</div>
                         <div class="feature-title">{{ 'main.feature.post.title'|trans }}</div>
                         <div class="feature-text">{{ 'main.feature.post.text'|trans }}</div>

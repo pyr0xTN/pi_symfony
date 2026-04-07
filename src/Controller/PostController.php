@@ -17,12 +17,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+#[IsGranted('ROLE_USER')]
 class PostController extends AbstractController
 {
-    // Simulated user — same as Java app (client_id = 1)
-    private const CURRENT_CLIENT_ID = 1;
 
-    #[Route('/', name: 'app_feed')]
+    #[Route('/community', name: 'app_feed')]
     public function feed(
         Request $request,
         PublicationRepository $pubRepo,
@@ -36,8 +35,8 @@ class PostController extends AbstractController
             ? $pubRepo->searchByKeyword($search)
             : $pubRepo->findAllApproved();
 
-        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(\App\Entity\User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+        $user = $this->getUser();
+        $clientId = $user->getId();
 
         // Build metadata for each post
         $postMeta = [];
@@ -55,6 +54,7 @@ class PostController extends AbstractController
             'search'    => $search,
             'viewMode'  => $view,
             'clientId'  => $clientId,
+            'embed'     => (bool) $request->query->get('embed', false),
         ]);
     }
 
@@ -68,8 +68,8 @@ class PostController extends AbstractController
         $post = $pubRepo->find($id);
         if (!$post) throw $this->createNotFoundException('Post not found');
 
-        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+        $user = $this->getUser();
+        $clientId = $user->getId();
 
         return $this->render('front/post_detail.html.twig', [
             'post'         => $post,
@@ -89,17 +89,8 @@ class PostController extends AbstractController
         ImageUploadService $imageUpload,
     ): Response {
         if ($request->isMethod('POST')) {
-            $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-            if (!$user) {
-                $user = new User();
-                $user->setEmail('testuser' . self::CURRENT_CLIENT_ID . '@test.com');
-                $user->setName('Demo');
-                $user->setLastName('Traveller');
-                $user->setPassword('123456');
-                $user->setUsername('demo_traveller');
-                $em->persist($user);
-                $em->flush();
-            }
+            $user = $this->getUser();
+
 
             $post = new Publication();
             $post->setContent($request->request->get('content', ''));
@@ -120,8 +111,8 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_feed');
         }
 
-        $user = $userRepo->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+        $user = $this->getUser();
+        $clientId = $user->getId();
 
         return $this->render('front/create_post.html.twig', [
             'post'     => null,
@@ -155,8 +146,8 @@ class PostController extends AbstractController
             return $this->redirectToRoute('app_post_detail', ['id' => $id]);
         }
 
-        $user = $pubRepo->createQueryBuilder('p')->getEntityManager()->getRepository(User::class)->findOneBy(['email' => 'testuser' . self::CURRENT_CLIENT_ID . '@test.com']);
-        $clientId = $user ? $user->getId() : self::CURRENT_CLIENT_ID;
+        $user = $this->getUser();
+        $clientId = $user->getId();
 
         return $this->render('front/create_post.html.twig', [
             'post'     => $post,

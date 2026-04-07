@@ -12,9 +12,9 @@
             
             {# ── USER STRIP ── #}
             <div class="cpd-user-strip">
-                <div class="avatar">W</div>
+                <div class="avatar">{{ app.user.username|first|upper|default('U') }}</div>
                 <div>
-                    <span class="cpd-username">Wajdi</span>
+                    <span class="cpd-username">{{ app.user.username|default('User') }}</span>
                     <div class="cpd-audience">
                         <span class="cpd-audience-label">Posting to</span>
                         <span class="cpd-audience-pill" id="audienceLabel">Public Feed</span>
