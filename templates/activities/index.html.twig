@@ -740,6 +740,279 @@
             transform: translateY(-1px);
         }
 
+        .payment-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 16, 30, 0.64);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 2700;
+        }
+
+        .payment-overlay.show {
+            display: flex;
+        }
+
+        .payment-modal {
+            width: min(560px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 26px;
+            background: linear-gradient(170deg, #f7fbff 0%, #eef6ff 100%);
+            border: 1px solid rgba(130, 157, 184, 0.34);
+            box-shadow: 0 30px 70px rgba(3, 24, 46, 0.36);
+        }
+
+        .payment-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(130, 157, 184, 0.22);
+        }
+
+        .payment-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: #123e66;
+        }
+
+        .payment-amount {
+            margin: 12px 20px 0;
+            padding: 10px 14px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(130, 157, 184, 0.22);
+            color: #1d4d7c;
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .payment-card {
+            position: relative;
+            overflow: hidden;
+            margin: 14px 20px 0;
+            border-radius: 20px;
+            padding: 20px;
+            color: #ffffff;
+            background:
+                radial-gradient(220px 140px at 90% -20%, rgba(255, 255, 255, 0.34), transparent 68%),
+                radial-gradient(260px 180px at -10% 120%, rgba(255, 255, 255, 0.18), transparent 72%),
+                linear-gradient(132deg, #0a2e59 0%, #0d4f7e 35%, #0fa5a2 68%, #2f7cc4 100%);
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            box-shadow: 0 20px 36px rgba(12, 63, 99, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .payment-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.1) 42%, transparent 68%);
+            pointer-events: none;
+        }
+
+        .payment-card::after {
+            content: '';
+            position: absolute;
+            left: -15%;
+            right: -15%;
+            top: 52%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            pointer-events: none;
+        }
+
+        .payment-card-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .payment-chip {
+            width: 44px;
+            height: 34px;
+            border-radius: 8px;
+            background:
+                linear-gradient(90deg, rgba(120, 84, 30, 0.24) 0, rgba(120, 84, 30, 0.24) 12px, transparent 12px, transparent 16px, rgba(120, 84, 30, 0.24) 16px, rgba(120, 84, 30, 0.24) 28px, transparent 28px),
+                linear-gradient(160deg, #f1d49b, #b98d49);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), 0 2px 6px rgba(7, 32, 59, 0.24);
+        }
+
+        .payment-brand {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            padding: 4px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            backdrop-filter: blur(4px);
+        }
+
+        .payment-brand-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .payment-brand-dot.red {
+            background: #ff6659;
+        }
+
+        .payment-brand-dot.yellow {
+            background: #ffc94f;
+            margin-left: -6px;
+            mix-blend-mode: screen;
+        }
+
+        .payment-brand-text {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .payment-card-number {
+            position: relative;
+            z-index: 1;
+            margin: 24px 0 12px;
+            letter-spacing: 0.14em;
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: 800;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.26);
+        }
+
+        .payment-card-meta {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 700;
+        }
+
+        .payment-card-meta span {
+            opacity: 0.9;
+        }
+
+        .payment-card-value {
+            display: block;
+            margin-top: 6px;
+            letter-spacing: 0;
+            text-transform: none;
+            font-size: 14px;
+            font-weight: 800;
+            opacity: 1;
+        }
+
+        .payment-form {
+            padding: 18px 20px 22px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .payment-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .payment-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .payment-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #5c7390;
+            font-weight: 800;
+        }
+
+        .payment-input {
+            border: 1px solid rgba(126, 152, 178, 0.36);
+            border-radius: 12px;
+            padding: 11px 12px;
+            font: inherit;
+            color: #174a78;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        .payment-error {
+            display: none;
+            color: #c6364f;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .payment-error.show {
+            display: block;
+        }
+
+        .payment-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .payment-confirm,
+        .payment-cancel {
+            border: 0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .payment-confirm {
+            color: #fff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
+        .payment-cancel {
+            background: rgba(13, 94, 138, 0.12);
+            color: #0d5e8a;
+        }
+
+        .payment-success {
+            display: none;
+            margin: 0 20px 4px;
+            border-radius: 12px;
+            padding: 10px 12px;
+            color: #0f8f66;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .payment-success.show {
+            display: block;
+        }
+
         .activity-modal-empty {
             padding: 18px;
             text-align: center;
@@ -1175,6 +1448,24 @@
             color: #8db4d7;
         }
 
+        body.dark-mode .payment-modal {
+            background: linear-gradient(170deg, rgba(21, 28, 41, 0.98), rgba(18, 24, 34, 0.98));
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .payment-title,
+        body.dark-mode .payment-amount,
+        body.dark-mode .payment-label,
+        body.dark-mode .payment-input {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .payment-amount,
+        body.dark-mode .payment-input {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.09);
+        }
+
         @media (max-width: 992px) {
             .side-menu {
                 box-shadow: none;
@@ -1282,7 +1573,8 @@
             }
 
             if (activityModalReserve) {
-                activityModalReserve.href = '{{ path('app_reservations') }}';
+                activityModalReserve.setAttribute('data-amount', button.dataset.price || '0');
+                activityModalReserve.setAttribute('data-activity-title', button.dataset.title || 'Activity');
             }
 
             activityModalOverlay.classList.add('show');
@@ -1335,6 +1627,52 @@
             createModalOverlay.classList.add('show');
         };
 
+        window.closePaymentModal = function () {
+            var paymentOverlay = document.querySelector('.payment-overlay');
+            var paymentForm = document.querySelector('.js-payment-form');
+            var paymentSuccess = document.querySelector('.js-payment-success');
+            if (paymentOverlay) {
+                paymentOverlay.classList.remove('show');
+            }
+            if (paymentForm) {
+                paymentForm.reset();
+            }
+            if (paymentSuccess) {
+                paymentSuccess.classList.remove('show');
+            }
+        };
+
+        window.openPaymentModal = function (amount, activityTitle) {
+            var paymentOverlay = document.querySelector('.payment-overlay');
+            var amountLabel = document.querySelector('.js-payment-amount');
+            var titleLabel = document.querySelector('.js-payment-activity-title');
+            var cardNumberDisplay = document.querySelector('.js-card-number-display');
+            var cardHolderDisplay = document.querySelector('.js-card-holder-display');
+            var cardExpiryDisplay = document.querySelector('.js-card-expiry-display');
+
+            if (!paymentOverlay) {
+                return;
+            }
+
+            if (amountLabel) {
+                amountLabel.textContent = (amount || '0') + ' DT';
+            }
+            if (titleLabel) {
+                titleLabel.textContent = activityTitle || 'Activity';
+            }
+            if (cardNumberDisplay) {
+                cardNumberDisplay.textContent = '•••• •••• •••• ••••';
+            }
+            if (cardHolderDisplay) {
+                cardHolderDisplay.textContent = 'VOTRE NOM';
+            }
+            if (cardExpiryDisplay) {
+                cardExpiryDisplay.textContent = 'MM/AA';
+            }
+
+            paymentOverlay.classList.add('show');
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
             var menuToggle = document.querySelector('.menu-toggle');
             var sideMenu = document.querySelector('.side-menu');
@@ -1345,6 +1683,22 @@
             var editModalClose = document.querySelector('.activity-edit-close');
             var createModalOverlay = document.querySelector('.activity-create-overlay');
             var createModalClose = document.querySelector('.activity-create-close');
+            var paymentOverlay = document.querySelector('.payment-overlay');
+            var paymentClose = document.querySelector('.payment-close');
+            var reserveButton = document.querySelector('.activity-modal-reserve');
+            var paymentForm = document.querySelector('.js-payment-form');
+            var paymentCardNumber = document.querySelector('.js-payment-card-number');
+            var paymentCardHolder = document.querySelector('.js-payment-card-holder');
+            var paymentCardExpiry = document.querySelector('.js-payment-card-expiry');
+            var paymentCardCvv = document.querySelector('.js-payment-card-cvv');
+            var cardNumberDisplay = document.querySelector('.js-card-number-display');
+            var cardHolderDisplay = document.querySelector('.js-card-holder-display');
+            var cardExpiryDisplay = document.querySelector('.js-card-expiry-display');
+            var paymentSuccess = document.querySelector('.js-payment-success');
+            var errorCardNumber = document.querySelector('.js-payment-error-number');
+            var errorCardHolder = document.querySelector('.js-payment-error-holder');
+            var errorCardExpiry = document.querySelector('.js-payment-error-expiry');
+            var errorCardCvv = document.querySelector('.js-payment-error-cvv');
 
             function closeMenu() {
                 if (sideMenu) {
@@ -1400,6 +1754,138 @@
                 });
             }
 
+            if (paymentClose) {
+                paymentClose.addEventListener('click', closePaymentModal);
+            }
+
+            if (paymentOverlay) {
+                paymentOverlay.addEventListener('click', function (event) {
+                    if (event.target === paymentOverlay) {
+                        closePaymentModal();
+                    }
+                });
+            }
+
+            if (reserveButton) {
+                reserveButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var amount = reserveButton.getAttribute('data-amount') || '0';
+                    var activityTitle = reserveButton.getAttribute('data-activity-title') || 'Activity';
+                    openPaymentModal(amount, activityTitle);
+                });
+            }
+
+            function formatCardNumber(value) {
+                var digits = String(value || '').replace(/\D/g, '').slice(0, 16);
+                return digits.replace(/(.{4})/g, '$1 ').trim();
+            }
+
+            function formatExpiry(value) {
+                var digits = String(value || '').replace(/\D/g, '').slice(0, 4);
+                if (digits.length <= 2) {
+                    return digits;
+                }
+                return digits.slice(0, 2) + '/' + digits.slice(2);
+            }
+
+            if (paymentCardNumber) {
+                paymentCardNumber.addEventListener('input', function () {
+                    paymentCardNumber.value = formatCardNumber(paymentCardNumber.value);
+                    if (cardNumberDisplay) {
+                        cardNumberDisplay.textContent = paymentCardNumber.value || '•••• •••• •••• ••••';
+                    }
+                    if (errorCardNumber) {
+                        errorCardNumber.classList.remove('show');
+                    }
+                });
+            }
+
+            if (paymentCardHolder) {
+                paymentCardHolder.addEventListener('input', function () {
+                    if (cardHolderDisplay) {
+                        cardHolderDisplay.textContent = paymentCardHolder.value || 'VOTRE NOM';
+                    }
+                    if (errorCardHolder) {
+                        errorCardHolder.classList.remove('show');
+                    }
+                });
+            }
+
+            if (paymentCardExpiry) {
+                paymentCardExpiry.addEventListener('input', function () {
+                    paymentCardExpiry.value = formatExpiry(paymentCardExpiry.value);
+                    if (cardExpiryDisplay) {
+                        cardExpiryDisplay.textContent = paymentCardExpiry.value || 'MM/AA';
+                    }
+                    if (errorCardExpiry) {
+                        errorCardExpiry.classList.remove('show');
+                    }
+                });
+            }
+
+            if (paymentCardCvv) {
+                paymentCardCvv.addEventListener('input', function () {
+                    paymentCardCvv.value = String(paymentCardCvv.value || '').replace(/\D/g, '').slice(0, 4);
+                    if (errorCardCvv) {
+                        errorCardCvv.classList.remove('show');
+                    }
+                });
+            }
+
+            if (paymentForm) {
+                paymentForm.addEventListener('submit', function (event) {
+                    event.preventDefault();
+
+                    var rawNumber = String(paymentCardNumber ? paymentCardNumber.value : '').replace(/\s/g, '');
+                    var holder = String(paymentCardHolder ? paymentCardHolder.value : '').trim();
+                    var expiry = String(paymentCardExpiry ? paymentCardExpiry.value : '').trim();
+                    var cvv = String(paymentCardCvv ? paymentCardCvv.value : '').trim();
+                    var expiryOk = /^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(expiry);
+
+                    var isValid = true;
+                    if (errorCardNumber) {
+                        var numberInvalid = rawNumber.length < 13 || rawNumber.length > 19;
+                        errorCardNumber.classList.toggle('show', numberInvalid);
+                        if (numberInvalid) {
+                            isValid = false;
+                        }
+                    }
+                    if (errorCardHolder) {
+                        var holderInvalid = holder.length < 3;
+                        errorCardHolder.classList.toggle('show', holderInvalid);
+                        if (holderInvalid) {
+                            isValid = false;
+                        }
+                    }
+                    if (errorCardExpiry) {
+                        errorCardExpiry.classList.toggle('show', !expiryOk);
+                        if (!expiryOk) {
+                            isValid = false;
+                        }
+                    }
+                    if (errorCardCvv) {
+                        var cvvInvalid = !/^\d{3,4}$/.test(cvv);
+                        errorCardCvv.classList.toggle('show', cvvInvalid);
+                        if (cvvInvalid) {
+                            isValid = false;
+                        }
+                    }
+
+                    if (!isValid) {
+                        return;
+                    }
+
+                    if (paymentSuccess) {
+                        paymentSuccess.classList.add('show');
+                    }
+
+                    window.setTimeout(function () {
+                        closePaymentModal();
+                        closeActivityModal();
+                    }, 1200);
+                });
+            }
+
             document.querySelectorAll('.js-open-activity-modal').forEach(function (button) {
                 button.addEventListener('click', function (event) {
                     event.preventDefault();
@@ -1412,6 +1898,7 @@
                     closeActivityModal();
                     closeActivityEditModal();
                     closeActivityCreateModal();
+                    closePaymentModal();
                 }
             });
 
@@ -1593,8 +2080,8 @@
                                     name="q"
                                     value="{{ currentSearch|default('') }}"
                                     class="activities-search"
-                                    placeholder="Search by activity name"
-                                    aria-label="Search activities by name"
+                                    placeholder="Search by activity name or place"
+                                    aria-label="Search activities by name or place"
                                 >
                                 <button type="submit" class="activities-search-btn">Search</button>
                             </form>
@@ -1700,10 +2187,10 @@
                                 </div>
                             </article>
                         {% else %}
-                            <div class="activities-empty">No activities found in the database.</div>
+                            <div class="activities-empty">No activities found with that name.</div>
                         {% endfor %}
                     </div>
-                    <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities match your current filters.</div>
+                    <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities match.</div>
                 </div>
             </div>
         </div>
@@ -1762,10 +2249,74 @@
                     </div>
 
                     <div class="activity-modal-actions">
-                        <a class="activity-modal-reserve" href="{{ path('app_reservations') }}">Reserver</a>
+                        <button type="button" class="activity-modal-reserve" data-amount="0" data-activity-title="Activity">Reserver</button>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="payment-overlay">
+        <div class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="paymentTitle">
+            <div class="payment-head">
+                <h3 class="payment-title" id="paymentTitle">Paiement</h3>
+                <button type="button" class="activity-modal-close payment-close" aria-label="Close" onclick="window.closePaymentModal(); return false;">&times;</button>
+            </div>
+
+            <div class="payment-amount">
+                <span class="js-payment-activity-title">Activity</span>
+                <strong class="js-payment-amount">0 DT</strong>
+            </div>
+
+            <div class="payment-card" aria-hidden="true">
+                <div class="payment-card-row">
+                    <span class="payment-chip"></span>
+                    <span class="payment-brand" aria-hidden="true">
+                        <span class="payment-brand-dot red"></span>
+                        <span class="payment-brand-dot yellow"></span>
+                        <span class="payment-brand-text">card</span>
+                    </span>
+                </div>
+                <p class="payment-card-number js-card-number-display">•••• •••• •••• ••••</p>
+                <div class="payment-card-meta">
+                    <span>Card Holder<span class="payment-card-value js-card-holder-display">VOTRE NOM</span></span>
+                    <span>Expire<span class="payment-card-value js-card-expiry-display">MM/AA</span></span>
+                </div>
+            </div>
+
+            <div class="payment-success js-payment-success">Payment confirmed successfully.</div>
+
+            <form class="payment-form js-payment-form" novalidate>
+                <div class="payment-field">
+                    <label class="payment-label" for="pay-card-number">Numero de carte</label>
+                    <input class="payment-input js-payment-card-number" id="pay-card-number" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" required>
+                    <span class="payment-error js-payment-error-number">Numero de carte invalide.</span>
+                </div>
+
+                <div class="payment-field">
+                    <label class="payment-label" for="pay-card-holder">Nom du titulaire</label>
+                    <input class="payment-input js-payment-card-holder" id="pay-card-holder" type="text" autocomplete="cc-name" placeholder="PRENOM NOM" required>
+                    <span class="payment-error js-payment-error-holder">Nom requis.</span>
+                </div>
+
+                <div class="payment-split">
+                    <div class="payment-field">
+                        <label class="payment-label" for="pay-card-expiry">Expiration</label>
+                        <input class="payment-input js-payment-card-expiry" id="pay-card-expiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" required>
+                        <span class="payment-error js-payment-error-expiry">Date invalide.</span>
+                    </div>
+                    <div class="payment-field">
+                        <label class="payment-label" for="pay-card-cvv">Code CVV</label>
+                        <input class="payment-input js-payment-card-cvv" id="pay-card-cvv" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="***" required>
+                        <span class="payment-error js-payment-error-cvv">CVV invalide.</span>
+                    </div>
+                </div>
+
+                <div class="payment-actions">
+                    <button type="submit" class="payment-confirm">Confirmer le paiement</button>
+                    <button type="button" class="payment-cancel" onclick="window.closePaymentModal(); return false;">Annuler</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1842,7 +2393,7 @@
                 <button type="button" class="activity-modal-close activity-create-close" aria-label="Close" onclick="window.closeActivityCreateModal(); return false;">&times;</button>
             </div>
 
-            <form method="post" class="activity-create-form js-activity-create-form" action="{{ path('app_activities_new') }}">
+            <form method="post" class="activity-create-form js-activity-create-form" action="{{ path('app_activities_new') }}" enctype="multipart/form-data">
                 <input type="hidden" name="_token" value="{{ csrf_token('new_activity') }}">
 
                 <div class="activity-create-field full">
@@ -1886,8 +2437,8 @@
                 </div>
 
                 <div class="activity-create-field full">
-                    <label class="activity-create-label" for="create-image">Image path or URL</label>
-                    <input class="activity-create-input" id="create-image" type="text" name="image" placeholder="uploads/images/my-activity.jpg">
+                    <label class="activity-create-label" for="create-image">Activity image</label>
+                    <input class="activity-create-input" id="create-image" type="file" name="image" accept="image/*">
                 </div>
 
                 <div class="activity-create-field full">

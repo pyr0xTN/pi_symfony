@@ -13,6 +13,7 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -51,11 +52,18 @@ class HomeController extends AbstractController
 
         $params = [];
         $types = [];
+        $whereClauses = [];
 
         if ($currentSearch !== '') {
-            $sql .= ' WHERE a.titre LIKE ?';
+            $whereClauses[] = '(a.titre LIKE ? OR a.lieu LIKE ?)';
+            $params[] = '%' . $currentSearch . '%';
             $params[] = '%' . $currentSearch . '%';
             $types[] = ParameterType::STRING;
+            $types[] = ParameterType::STRING;
+        }
+
+        if ($whereClauses !== []) {
+            $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
         }
 
         $sql .= ' ORDER BY a.dateActivite DESC, a.idActivite DESC';
@@ -104,6 +112,7 @@ class HomeController extends AbstractController
         $price = (int) $request->request->get('price', 0);
         $places = (int) $request->request->get('places', 0);
         $image = trim((string) $request->request->get('image', ''));
+        $uploadedImage = $request->files->get('image');
 
         if ($title === '' || $description === '' || $location === '') {
             $this->addFlash('error', 'Title, description and location are required.');
@@ -124,6 +133,37 @@ class HomeController extends AbstractController
         $allowedStatuses = ['Actif', 'Inactif'];
         if (!in_array($status, $allowedStatuses, true)) {
             $status = 'Actif';
+        }
+
+        if ($uploadedImage instanceof UploadedFile) {
+            if (!$uploadedImage->isValid()) {
+                $this->addFlash('error', 'Uploaded image is invalid.');
+                return $this->redirectToRoute('app_activities');
+            }
+
+            $mimeType = (string) ($uploadedImage->getMimeType() ?? '');
+            if ($mimeType === '' || !str_starts_with($mimeType, 'image/')) {
+                $this->addFlash('error', 'Please select a valid image file.');
+                return $this->redirectToRoute('app_activities');
+            }
+
+            $projectDir = (string) $this->getParameter('kernel.project_dir');
+            $uploadDir = $projectDir . '/public/uploads/activities';
+            if (!is_dir($uploadDir) && !@mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+                $this->addFlash('error', 'Unable to prepare activity uploads folder.');
+                return $this->redirectToRoute('app_activities');
+            }
+
+            $extension = $uploadedImage->guessExtension() ?: 'jpg';
+            $fileName = 'activity_' . bin2hex(random_bytes(8)) . '.' . $extension;
+
+            try {
+                $uploadedImage->move($uploadDir, $fileName);
+                $image = '/uploads/activities/' . $fileName;
+            } catch (\Throwable $e) {
+                $this->addFlash('error', 'Unable to upload activity image.');
+                return $this->redirectToRoute('app_activities');
+            }
         }
 
         $connection->executeStatement(
@@ -2601,7 +2641,7 @@ class HomeController extends AbstractController
 
     private function activityImageToUrl(mixed $image): string
     {
-        $default = '/images/default_image.png';
+        $default = '/images/defaultact.jpg';
         if (empty($image)) {
             return $default;
         }
@@ -2629,7 +2669,7 @@ class HomeController extends AbstractController
             }
         }
 
-        return '/uploads/images/' . rawurlencode(basename($imagePath));
+        return $default;
     }
 
     private function buildShopViewData(Connection $connection): array
