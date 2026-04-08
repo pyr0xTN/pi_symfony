@@ -987,16 +987,12 @@
                                     return;
                                 }
 
-                                const blocked = !!payload.blocked;
-                                if (submitButton) {
-                                    submitButton.classList.toggle('blocked', blocked);
-                                    submitButton.title = blocked ? 'Unblock user' : 'Block user';
-                                    submitButton.setAttribute('aria-label', blocked ? 'Unblock user' : 'Block user');
+                                if (payload.redirectUrl) {
+                                    window.location.assign(payload.redirectUrl);
+                                    return;
                                 }
 
-                                if (icon) {
-                                    icon.textContent = blocked ? '🔓' : '⛔';
-                                }
+                                window.location.assign('{{ path('app_dashboard') }}');
                             })
                             .catch(function () {
                                 // Leave the existing state in place if the request fails.
