@@ -16,10 +16,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
-/**
- * Form for Vol (flight) creation and editing.
- * Maps to: AddVol.fxml / updateVol.fxml fields.
- */
+
 class VolType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void

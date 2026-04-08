@@ -68,18 +68,28 @@
                         {% endif %}
                     </div>
 
-                    {# Footer: Actions #}
-                    <div class="rc-footer">
-                        <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
-                            Voir détails
-                        </a>
-                        <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
-                           class="rc-btn rc-btn-danger"
-                           onclick="return confirm('Confirmer la suppression ?')">
-                           Supprimer
-                        </a>
-                      
-                    </div>
+                   {# Footer: Actions #}
+<div class="rc-footer">
+  <!--  <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
+        Voir détails
+    </a> -->
+
+    {% if reservation.statut|lower != 'confirmée' %}
+        <form method="POST" action="{{ path('reservation_approve', { id: reservation.idReservation }) }}" style="display:inline;">
+            <input type="hidden" name="_token" value="{{ csrf_token('approve_resa_' ~ reservation.idReservation) }}">
+            <button type="submit" class="rc-btn rc-btn-success"
+                    onclick="return confirm('Confirmer cette réservation ?')">
+                ✅ Approuver
+            </button>
+        </form>
+    {% endif %}
+
+    <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+       class="rc-btn rc-btn-danger"
+       onclick="return confirm('Confirmer la suppression ?')">
+       Supprimer
+    </a>
+</div>
 
                 </div>
             {% endfor %}

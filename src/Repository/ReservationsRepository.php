@@ -16,10 +16,7 @@ class ReservationsRepository extends ServiceEntityRepository
         parent::__construct($registry, Reservations::class);
     }
 
-    /**
-     * Returns the most recent N reservations (for the dashboard overview).
-     * Mirrors the reservation table in DashboardServices.fxml.
-     */
+    
     public function findLatest(int $limit = 10): array
     {
         return $this->createQueryBuilder('r')
@@ -29,10 +26,7 @@ class ReservationsRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Search reservations by client name or payment method.
-     * Mirrors: handleSearch in ReservationsController (JavaFX).
-     */
+ 
     public function findBySearch(string $query): array
     {
         $q = '%' . strtolower($query) . '%';
@@ -46,10 +40,7 @@ class ReservationsRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Returns all taken seat numbers for a given service (vol).
-     * Used to build the seat map in ReservationController::buildSeatMap().
-     */
+    
     public function findTakenSeatsByService(int $serviceId): array
     {
         return $this->createQueryBuilder('r')

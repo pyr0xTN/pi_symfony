@@ -76,7 +76,7 @@ class HotelType extends AbstractType
             ])
             ->add('photo', FileType::class, [
                 'label'       => 'Photo',
-                'mapped'      => false,   // Handled manually in the controller
+                'mapped'      => false,   
                 'required'    => false,
                 'constraints' => [
                     new Assert\File([

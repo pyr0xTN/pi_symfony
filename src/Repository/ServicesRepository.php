@@ -16,10 +16,7 @@ class ServicesRepository extends ServiceEntityRepository
         parent::__construct($registry, Services::class);
     }
 
-    /**
-     * Full-text search across nom, description, localisation, villeDepart, villeArrivee.
-     * Mirrors: handleSearchAction / handleFilterAction in DashboardServicesController (JavaFX).
-     */
+  
     public function findBySearch(string $query): array
     {
         $q = '%' . strtolower($query) . '%';
@@ -36,9 +33,7 @@ class ServicesRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /**
-     * Returns only available (disponibilite = true/1) services of a given type.
-     */
+  
     public function findAvailableByType(string $type): array
     {
         return $this->createQueryBuilder('s')

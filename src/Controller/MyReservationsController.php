@@ -22,11 +22,6 @@ class MyReservationsController extends AbstractController
         private ServicesRepository     $servicesRepo,
     ) {}
 
-    // ──────────────────────────────────────────────
-    // LIST ALL RESERVATIONS
-    // Mirrors: ReservationsController (JavaFX) — card grid
-    // ──────────────────────────────────────────────
-
     #[Route('', name: 'myreservations_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
@@ -44,9 +39,6 @@ class MyReservationsController extends AbstractController
 
 
 
-    // ──────────────────────────────────────────────
-    // DELETE
-    // ──────────────────────────────────────────────
 
     #[Route('/{id}/delete', name: 'myreservation_delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, int $id): Response
@@ -56,7 +48,7 @@ class MyReservationsController extends AbstractController
             throw $this->createNotFoundException("Réservation #$id introuvable.");
         }
 
-        // Accept both GET (with confirm dialog in Twig) and POST (with CSRF)
+      
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete_resa_' . $id, $request->request->get('_token'))) {
                 $this->em->remove($reservation);
@@ -64,7 +56,7 @@ class MyReservationsController extends AbstractController
                 $this->addFlash('success', 'Réservation supprimée.');
             }
         } else {
-            // GET — simple confirmation via JS confirm() in the Twig link
+          
             $this->em->remove($reservation);
             $this->em->flush();
             $this->addFlash('success', 'Réservation supprimée.');

@@ -11,13 +11,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Form for creating a reservation.
- * Maps to: ReservationForm.fxml fields.
- *
- * The 'service_type' option controls whether the seat field is included
- * (vols only — the seat map in the Twig template is built separately).
- */
+
 class ReservationType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void

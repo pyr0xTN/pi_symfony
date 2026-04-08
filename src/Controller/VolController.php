@@ -15,10 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-/**
- * Handles all Vol (flight) CRUD operations.
- * Mirrors: addVolController + UpdateVolController + VolDetailsController (JavaFX)
- */
+
 #[Route('/vol')]
 class VolController extends AbstractController
 {
@@ -29,9 +26,7 @@ class VolController extends AbstractController
         private HttpClientInterface    $httpClient,
     ) {}
 
-    // ──────────────────────────────────────────────
-    // LIST
-    // ──────────────────────────────────────────────
+
 
     #[Route('', name: 'vol_index', methods: ['GET'])]
     public function index(): Response
@@ -42,9 +37,7 @@ class VolController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // CREATE
-    // ──────────────────────────────────────────────
+
 
     #[Route('/new', name: 'vol_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
@@ -80,24 +73,16 @@ class VolController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // SHOW / DETAILS
-    // ──────────────────────────────────────────────
 
     #[Route('/{id}', name: 'vol_show', methods: ['GET'])]
     public function show(int $id): Response
     {
         $vol = $this->findVolOrFail($id);
 
-        // Optional: fetch weather for departure & arrival cities
-        // $tempDepart  = $this->weatherService->getTemperature($vol->getVilleDepart());
-        // $tempArrivee = $this->weatherService->getTemperature($vol->getVilleArrivee());
-
+      
         return $this->render('vol/show.html.twig', [
             'active_page' => 'services',
             'vol'         => $vol,
-            // 'tempDepart'  => $tempDepart,
-            // 'tempArrivee' => $tempArrivee,
         ]);
     }
     #[Route('/details/{id}', name: 'vol_showdetails', methods: ['GET'])]
@@ -105,15 +90,12 @@ class VolController extends AbstractController
     {
         $vol = $this->findVolOrFail($id);
 
-        // Optional: fetch weather for departure & arrival cities
-        // $tempDepart  = $this->weatherService->getTemperature($vol->getVilleDepart());
-        // $tempArrivee = $this->weatherService->getTemperature($vol->getVilleArrivee());
+      
 
         return $this->render('vol/showdetails.html.twig', [
             'active_page' => 'services',
             'vol'         => $vol,
-            // 'tempDepart'  => $tempDepart,
-            // 'tempArrivee' => $tempArrivee,
+           
         ]);
     }
 
@@ -150,9 +132,7 @@ class VolController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // DELETE
-    // ──────────────────────────────────────────────
+    
 
     #[Route('/{id}/delete', name: 'vol_delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, int $id): Response
@@ -163,7 +143,6 @@ class VolController extends AbstractController
             throw $this->createNotFoundException("vol #$id introuvable.");
         }
 
-        // Accept both GET (with confirm dialog in Twig) and POST (with CSRF)
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete_vol_' . $id, $request->request->get('_token'))) {
                 $this->em->remove($vol);
@@ -172,7 +151,6 @@ class VolController extends AbstractController
             }
     
         } else {
-            // GET — simple confirmation via JS confirm() in the Twig link
             $this->em->remove($vol);
             $this->em->flush();
             $this->addFlash('success', 'vol supprimée.');
@@ -181,11 +159,7 @@ class VolController extends AbstractController
         return $this->redirectToRoute('services_index');
     }
 
-    // ──────────────────────────────────────────────
-    // AUTO-FILL FROM EXTERNAL FLIGHT API
-    // Mirrors: chercherVolAPI() in addVolController (JavaFX)
-    // Call via JS fetch from the "Auto remplissage" button
-    // ──────────────────────────────────────────────
+ 
 
     #[Route('/autofill', name: 'vol_autofill', methods: ['GET'])]
     public function autofill(Request $request): JsonResponse
@@ -225,9 +199,7 @@ class VolController extends AbstractController
         }
     }
 
-    // ──────────────────────────────────────────────
-    // PRIVATE HELPERS
-    // ──────────────────────────────────────────────
+
 
     private function findVolOrFail(int $id): Services
     {

@@ -1153,3 +1153,10 @@ input[type="date"].form-input {
     color: white;
     border-color: #d9534f;
 }
+.rc-btn-success {
+    background-color: #28a745;
+    border: 1px solid rgba(217, 83, 79, 0.3);
+}
+.rc-btn-success:hover {
+    background-color: #218838;
+}

@@ -370,7 +370,6 @@ private ?\DateTimeInterface $date_arrive = null;
         public function removeReservationss(Reservations $reservationss): static
         {
             if ($this->reservationss->removeElement($reservationss)) {
-                // set the owning side to null (unless already changed)
                 if ($reservationss->getIdService() === $this) {
                     $reservationss->setIdService(null);
                 }

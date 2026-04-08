@@ -19,9 +19,6 @@ class OurServicesController extends AbstractController
         private ServicesRepository $servicesRepo,
     ) {}
 
-    // ──────────────────────────────────────────────
-    // LIST ALL SERVICES (hotels + vols)
-    // ──────────────────────────────────────────────
 
     #[Route('', name: 'ourservices_index', methods: ['GET'])]
     public function index(Request $request): Response

@@ -13,10 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 
-/**
- * Handles all Hotel CRUD operations.
- * Mirrors: addHotelController + UpdateHotelController + HotelDetailsController (JavaFX)
- */
+
 #[Route('/hotel')]
 class HotelController extends AbstractController
 {
@@ -26,9 +23,7 @@ class HotelController extends AbstractController
         private SluggerInterface       $slugger,
     ) {}
 
-    // ──────────────────────────────────────────────
-    // LIST  (used from dashboard navigation)
-    // ──────────────────────────────────────────────
+
 
     #[Route('', name: 'hotel_index', methods: ['GET'])]
     public function index(): Response
@@ -39,9 +34,7 @@ class HotelController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // CREATE
-    // ──────────────────────────────────────────────
+   
 
     #[Route('/new', name: 'hotel_new', methods: ['GET', 'POST'])]
     public function new(Request $request): Response
@@ -80,22 +73,16 @@ class HotelController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // SHOW / DETAILS
-    // ──────────────────────────────────────────────
 
     #[Route('/{id}', name: 'hotel_show', methods: ['GET'])]
     public function show(int $id): Response
     {
         $hotel = $this->findHotelOrFail($id);
 
-        // Optional: fetch live weather for the hotel's city
-        // $weather = $this->weatherService->getTemperature($hotel->getLocalisation());
-
         return $this->render('hotel/show.html.twig', [
             'active_page' => 'services',
             'hotel'       => $hotel,
-            // 'weather'  => $weather,
+           
         ]);
     }
     
@@ -104,20 +91,12 @@ class HotelController extends AbstractController
     {
         $hotel = $this->findHotelOrFail($id);
 
-        // Optional: fetch live weather for the hotel's city
-        // $weather = $this->weatherService->getTemperature($hotel->getLocalisation());
-
         return $this->render('hotel/showdetails.html.twig', [
             'active_page' => 'services',
             'hotel'       => $hotel,
-            // 'weather'  => $weather,
+            
         ]);
     }
-
-
-    // ──────────────────────────────────────────────
-    // EDIT / UPDATE
-    // ──────────────────────────────────────────────
 
     #[Route('/{id}/edit', name: 'hotel_edit', methods: ['GET', 'POST'])]
     public function edit(Request $request, int $id): Response
@@ -158,8 +137,6 @@ class HotelController extends AbstractController
         if (!$hotel) {
             throw $this->createNotFoundException("vol #$id introuvable.");
         }
-
-        // Accept both GET (with confirm dialog in Twig) and POST (with CSRF)
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete_hotel_' . $id, $request->request->get('_token'))) {
                 $this->em->remove($hotel);
@@ -168,7 +145,6 @@ class HotelController extends AbstractController
             }
     
         } else {
-            // GET — simple confirmation via JS confirm() in the Twig link
             $this->em->remove($hotel);
             $this->em->flush();
             $this->addFlash('success', 'hotel supprimée.');
@@ -179,11 +155,6 @@ class HotelController extends AbstractController
 
    
 
-    // ──────────────────────────────────────────────
-    // PRIVATE HELPERS
-    // ──────────────────────────────────────────────
-
-    /** Finds a Services entity of type 'hotel', throws 404 otherwise. */
     private function findHotelOrFail(int $id): Services
     {
         $hotel = $this->servicesRepo->findOneBy(['idService' => $id, 'type' => 'hotel']);
@@ -193,10 +164,6 @@ class HotelController extends AbstractController
         return $hotel;
     }
 
-    /**
-     * Moves an uploaded file to public/uploads/{subfolder}/ and returns the filename.
-     * Mirrors: choisirPhoto() in JavaFX controllers.
-     */
     private function uploadPhoto(\Symfony\Component\HttpFoundation\File\UploadedFile $file, string $subfolder): string
     {
         $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);

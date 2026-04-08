@@ -17,17 +17,13 @@ class DashboardController extends AbstractController
         private ReservationsRepository  $reservationsRepo,
     ) {}
 
-    /**
-     * Main dashboard overview — shows stats + service list + reservation list.
-     * Mirrors: DashboardServicesController (JavaFX)
-     */
+    
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function index(Request $request): Response
     {
         $filter = $request->query->get('filter', '');
         $search = $request->query->get('q', '');
 
-        // Fetch services, optionally filtered by type (hotel / vol)
         if ($filter) {
             $services = $this->servicesRepo->findBy(['type' => $filter]);
         } elseif ($search) {
