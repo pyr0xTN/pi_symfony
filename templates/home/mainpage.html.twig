@@ -1035,6 +1035,9 @@
                         if (view === 'shop') {
                             initializeShopModule();
                         }
+                        if (view === 'messenger') {
+                            initializeMessengerModule();
+                        }
                     },
                     error: function() {
                         console.error('Failed to load content');
@@ -1265,6 +1268,119 @@
                     $mapHint.text(mapHintNoToken);
                 }
             }
+
+            let messengerPoller = null;
+            let currentConversationId = null;
+
+            function initializeMessengerModule() {
+                const messagesArea = document.getElementById('messagesArea');
+                const messageInput = document.getElementById('messageInput');
+                const sendMessageBtn = document.getElementById('sendMessageBtn');
+                const inputStatus = document.getElementById('inputStatus');
+                const conversationViewContent = document.getElementById('conversationViewContent');
+                const noConversationView = document.getElementById('noConversationView');
+                const selectedConvName = document.getElementById('selectedConvName');
+                const selectedConvStatus = document.getElementById('selectedConvStatus');
+
+                if (!messagesArea) return;
+
+                function escapeHtml(val) {
+                    const div = document.createElement('div');
+                    div.textContent = val;
+                    return div.innerHTML;
+                }
+
+                function loadMessages() {
+                    if (!currentConversationId) return;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_messages') }}',
+                        type: 'GET',
+                        success: function(response) {
+                            if (!Array.isArray(response.messages) || response.messages.length === 0) {
+                                messagesArea.innerHTML = '<div class="messages-empty">Aucun message. Commencez la conversation!</div>';
+                                return;
+                            }
+
+                            const html = response.messages.map(function(msg) {
+                                const groupClass = msg.isMine ? 'sent' : 'received';
+                                const bubbleClass = msg.isMine ? 'sent' : 'received';
+                                const senderLabel = msg.isMine ? 'Vous' : escapeHtml(msg.senderName || 'Support');
+                                const timestamp = escapeHtml(msg.timestamp || '');
+                                const content = escapeHtml(msg.message || '');
+
+                                return `
+                                    <div class="message-group ${groupClass}">
+                                        <div class="message-bubble ${bubbleClass}">${content}</div>
+                                        <div class="message-time">${timestamp}</div>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            messagesArea.innerHTML = html;
+                            messagesArea.scrollTop = messagesArea.scrollHeight;
+                        }
+                    });
+                }
+
+                function sendMessage() {
+                    const text = (messageInput.value || '').trim();
+                    if (!text) {
+                        return;
+                    }
+
+                    inputStatus.textContent = '';
+                    messageInput.disabled = true;
+                    sendMessageBtn.disabled = true;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_send') }}',
+                        type: 'POST',
+                        data: { message: text },
+                        success: function() {
+                            messageInput.value = '';
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            loadMessages();
+                            messageInput.focus();
+                        },
+                        error: function(xhr) {
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                            inputStatus.textContent = payload && payload.error ? payload.error : 'Erreur lors de l\'envoi.';
+                        }
+                    });
+                }
+
+                if (sendMessageBtn) {
+                    sendMessageBtn.addEventListener('click', sendMessage);
+                }
+
+                if (messageInput) {
+                    messageInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    });
+                }
+
+                // Afficher la conversation et charger les messages
+                if (conversationViewContent && noConversationView) {
+                    conversationViewContent.style.display = 'flex';
+                    noConversationView.style.display = 'none';
+                    currentConversationId = 1;
+                    selectedConvName.textContent = 'Support Admin';
+                    selectedConvStatus.textContent = 'En ligne';
+                    loadMessages();
+                }
+
+                if (messengerPoller) {
+                    clearInterval(messengerPoller);
+                }
+                messengerPoller = setInterval(loadMessages, 8000);
+            }
             
             // Refresh unread badge periodically
             function refreshBadge() {
@@ -1423,7 +1539,7 @@
                 } else if (action === 'my-orders') {
                     window.location.href = '{{ path('app_my_orders') }}';
                 } else if (action === 'offers-grid') {
-                    window.location.href = '{{ path('app_offer_index') }}';
+                    window.location.href = '{{ path('app_offers_grid') }}';
                 }
             });
 
@@ -1534,9 +1650,10 @@
                 <button class="nav-tab" data-view="activities">🏞 {{ 'main.tab.activities'|trans }}</button>
                 <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
                 <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
-<button class="nav-tab" type="button" onclick="window.location.href='{{ path('app_offer_index') }}'">
-    🔖 {{ 'main.tab.offers'|trans }}
-</button>                {% if is_granted('ROLE_ADMIN') %}
+                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
+                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+                <button class="nav-tab" data-view="post">✉️ Posts</button>
+                {% if is_granted('ROLE_ADMIN') %}
                     <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
                 {% endif %}
             </div>
@@ -1569,7 +1686,7 @@
                         <div class="feature-title">{{ 'main.feature.chat.title'|trans }}</div>
                         <div class="feature-text">{{ 'main.feature.chat.text'|trans }}</div>
                     </a>
-                    <a href="{{ path('app_post') }}" class="feature-card">
+                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('post'); return false;">
                         <div class="feature-icon">✉️</div>
                         <div class="feature-title">{{ 'main.feature.post.title'|trans }}</div>
                         <div class="feature-text">{{ 'main.feature.post.text'|trans }}</div>
