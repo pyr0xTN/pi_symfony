@@ -45,6 +45,10 @@ class LoginFormAuthenticator extends AbstractLoginFormAuthenticator
             throw new CustomUserMessageAuthenticationException('Email does not exist.');
         }
 
+        if ($user->isBlocked()) {
+            throw new CustomUserMessageAuthenticationException('Your account has been blocked by an administrator.');
+        }
+
         if (!$this->passwordHasher->isPasswordValid($user, $password)) {
             throw new CustomUserMessageAuthenticationException('Incorrect password.');
         }

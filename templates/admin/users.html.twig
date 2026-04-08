@@ -161,6 +161,13 @@
                                     <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="action-btn edit-btn" title="Edit user">
                                         <span aria-hidden="true">✎</span>
                                     </a>
+                                    <form method="post" action="{{ path('app_user_toggle_block', {'id': user.id}) }}" style="margin:0;" data-block-toggle-form="true">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('toggle-block-' ~ user.id) }}">
+                                        {% set blocked = (user.is_blocked|default(0)) == 1 %}
+                                        <button type="submit" class="action-btn block-btn{{ blocked ? ' blocked' : '' }}" title="{{ blocked ? 'Unblock user' : 'Block user' }}" aria-label="{{ blocked ? 'Unblock user' : 'Block user' }}">
+                                            <span aria-hidden="true" data-block-toggle-icon="true">{{ blocked ? '🔓' : '⛔' }}</span>
+                                        </button>
+                                    </form>
                                     <form method="post" action="{{ path('app_user_delete', {'id': user.id}) }}" style="margin:0;" onsubmit="return confirm('Delete user {{ user.username }}?');">
                                         <input type="hidden" name="_token" value="{{ csrf_token('delete-user-' ~ user.id) }}">
                                         <button type="submit" class="action-btn delete-btn" title="Delete user">
@@ -335,6 +342,14 @@
             background: #132431;
             border-color: #2a3b51;
             color: #66d8d5;
+        }
+
+        body.dark-mode .block-btn {
+            background: #cc7e2c;
+        }
+
+        body.dark-mode .block-btn.blocked {
+            background: #2e7d32;
         }
 
         .add-user-btn {
@@ -713,6 +728,26 @@
             background: #ff6b6b;
         }
 
+        .block-btn {
+            background: #ff9f43;
+        }
+
+        .block-btn:hover {
+            background: #ff8c1f;
+            box-shadow: 0 4px 12px rgba(255, 159, 67, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .block-btn.blocked {
+            background: #4caf50;
+        }
+
+        .block-btn.blocked:hover {
+            background: #43a047;
+            box-shadow: 0 4px 12px rgba(67, 160, 71, 0.35);
+            transform: translateY(-2px);
+        }
+
         .delete-btn:hover {
             background: #ff5252;
             box-shadow: 0 4px 12px rgba(255, 107, 107, 0.25);
@@ -910,6 +945,69 @@
                         releasePageLock();
                     });
                 }
+
+                const blockToggleForms = Array.from(document.querySelectorAll('form[data-block-toggle-form="true"]'));
+                blockToggleForms.forEach(function (form) {
+                    if (form.dataset.blockToggleBound === '1') {
+                        return;
+                    }
+
+                    form.dataset.blockToggleBound = '1';
+
+                    form.addEventListener('submit', function (event) {
+                        event.preventDefault();
+
+                        const submitButton = form.querySelector('button[type="submit"]');
+                        const icon = form.querySelector('[data-block-toggle-icon="true"]');
+
+                        if (submitButton) {
+                            submitButton.disabled = true;
+                        }
+
+                        releasePageLock();
+
+                        fetch(form.action, {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            body: new FormData(form)
+                        })
+                            .then(function (response) {
+                                return response.json().then(function (payload) {
+                                    return { ok: response.ok, payload: payload };
+                                });
+                            })
+                            .then(function (result) {
+                                const payload = result.payload || {};
+
+                                if (!result.ok || !payload.success) {
+                                    return;
+                                }
+
+                                const blocked = !!payload.blocked;
+                                if (submitButton) {
+                                    submitButton.classList.toggle('blocked', blocked);
+                                    submitButton.title = blocked ? 'Unblock user' : 'Block user';
+                                    submitButton.setAttribute('aria-label', blocked ? 'Unblock user' : 'Block user');
+                                }
+
+                                if (icon) {
+                                    icon.textContent = blocked ? '🔓' : '⛔';
+                                }
+                            })
+                            .catch(function () {
+                                // Leave the existing state in place if the request fails.
+                            })
+                            .finally(function () {
+                                if (submitButton) {
+                                    submitButton.disabled = false;
+                                }
+                            });
+                    });
+                });
 
                 modal.addEventListener('click', function (event) {
                     const target = event.target;

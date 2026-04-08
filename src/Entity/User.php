@@ -47,6 +47,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 20, nullable: true)]
     private ?string $status = null;
 
+    #[ORM\Column(name: 'block', type: 'boolean', nullable: true, options: ['default' => 0])]
+    private ?bool $block = false;
+
     #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => 0])]
     private ?bool $two_factor_enabled = false;
 
@@ -276,6 +279,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setStatus(?string $status): static
     {
         $this->status = $status;
+        return $this;
+    }
+
+    public function isBlocked(): bool
+    {
+        return (bool) ($this->block ?? false);
+    }
+
+    public function setBlocked(?bool $blocked): static
+    {
+        $this->block = $blocked;
         return $this;
     }
 

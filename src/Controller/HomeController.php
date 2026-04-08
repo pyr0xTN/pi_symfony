@@ -1334,8 +1334,8 @@ class HomeController extends AbstractController
                 $hashedPassword = $passwordHasher->hashPassword($userEntity, $password);
 
                 $connection->executeStatement(
-                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled, `block`)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         $email,
                         $role,
@@ -1345,6 +1345,7 @@ class HomeController extends AbstractController
                         (new \DateTimeImmutable())->format('Y-m-d'),
                         $username,
                         'offline',
+                        0,
                         0,
                     ],
                     [
@@ -1356,6 +1357,7 @@ class HomeController extends AbstractController
                         ParameterType::STRING,
                         ParameterType::STRING,
                         ParameterType::STRING,
+                        ParameterType::INTEGER,
                         ParameterType::INTEGER,
                     ]
                 );
@@ -1398,7 +1400,7 @@ class HomeController extends AbstractController
         $adminImageUrl = $this->getCurrentUserProfileImageUrl($connection);
 
         $allUsers = $connection->executeQuery(
-            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, p.image
+            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, u.`block` AS is_blocked, p.image
              FROM `user` u
              LEFT JOIN (
                  SELECT p1.*
@@ -1426,6 +1428,65 @@ class HomeController extends AbstractController
             'limit' => $limit,
             'totalPages' => ceil($totalUsers / $limit),
         ]);
+    }
+
+    #[Route('/users/{id}/toggle-block', name: 'app_user_toggle_block', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function toggleUserBlock(int $id, Request $request, Connection $connection): Response
+    {
+        if (!$this->isCsrfTokenValid('toggle-block-' . $id, (string) $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Invalid block toggle request token.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'Invalid block toggle request token.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User && (int) $currentUser->getId() === $id) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'You cannot block your own account while logged in.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'You cannot block your own account while logged in.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $exists = $connection->fetchOne('SELECT id FROM `user` WHERE id = ?', [$id], [ParameterType::INTEGER]);
+        if ($exists === false) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'User not found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->addFlash('error', 'User not found.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentBlockState = (int) $connection->fetchOne(
+            'SELECT COALESCE(`block`, 0) FROM `user` WHERE id = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        $nextState = $currentBlockState === 1 ? 0 : 1;
+        $connection->executeStatement(
+            'UPDATE `user` SET `block` = ? WHERE id = ?',
+            [$nextState, $id],
+            [ParameterType::INTEGER, ParameterType::INTEGER]
+        );
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'blocked' => $nextState === 1,
+                'message' => $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.',
+            ]);
+        }
+
+        $this->addFlash('success', $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.');
+
+        return $this->redirectToRoute('app_users');
     }
 
     #[Route('/users/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
