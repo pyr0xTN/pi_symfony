@@ -359,6 +359,26 @@
             text-decoration: none;
         }
 
+        .activities-filter-guide {
+            cursor: pointer;
+        }
+
+        .activities-filter-guide svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+        }
+
+        .activities-filter-guide.active {
+            background: rgba(255, 255, 255, 0.28);
+            border-color: rgba(255, 255, 255, 0.65);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
+        .activities-add-new {
+            cursor: pointer;
+        }
+
         .activities-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -468,6 +488,10 @@
             flex-direction: row;
             align-items: flex-end;
             gap: 8px;
+        }
+
+        .activity-delete-form {
+            margin: 0;
         }
 
         .activity-view {
@@ -689,6 +713,230 @@
             color: #5d7590;
         }
 
+        .activity-edit-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 16, 30, 0.58);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 2600;
+        }
+
+        .activity-edit-overlay.show {
+            display: flex;
+        }
+
+        .activity-edit-modal {
+            width: min(720px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 253, 0.98));
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.26);
+            border: 1px solid rgba(137, 156, 174, 0.24);
+        }
+
+        .activity-edit-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(137, 156, 174, 0.16);
+        }
+
+        .activity-edit-title {
+            margin: 0;
+            font-size: 24px;
+            color: #134563;
+            font-weight: 800;
+        }
+
+        .activity-edit-form {
+            padding: 20px 22px 24px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .activity-edit-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .activity-edit-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .activity-edit-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #6a8198;
+            font-weight: 800;
+        }
+
+        .activity-edit-input,
+        .activity-edit-textarea,
+        .activity-edit-select {
+            border: 1px solid rgba(126, 152, 178, 0.35);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font: inherit;
+            color: #174a78;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .activity-edit-textarea {
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        .activity-edit-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .activity-edit-cancel,
+        .activity-edit-submit {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .activity-edit-cancel {
+            background: rgba(13, 94, 138, 0.12);
+            color: #0d5e8a;
+        }
+
+        .activity-edit-submit {
+            color: #fff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
+        .activity-create-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 16, 30, 0.58);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 2650;
+        }
+
+        .activity-create-overlay.show {
+            display: flex;
+        }
+
+        .activity-create-modal {
+            width: min(720px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 24px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 253, 0.98));
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.26);
+            border: 1px solid rgba(137, 156, 174, 0.24);
+        }
+
+        .activity-create-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(137, 156, 174, 0.16);
+        }
+
+        .activity-create-title {
+            margin: 0;
+            font-size: 24px;
+            color: #134563;
+            font-weight: 800;
+        }
+
+        .activity-create-form {
+            padding: 20px 22px 24px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .activity-create-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .activity-create-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .activity-create-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #6a8198;
+            font-weight: 800;
+        }
+
+        .activity-create-input,
+        .activity-create-textarea,
+        .activity-create-select {
+            border: 1px solid rgba(126, 152, 178, 0.35);
+            border-radius: 12px;
+            padding: 10px 12px;
+            font: inherit;
+            color: #174a78;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .activity-create-textarea {
+            min-height: 92px;
+            resize: vertical;
+        }
+
+        .activity-create-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .activity-create-cancel,
+        .activity-create-submit {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+        }
+
+        .activity-create-cancel {
+            background: rgba(13, 94, 138, 0.12);
+            color: #0d5e8a;
+        }
+
+        .activity-create-submit {
+            color: #fff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
         .activities-badge {
             display: inline-flex;
             align-items: center;
@@ -840,6 +1088,44 @@
             border-color: rgba(255, 255, 255, 0.08);
         }
 
+        body.dark-mode .activity-edit-modal {
+            background: linear-gradient(180deg, rgba(21, 28, 41, 0.98), rgba(18, 24, 34, 0.98));
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-edit-title,
+        body.dark-mode .activity-edit-input,
+        body.dark-mode .activity-edit-textarea,
+        body.dark-mode .activity-edit-select {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .activity-edit-input,
+        body.dark-mode .activity-edit-textarea,
+        body.dark-mode .activity-edit-select {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-create-modal {
+            background: linear-gradient(180deg, rgba(21, 28, 41, 0.98), rgba(18, 24, 34, 0.98));
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-create-title,
+        body.dark-mode .activity-create-input,
+        body.dark-mode .activity-create-textarea,
+        body.dark-mode .activity-create-select {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .activity-create-input,
+        body.dark-mode .activity-create-textarea,
+        body.dark-mode .activity-create-select {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
         body.dark-mode .activity-modal-label {
             color: #8db4d7;
         }
@@ -850,6 +1136,14 @@
             }
 
             .activity-modal-body {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-edit-form {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-create-form {
                 grid-template-columns: 1fr;
             }
         }
@@ -863,6 +1157,20 @@
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
             if (activityModalOverlay) {
                 activityModalOverlay.classList.remove('show');
+            }
+        };
+
+        window.closeActivityEditModal = function () {
+            var editModalOverlay = document.querySelector('.activity-edit-overlay');
+            if (editModalOverlay) {
+                editModalOverlay.classList.remove('show');
+            }
+        };
+
+        window.closeActivityCreateModal = function () {
+            var createModalOverlay = document.querySelector('.activity-create-overlay');
+            if (createModalOverlay) {
+                createModalOverlay.classList.remove('show');
             }
         };
 
@@ -935,12 +1243,63 @@
             activityModalOverlay.classList.add('show');
         };
 
+        window.openActivityEditModal = function (button) {
+            if (!button) {
+                return;
+            }
+
+            var editModalOverlay = document.querySelector('.activity-edit-overlay');
+            var editForm = document.querySelector('.js-activity-edit-form');
+            if (!editModalOverlay || !editForm) {
+                return;
+            }
+
+            editForm.action = button.dataset.editUrl || '';
+
+            var fieldMap = {
+                title: '.js-edit-title',
+                description: '.js-edit-description',
+                location: '.js-edit-location',
+                category: '.js-edit-category',
+                status: '.js-edit-status',
+                dateInput: '.js-edit-date',
+                duration: '.js-edit-duration',
+                price: '.js-edit-price',
+                places: '.js-edit-places',
+                token: '.js-edit-token'
+            };
+
+            Object.keys(fieldMap).forEach(function (key) {
+                var field = document.querySelector(fieldMap[key]);
+                if (field) {
+                    field.value = button.dataset[key] || '';
+                }
+            });
+
+            editModalOverlay.classList.add('show');
+        };
+
+        window.openActivityCreateModal = function () {
+            var createModalOverlay = document.querySelector('.activity-create-overlay');
+            var createForm = document.querySelector('.js-activity-create-form');
+            if (!createModalOverlay || !createForm) {
+                return;
+            }
+
+            createForm.reset();
+            createModalOverlay.classList.add('show');
+        };
+
         document.addEventListener('DOMContentLoaded', function () {
             var menuToggle = document.querySelector('.menu-toggle');
             var sideMenu = document.querySelector('.side-menu');
             var overlay = document.querySelector('.menu-overlay');
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
             var activityModalClose = document.querySelector('.activity-modal-close');
+            var editModalOverlay = document.querySelector('.activity-edit-overlay');
+            var editModalClose = document.querySelector('.activity-edit-close');
+            var createModalOverlay = document.querySelector('.activity-create-overlay');
+            var createModalClose = document.querySelector('.activity-create-close');
 
             function closeMenu() {
                 if (sideMenu) {
@@ -972,6 +1331,30 @@
                 });
             }
 
+            if (editModalClose) {
+                editModalClose.addEventListener('click', closeActivityEditModal);
+            }
+
+            if (editModalOverlay) {
+                editModalOverlay.addEventListener('click', function (event) {
+                    if (event.target === editModalOverlay) {
+                        closeActivityEditModal();
+                    }
+                });
+            }
+
+            if (createModalClose) {
+                createModalClose.addEventListener('click', closeActivityCreateModal);
+            }
+
+            if (createModalOverlay) {
+                createModalOverlay.addEventListener('click', function (event) {
+                    if (event.target === createModalOverlay) {
+                        closeActivityCreateModal();
+                    }
+                });
+            }
+
             document.querySelectorAll('.js-open-activity-modal').forEach(function (button) {
                 button.addEventListener('click', function (event) {
                     event.preventDefault();
@@ -982,8 +1365,60 @@
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closeActivityModal();
+                    closeActivityEditModal();
+                    closeActivityCreateModal();
                 }
             });
+
+            document.querySelectorAll('.js-open-activity-edit').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openActivityEditModal(button);
+                });
+            });
+
+            var addNewButton = document.querySelector('.js-open-activity-create');
+            if (addNewButton) {
+                addNewButton.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openActivityCreateModal();
+                });
+            }
+
+            var guideFilterToggle = document.querySelector('.js-guide-activities-toggle');
+            var activitiesEmptyFilter = document.querySelector('.js-activities-empty-filter');
+            var activityCards = Array.prototype.slice.call(document.querySelectorAll('.activity-card'));
+
+            function applyGuideActivitiesFilter(isActive) {
+                var visibleCards = 0;
+
+                activityCards.forEach(function (card) {
+                    var isMine = card.getAttribute('data-is-my-activity') === '1';
+                    var shouldHide = isActive && !isMine;
+                    card.style.display = shouldHide ? 'none' : '';
+                    if (!shouldHide) {
+                        visibleCards += 1;
+                    }
+                });
+
+                if (activitiesEmptyFilter) {
+                    activitiesEmptyFilter.style.display = isActive && visibleCards === 0 ? 'block' : 'none';
+                }
+
+                if (guideFilterToggle) {
+                    guideFilterToggle.classList.toggle('active', isActive);
+                    guideFilterToggle.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+                    guideFilterToggle.setAttribute('data-filter-active', isActive ? '1' : '0');
+                    guideFilterToggle.setAttribute('title', isActive ? 'Show all activities' : 'Show only my activities');
+                }
+            }
+
+            if (guideFilterToggle) {
+                guideFilterToggle.addEventListener('click', function () {
+                    var nextState = guideFilterToggle.getAttribute('data-filter-active') !== '1';
+                    applyGuideActivitiesFilter(nextState);
+                });
+            }
 
             document.querySelectorAll('.side-menu-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -1094,6 +1529,29 @@
                         </div>
                         <div class="activities-head-actions">
                             <span class="activities-pill">{{ activities|length }} total</span>
+                            {% if is_granted('ROLE_GUIDE') %}
+                                <button
+                                    type="button"
+                                    class="activities-pill activities-filter-guide js-guide-activities-toggle"
+                                    data-filter-active="0"
+                                    aria-pressed="false"
+                                    title="Show only my activities"
+                                >
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 5h18"></path>
+                                        <path d="M6 12h12"></path>
+                                        <path d="M10 19h4"></path>
+                                    </svg>
+                                    <span>My activities</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="activities-pill activities-add-new js-open-activity-create"
+                                    title="Add a new activity"
+                                >
+                                    <span>+ Add new</span>
+                                </button>
+                            {% endif %}
                             <a class="activities-pill" href="{{ path('app_mainpage') }}">Back to main</a>
                         </div>
                     </div>
@@ -1102,7 +1560,7 @@
                         {% for activity in activities %}
                             {% set status = activity.statut|default('')|lower %}
                             {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
-                            <article class="activity-card">
+                            <article class="activity-card" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}">
                                 {% if isMyActivity %}
                                     <div class="activity-owner-badge">My activity</div>
                                 {% endif %}
@@ -1126,14 +1584,29 @@
                                             {% if isMyActivity %}
                                                 <button
                                                     type="button"
-                                                    class="activity-edit"
-                                                    onclick="window.alert('Edit activity is not wired yet.'); return false;"
+                                                    class="activity-edit js-open-activity-edit"
+                                                    onclick="window.openActivityEditModal(this); return false;"
+                                                    data-title="{{ activity.titre|e('html_attr') }}"
+                                                    data-description="{{ activity.description|e('html_attr') }}"
+                                                    data-location="{{ activity.lieu|e('html_attr') }}"
+                                                    data-category="{{ activity.categorie|default('')|e('html_attr') }}"
+                                                    data-status="{{ activity.statut|default('Actif')|e('html_attr') }}"
+                                                    data-date-input="{{ activity.dateActivite ? activity.dateActivite|date('Y-m-d\\TH:i') : '' }}"
+                                                    data-duration="{{ activity.dureParJour|default(0) }}"
+                                                    data-price="{{ activity.prix|default(0) }}"
+                                                    data-places="{{ activity.placesDisponibles|default(0) }}"
+                                                    data-edit-url="{{ path('app_activities_edit', { id: activity.idActivite }) }}"
+                                                    data-token="{{ csrf_token('edit_activity_' ~ activity.idActivite) }}"
                                                 >Edit</button>
-                                                <button
-                                                    type="button"
-                                                    class="activity-delete"
-                                                    onclick="if (window.confirm('Delete this activity?')) { window.alert('Delete activity is not wired yet.'); } return false;"
-                                                >Delete</button>
+                                                <form
+                                                    method="post"
+                                                    action="{{ path('app_activities_delete', { id: activity.idActivite }) }}"
+                                                    class="activity-delete-form"
+                                                    onsubmit="return window.confirm('Delete this activity?');"
+                                                >
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_activity_' ~ activity.idActivite) }}">
+                                                    <button type="submit" class="activity-delete">Delete</button>
+                                                </form>
                                             {% else %}
                                                 <button
                                                     type="button"
@@ -1161,6 +1634,7 @@
                             <div class="activities-empty">No activities found in the database.</div>
                         {% endfor %}
                     </div>
+                    <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities created by you yet.</div>
                 </div>
             </div>
         </div>
@@ -1223,6 +1697,143 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="activity-edit-overlay">
+        <div class="activity-edit-modal" role="dialog" aria-modal="true" aria-labelledby="activityEditTitle">
+            <div class="activity-edit-head">
+                <h3 class="activity-edit-title" id="activityEditTitle">Edit Activity</h3>
+                <button type="button" class="activity-modal-close activity-edit-close" aria-label="Close" onclick="window.closeActivityEditModal(); return false;">&times;</button>
+            </div>
+
+            <form method="post" class="activity-edit-form js-activity-edit-form" action="{{ path('app_activities') }}">
+                <input type="hidden" name="_token" class="js-edit-token" value="">
+
+                <div class="activity-edit-field full">
+                    <label class="activity-edit-label" for="edit-title">Title</label>
+                    <input class="activity-edit-input js-edit-title" id="edit-title" type="text" name="title" required>
+                </div>
+
+                <div class="activity-edit-field full">
+                    <label class="activity-edit-label" for="edit-description">Description</label>
+                    <textarea class="activity-edit-textarea js-edit-description" id="edit-description" name="description" required></textarea>
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-location">Location</label>
+                    <input class="activity-edit-input js-edit-location" id="edit-location" type="text" name="location" required>
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-category">Category</label>
+                    <input class="activity-edit-input js-edit-category" id="edit-category" type="text" name="category">
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-date">Date</label>
+                    <input class="activity-edit-input js-edit-date" id="edit-date" type="datetime-local" name="date" required>
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-duration">Duration (hours)</label>
+                    <input class="activity-edit-input js-edit-duration" id="edit-duration" type="number" min="0" name="duration" required>
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-price">Price</label>
+                    <input class="activity-edit-input js-edit-price" id="edit-price" type="number" min="0" name="price" required>
+                </div>
+
+                <div class="activity-edit-field">
+                    <label class="activity-edit-label" for="edit-places">Places</label>
+                    <input class="activity-edit-input js-edit-places" id="edit-places" type="number" min="0" name="places" required>
+                </div>
+
+                <div class="activity-edit-field full">
+                    <label class="activity-edit-label" for="edit-status">Status</label>
+                    <select class="activity-edit-select js-edit-status" id="edit-status" name="status">
+                        <option value="Actif">Actif</option>
+                        <option value="Inactif">Inactif</option>
+                    </select>
+                </div>
+
+                <div class="activity-edit-actions">
+                    <button type="button" class="activity-edit-cancel" onclick="window.closeActivityEditModal(); return false;">Cancel</button>
+                    <button type="submit" class="activity-edit-submit">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="activity-create-overlay">
+        <div class="activity-create-modal" role="dialog" aria-modal="true" aria-labelledby="activityCreateTitle">
+            <div class="activity-create-head">
+                <h3 class="activity-create-title" id="activityCreateTitle">Add New Activity</h3>
+                <button type="button" class="activity-modal-close activity-create-close" aria-label="Close" onclick="window.closeActivityCreateModal(); return false;">&times;</button>
+            </div>
+
+            <form method="post" class="activity-create-form js-activity-create-form" action="{{ path('app_activities_new') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('new_activity') }}">
+
+                <div class="activity-create-field full">
+                    <label class="activity-create-label" for="create-title">Title</label>
+                    <input class="activity-create-input" id="create-title" type="text" name="title" required>
+                </div>
+
+                <div class="activity-create-field full">
+                    <label class="activity-create-label" for="create-description">Description</label>
+                    <textarea class="activity-create-textarea" id="create-description" name="description" required></textarea>
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-location">Location</label>
+                    <input class="activity-create-input" id="create-location" type="text" name="location" required>
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-category">Category</label>
+                    <input class="activity-create-input" id="create-category" type="text" name="category">
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-date">Date</label>
+                    <input class="activity-create-input" id="create-date" type="datetime-local" name="date" required>
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-duration">Duration (hours)</label>
+                    <input class="activity-create-input" id="create-duration" type="number" min="0" name="duration" required>
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-price">Price</label>
+                    <input class="activity-create-input" id="create-price" type="number" min="0" name="price" required>
+                </div>
+
+                <div class="activity-create-field">
+                    <label class="activity-create-label" for="create-places">Places</label>
+                    <input class="activity-create-input" id="create-places" type="number" min="0" name="places" required>
+                </div>
+
+                <div class="activity-create-field full">
+                    <label class="activity-create-label" for="create-image">Image path or URL</label>
+                    <input class="activity-create-input" id="create-image" type="text" name="image" placeholder="uploads/images/my-activity.jpg">
+                </div>
+
+                <div class="activity-create-field full">
+                    <label class="activity-create-label" for="create-status">Status</label>
+                    <select class="activity-create-select" id="create-status" name="status">
+                        <option value="Actif">Actif</option>
+                        <option value="Inactif">Inactif</option>
+                    </select>
+                </div>
+
+                <div class="activity-create-actions">
+                    <button type="button" class="activity-create-cancel" onclick="window.closeActivityCreateModal(); return false;">Cancel</button>
+                    <button type="submit" class="activity-create-submit">Create activity</button>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock %}

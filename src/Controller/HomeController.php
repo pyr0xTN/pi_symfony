@@ -67,6 +67,225 @@ class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/activities/new', name: 'app_activities_new', methods: ['POST'])]
+    #[IsGranted('ROLE_GUIDE')]
+    public function createActivity(Request $request, Connection $connection): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('new_activity', (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid create request.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $title = trim((string) $request->request->get('title', ''));
+        $description = trim((string) $request->request->get('description', ''));
+        $location = trim((string) $request->request->get('location', ''));
+        $category = trim((string) $request->request->get('category', ''));
+        $status = trim((string) $request->request->get('status', 'Actif'));
+        $dateInput = trim((string) $request->request->get('date', ''));
+        $duration = (int) $request->request->get('duration', 0);
+        $price = (int) $request->request->get('price', 0);
+        $places = (int) $request->request->get('places', 0);
+        $image = trim((string) $request->request->get('image', ''));
+
+        if ($title === '' || $description === '' || $location === '') {
+            $this->addFlash('error', 'Title, description and location are required.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $dateInput);
+        if (!$date) {
+            $this->addFlash('error', 'Invalid activity date format.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        if ($duration < 0 || $price < 0 || $places < 0) {
+            $this->addFlash('error', 'Duration, price and places must be positive values.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $allowedStatuses = ['Actif', 'Inactif'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = 'Actif';
+        }
+
+        $connection->executeStatement(
+            'INSERT INTO activite (titre, description, lieu, dateActivite, dureParJour, prix, idGuide, image, statut, placesDisponibles, categorie)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+                $title,
+                $description,
+                $location,
+                $date->format('Y-m-d H:i:s'),
+                $duration,
+                $price,
+                (int) $user->getId(),
+                $image !== '' ? $image : null,
+                $status,
+                $places,
+                $category,
+            ],
+            [
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+            ]
+        );
+
+        $this->addFlash('success', 'Activity created successfully.');
+        return $this->redirectToRoute('app_activities');
+    }
+
+    #[Route('/activities/{id}/edit', name: 'app_activities_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_GUIDE')]
+    public function editActivity(int $id, Request $request, Connection $connection): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('edit_activity_' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid edit request.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $ownerId = $connection->fetchOne(
+            'SELECT idGuide FROM activite WHERE idActivite = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        if ($ownerId === false) {
+            $this->addFlash('error', 'Activity not found.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        if ((int) $ownerId !== (int) $user->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $title = trim((string) $request->request->get('title', ''));
+        $description = trim((string) $request->request->get('description', ''));
+        $location = trim((string) $request->request->get('location', ''));
+        $category = trim((string) $request->request->get('category', ''));
+        $status = trim((string) $request->request->get('status', 'Actif'));
+        $dateInput = trim((string) $request->request->get('date', ''));
+        $duration = (int) $request->request->get('duration', 0);
+        $price = (int) $request->request->get('price', 0);
+        $places = (int) $request->request->get('places', 0);
+
+        if ($title === '' || $description === '' || $location === '') {
+            $this->addFlash('error', 'Title, description and location are required.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d\TH:i', $dateInput);
+        if (!$date) {
+            $this->addFlash('error', 'Invalid activity date format.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        if ($duration < 0 || $price < 0 || $places < 0) {
+            $this->addFlash('error', 'Duration, price and places must be positive values.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $allowedStatuses = ['Actif', 'Inactif'];
+        if (!in_array($status, $allowedStatuses, true)) {
+            $status = 'Actif';
+        }
+
+        $connection->executeStatement(
+            'UPDATE activite
+             SET titre = ?, description = ?, lieu = ?, dateActivite = ?, dureParJour = ?, prix = ?, placesDisponibles = ?, categorie = ?, statut = ?
+             WHERE idActivite = ?',
+            [
+                $title,
+                $description,
+                $location,
+                $date->format('Y-m-d H:i:s'),
+                $duration,
+                $price,
+                $places,
+                $category,
+                $status,
+                $id,
+            ],
+            [
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::INTEGER,
+            ]
+        );
+
+        $this->addFlash('success', 'Activity updated successfully.');
+        return $this->redirectToRoute('app_activities');
+    }
+
+    #[Route('/activities/{id}/delete', name: 'app_activities_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_GUIDE')]
+    public function deleteActivity(int $id, Request $request, Connection $connection): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            throw $this->createAccessDeniedException();
+        }
+
+        if (!$this->isCsrfTokenValid('delete_activity_' . $id, (string) $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid delete request.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        $ownerId = $connection->fetchOne(
+            'SELECT idGuide FROM activite WHERE idActivite = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        if ($ownerId === false) {
+            $this->addFlash('error', 'Activity not found.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        if ((int) $ownerId !== (int) $user->getId()) {
+            throw $this->createAccessDeniedException();
+        }
+
+        $deletedRows = $connection->executeStatement(
+            'DELETE FROM activite WHERE idActivite = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        if ($deletedRows > 0) {
+            $this->addFlash('success', 'Activity deleted successfully.');
+        } else {
+            $this->addFlash('error', 'Unable to delete activity.');
+        }
+
+        return $this->redirectToRoute('app_activities');
+    }
+
     #[Route('/language/{locale}', name: 'app_set_locale', methods: ['GET', 'POST'])]
     public function setLocale(string $locale, Request $request, Connection $connection): Response
     {
