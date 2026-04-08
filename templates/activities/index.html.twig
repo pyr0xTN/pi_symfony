@@ -1,0 +1,1228 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Activities - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
+
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            background: radial-gradient(1400px 500px at 10% -20%, rgba(10, 160, 159, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(252, 186, 48, 0.20), transparent 55%), linear-gradient(180deg, #f4f9ff 0%, #eff6fb 100%);
+            font-family: 'Sora', 'Segoe UI', sans-serif;
+        }
+
+        .side-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+            box-shadow: 10px 0 32px rgba(3, 39, 75, 0.15);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            border-right: none;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .side-menu-content {
+            padding: 28px 22px;
+        }
+
+        .user-info {
+            text-align: center;
+            padding-bottom: 18px;
+            border-bottom: none;
+            margin-bottom: 18px;
+        }
+
+        .avatar {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            background: linear-gradient(145deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.25);
+        }
+
+        .user-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #11406f;
+            margin: 0;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #d29a16;
+            font-weight: 700;
+            margin: 2px 0 0;
+            text-transform: capitalize;
+        }
+
+        .side-menu-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            color: #33506f;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .side-menu-btn:hover {
+            background: rgba(10, 160, 159, 0.10);
+            border-color: rgba(10, 160, 159, 0.22);
+            color: #0b8e8b;
+        }
+
+        .logout-btn {
+            margin-top: 18px;
+            background: #fff2f2;
+            color: #d94a5a;
+            font-weight: 700;
+            border-color: #ffd9de;
+        }
+
+        .logout-btn:hover {
+            background: #ffe9ec;
+            border-color: #ffccd4;
+            color: #c03b4d;
+        }
+
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 30, 58, 0.40);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+        }
+
+        .menu-overlay.show {
+            display: block;
+        }
+
+        .top-bar {
+            background: rgba(255, 255, 255, 0.90);
+            backdrop-filter: blur(10px);
+            padding: 16px 28px;
+            box-shadow: 0 8px 24px rgba(10, 46, 88, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: none;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            height: 40px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 12px;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(10, 160, 159, 0.10);
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: #1D4D7C;
+            margin: 5px 0;
+            transition: 0.3s;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 6px 8px 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(80, 149, 198, 0.16);
+            transition: all 0.25s ease;
+        }
+
+        .profile-info {
+            text-align: right;
+        }
+
+        .profile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1D4D7C;
+            margin: 0;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #d19a1a;
+            font-weight: 700;
+            margin: 0;
+            text-transform: capitalize;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(7, 57, 107, 0.20);
+        }
+
+        .online-status {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .nav-tabs {
+            background: transparent;
+            padding: 10px 28px 0;
+            border-bottom: 0;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-tab {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.75);
+            border: none;
+            border-radius: 999px;
+            color: #49617a;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nav-tab:hover {
+            background: #ffffff;
+            color: #0FA5A2;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(135deg, #0FA5A2 0%, #1788b6 100%);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(15, 165, 162, 0.26);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 22px 28px 36px;
+            background: transparent;
+        }
+
+        .welcome-section {
+            margin-bottom: 24px;
+            padding: 28px;
+            border-radius: 24px;
+            background: linear-gradient(120deg, #ffffff 0%, #f7fbff 100%);
+            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.09);
+        }
+
+        .welcome-title {
+            font-size: clamp(2rem, 3.8vw, 3rem);
+            font-weight: 800;
+            color: #133f6a;
+            margin-bottom: 8px;
+            line-height: 1.06;
+            letter-spacing: -1px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #4f657c;
+            margin-bottom: 0;
+        }
+
+        .activities-card {
+            padding: 28px;
+            border-radius: 24px;
+            background: #ffffff;
+            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.09);
+        }
+
+        .activities-module {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .activities-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 20px 22px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(8, 97, 123, 0.96), rgba(14, 136, 161, 0.93));
+            color: #fff;
+            box-shadow: 0 18px 38px rgba(10, 52, 90, 0.2);
+        }
+
+        .activities-head h2 {
+            margin: 0;
+            font-size: clamp(28px, 3vw, 42px);
+            line-height: 1.05;
+        }
+
+        .activities-head p {
+            margin: 8px 0 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        .activities-head-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .activities-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.34);
+            background: rgba(255, 255, 255, 0.14);
+            color: #fff;
+            font-weight: 800;
+            font-size: 13px;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 14px;
+        }
+
+        .activity-card {
+            border: 1px solid rgba(126, 152, 178, 0.28);
+            border-radius: 18px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 12px 24px rgba(10, 34, 62, 0.08);
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            position: relative;
+        }
+
+        .activity-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(56, 189, 248, 0.55);
+            box-shadow: 0 18px 34px rgba(56, 189, 248, 0.28), 0 10px 22px rgba(10, 34, 62, 0.08);
+        }
+
+        .activity-owner-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: rgba(56, 189, 248, 0.95);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.32);
+            text-transform: uppercase;
+        }
+
+        .activity-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            object-position: center;
+            background: #f8fbff;
+        }
+
+        .activity-body {
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .activity-title {
+            margin: 0;
+            font-size: 20px;
+            color: #174a78;
+            font-weight: 800;
+        }
+
+        .activity-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .activity-tag {
+            border: 1px solid rgba(11, 164, 161, 0.3);
+            background: rgba(11, 164, 161, 0.1);
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0b8e8b;
+        }
+
+        .activity-description {
+            color: #5d7590;
+            font-size: 13px;
+            line-height: 1.45;
+            min-height: 56px;
+        }
+
+        .activity-foot {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .activity-price {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0d5e8a;
+        }
+
+        .activity-foot-right {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .activity-view {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .activity-view:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.28);
+        }
+
+        .activity-edit,
+        .activity-delete {
+            border: 0;
+            border-radius: 12px;
+            padding: 10px 12px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 13px;
+            color: #fff;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .activity-edit {
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+        }
+
+        .activity-edit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.28);
+        }
+
+        .activity-delete {
+            background: linear-gradient(135deg, #e85d75, #c6364f);
+        }
+
+        .activity-delete:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(200, 54, 79, 0.28);
+        }
+
+        .activity-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 16, 30, 0.58);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 2500;
+        }
+
+        .activity-modal-overlay.show {
+            display: flex;
+        }
+
+        .activity-modal {
+            width: min(980px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 28px;
+            background:
+                radial-gradient(760px 260px at 100% 0%, rgba(11, 164, 161, 0.12), transparent 60%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 253, 0.98));
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.26);
+            border: 1px solid rgba(137, 156, 174, 0.24);
+        }
+
+        .activity-modal-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 18px 22px;
+            border-bottom: 1px solid rgba(137, 156, 174, 0.16);
+        }
+
+        .activity-modal-title {
+            margin: 0;
+            font-size: 26px;
+            color: #134563;
+            font-weight: 800;
+        }
+
+        .activity-modal-close {
+            border: 0;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: rgba(13, 94, 138, 0.1);
+            color: #0d5e8a;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .activity-modal-body {
+            display: grid;
+            grid-template-columns: minmax(280px, 360px) 1fr;
+            gap: 22px;
+            padding: 22px;
+        }
+
+        .activity-modal-image {
+            width: 100%;
+            height: 100%;
+            max-height: 420px;
+            object-fit: cover;
+            border-radius: 22px;
+            box-shadow: 0 14px 26px rgba(10, 34, 62, 0.14);
+        }
+
+        .activity-modal-info {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .activity-modal-desc {
+            color: #5d7590;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .activity-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .activity-modal-item {
+            border: 1px solid rgba(126, 152, 178, 0.22);
+            border-radius: 16px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .activity-modal-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6a8198;
+            margin-bottom: 4px;
+            font-weight: 800;
+        }
+
+        .activity-modal-value {
+            color: #174a78;
+            font-weight: 700;
+        }
+
+        .activity-guide-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid rgba(126, 152, 178, 0.22);
+            border-radius: 18px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        .activity-guide-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(11, 164, 161, 0.3);
+            box-shadow: 0 8px 16px rgba(10, 34, 62, 0.08);
+        }
+
+        .activity-guide-name {
+            margin: 0;
+            color: #134563;
+            font-weight: 800;
+        }
+
+        .activity-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .activity-modal-reserve {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 14px;
+            padding: 12px 16px;
+            color: #fff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            text-decoration: none;
+            font-weight: 800;
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
+        .activity-modal-reserve:hover {
+            box-shadow: 0 14px 24px rgba(11, 154, 157, 0.30);
+            transform: translateY(-1px);
+        }
+
+        .activity-modal-empty {
+            padding: 18px;
+            text-align: center;
+            color: #5d7590;
+        }
+
+        .activities-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .activities-badge.active {
+            background: rgba(16, 185, 129, 0.12);
+            color: #0f8f66;
+        }
+
+        .activities-badge.inactive {
+            background: rgba(239, 68, 68, 0.12);
+            color: #bb3f3f;
+        }
+
+        .activities-badge.neutral {
+            background: rgba(13, 94, 138, 0.1);
+            color: #0d5e8a;
+        }
+
+        .activities-empty {
+            padding: 20px 16px;
+            text-align: center;
+            color: #5d7590;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 18px;
+        }
+
+        body.dark-mode .main-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+        }
+
+        body.dark-mode .top-bar {
+            background: rgba(30, 30, 50, 0.95) !important;
+        }
+
+        body.dark-mode .nav-tab {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #b8d4f1 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .nav-tab:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .nav-tab.active {
+            background: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .profile-section {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .profile-name,
+        body.dark-mode .welcome-title {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .profile-role,
+        body.dark-mode .welcome-subtitle {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .side-menu {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
+        }
+
+        body.dark-mode .side-menu-btn {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .side-menu-btn:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            border-color: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .user-name {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .user-role {
+            color: #ffd89b !important;
+        }
+
+        body.dark-mode .activities-head {
+            box-shadow: 0 18px 38px rgba(0, 0, 0, 0.28);
+        }
+
+        body.dark-mode .activities-table-card {
+            background: rgba(21, 28, 41, 0.95);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-card {
+            background: rgba(21, 28, 41, 0.95);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+        }
+
+        body.dark-mode .activity-title {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .activity-description,
+        body.dark-mode .activities-empty {
+            color: #a8c5e0;
+        }
+
+        body.dark-mode .activity-price {
+            color: #d4e4f0;
+        }
+
+        body.dark-mode .activity-delete {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+        }
+
+        body.dark-mode .activity-modal {
+            background:
+                radial-gradient(760px 260px at 100% 0%, rgba(11, 164, 161, 0.12), transparent 60%),
+                linear-gradient(180deg, rgba(21, 28, 41, 0.98), rgba(18, 24, 34, 0.98));
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-modal-title,
+        body.dark-mode .activity-modal-value,
+        body.dark-mode .activity-guide-name {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .activity-modal-desc,
+        body.dark-mode .activity-modal-empty {
+            color: #a8c5e0;
+        }
+
+        body.dark-mode .activity-modal-item,
+        body.dark-mode .activity-guide-box {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .activity-modal-label {
+            color: #8db4d7;
+        }
+
+        @media (max-width: 992px) {
+            .side-menu {
+                box-shadow: none;
+            }
+
+            .activity-modal-body {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        window.closeActivityModal = function () {
+            var activityModalOverlay = document.querySelector('.activity-modal-overlay');
+            if (activityModalOverlay) {
+                activityModalOverlay.classList.remove('show');
+            }
+        };
+
+        window.openActivityModal = function (button) {
+            var activityModalOverlay = document.querySelector('.activity-modal-overlay');
+            var activityModalReserve = document.querySelector('.activity-modal-reserve');
+            var activityModalTitle = document.querySelector('.js-activity-modal-title');
+            var activityModalImage = document.querySelector('.js-activity-modal-image');
+            var activityModalDescription = document.querySelector('.js-activity-modal-description');
+            var activityModalGuideImage = document.querySelector('.js-activity-modal-guide-image');
+            var activityModalGuideName = document.querySelector('.js-activity-modal-guide-name');
+            var activityModalFields = {
+                location: document.querySelector('.js-activity-modal-location'),
+                category: document.querySelector('.js-activity-modal-category'),
+                places: document.querySelector('.js-activity-modal-places'),
+                price: document.querySelector('.js-activity-modal-price'),
+                status: document.querySelector('.js-activity-modal-status'),
+                date: document.querySelector('.js-activity-modal-date'),
+                duration: document.querySelector('.js-activity-modal-duration')
+            };
+
+            if (!activityModalOverlay || !button) {
+                return;
+            }
+
+            if (activityModalTitle) {
+                activityModalTitle.textContent = button.dataset.title || 'Activity';
+            }
+            if (activityModalImage) {
+                activityModalImage.src = button.dataset.image || '';
+                activityModalImage.alt = button.dataset.title || 'Activity';
+            }
+            if (activityModalDescription) {
+                activityModalDescription.textContent = button.dataset.description || '';
+            }
+            if (activityModalGuideImage) {
+                activityModalGuideImage.src = button.dataset.guideImage || '';
+                activityModalGuideImage.alt = button.dataset.guideName || 'Guide';
+            }
+            if (activityModalGuideName) {
+                activityModalGuideName.textContent = button.dataset.guideName || 'Guide';
+            }
+
+            if (activityModalFields.location) {
+                activityModalFields.location.textContent = button.dataset.location || '-';
+            }
+            if (activityModalFields.category) {
+                activityModalFields.category.textContent = button.dataset.category || '-';
+            }
+            if (activityModalFields.places) {
+                activityModalFields.places.textContent = button.dataset.places || '-';
+            }
+            if (activityModalFields.price) {
+                activityModalFields.price.textContent = (button.dataset.price || '-') + ' coins';
+            }
+            if (activityModalFields.status) {
+                activityModalFields.status.textContent = button.dataset.status || '-';
+            }
+            if (activityModalFields.date) {
+                activityModalFields.date.textContent = button.dataset.date || '-';
+            }
+            if (activityModalFields.duration) {
+                activityModalFields.duration.textContent = (button.dataset.duration || '-') + ' h';
+            }
+
+            if (activityModalReserve) {
+                activityModalReserve.href = '{{ path('app_reservations') }}';
+            }
+
+            activityModalOverlay.classList.add('show');
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var menuToggle = document.querySelector('.menu-toggle');
+            var sideMenu = document.querySelector('.side-menu');
+            var overlay = document.querySelector('.menu-overlay');
+            var activityModalOverlay = document.querySelector('.activity-modal-overlay');
+            var activityModalClose = document.querySelector('.activity-modal-close');
+
+            function closeMenu() {
+                if (sideMenu) {
+                    sideMenu.classList.remove('open');
+                }
+                if (overlay) {
+                    overlay.classList.remove('show');
+                }
+            }
+
+            if (menuToggle && sideMenu && overlay) {
+                menuToggle.addEventListener('click', function () {
+                    sideMenu.classList.toggle('open');
+                    overlay.classList.toggle('show');
+                });
+
+                overlay.addEventListener('click', closeMenu);
+            }
+
+            if (activityModalClose) {
+                activityModalClose.addEventListener('click', closeActivityModal);
+            }
+
+            if (activityModalOverlay) {
+                activityModalOverlay.addEventListener('click', function (event) {
+                    if (event.target === activityModalOverlay) {
+                        closeActivityModal();
+                    }
+                });
+            }
+
+            document.querySelectorAll('.js-open-activity-modal').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    openActivityModal(button);
+                });
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    closeActivityModal();
+                }
+            });
+
+            document.querySelectorAll('.side-menu-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var action = button.getAttribute('data-action');
+                    if (action === 'logout') {
+                        window.location.href = '{{ path('app_logout') }}';
+                    } else if (action === 'dashboard') {
+                        window.location.href = '{{ path('app_dashboard') }}';
+                    } else if (action === 'guide-dashboard') {
+                        window.location.href = '{{ path('app_guide_dashboard') }}';
+                    } else if (action === 'reservations') {
+                        window.location.href = '{{ path('app_reservations') }}';
+                    } else if (action === 'my-reservations') {
+                        window.location.href = '{{ path('app_my_reservations') }}';
+                    } else if (action === 'my-orders') {
+                        window.location.href = '{{ path('app_my_orders') }}';
+                    } else if (action === 'offers-grid') {
+                        window.location.href = '{{ path('app_offers_grid') }}';
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
+
+{% block body %}
+    {% set userRoleLabel = 'main.role.member'|trans %}
+    {% if is_granted('ROLE_ADMIN') %}
+        {% set userRoleLabel = 'main.role.administrator'|trans %}
+    {% elseif is_granted('ROLE_GUIDE') %}
+        {% set userRoleLabel = 'main.role.guide'|trans %}
+    {% endif %}
+
+    <div class="menu-overlay"></div>
+
+    <div class="side-menu">
+        <div class="side-menu-content">
+            <div class="user-info">
+                <div class="avatar">{{ app.user.username|first|upper }}</div>
+                <p class="user-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                <p class="user-role">{{ userRoleLabel }}</p>
+            </div>
+
+            {% if is_granted('ROLE_ADMIN') %}
+                <button class="side-menu-btn" data-action="dashboard">🏠 {{ 'main.menu.dashboard'|trans }}</button>
+            {% endif %}
+
+            {% if is_granted('ROLE_GUIDE') %}
+                <button class="side-menu-btn" data-action="guide-dashboard">👤 {{ 'main.menu.guide_dashboard'|trans }}</button>
+            {% endif %}
+
+            <button class="side-menu-btn" data-action="my-reservations">👤 {{ 'main.menu.my_reservations'|trans }}</button>
+            <button class="side-menu-btn" data-action="my-orders">🧾 {{ 'main.menu.my_orders'|trans }}</button>
+            <button class="side-menu-btn" data-action="reservations">💻 {{ 'main.menu.reservations'|trans }}</button>
+            <button class="side-menu-btn" data-action="offers-grid">📋 {{ 'main.menu.offers_grid'|trans }}</button>
+
+            <button class="side-menu-btn logout-btn" data-action="logout">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div style="flex: 1;">
+            <div class="top-bar">
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-toggle" type="button" aria-label="Toggle menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="profile-section">
+                        <div class="profile-info">
+                            <p class="profile-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                            <p class="profile-role">{{ userRoleLabel }}</p>
+                        </div>
+                        <div class="profile-avatar">
+                            {{ app.user.username|first|upper }}
+                            <div class="online-status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-tabs">
+                <button class="nav-tab" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
+                <a class="nav-tab active" href="{{ path('app_activities') }}">🏞 {{ 'main.tab.activities'|trans }}</a>
+                <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
+                <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
+                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
+                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+                <button class="nav-tab" data-view="post">✉️ Posts</button>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
+                {% endif %}
+            </div>
+
+            <div class="content-area">
+                <div class="activities-module">
+                    <div class="activities-head">
+                        <div>
+                            <h2>Activities</h2>
+                            <p>{{ activities|length }} activities loaded from the database.</p>
+                        </div>
+                        <div class="activities-head-actions">
+                            <span class="activities-pill">{{ activities|length }} total</span>
+                            <a class="activities-pill" href="{{ path('app_mainpage') }}">Back to main</a>
+                        </div>
+                    </div>
+
+                    <div class="activities-grid">
+                        {% for activity in activities %}
+                            {% set status = activity.statut|default('')|lower %}
+                            {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
+                            <article class="activity-card">
+                                {% if isMyActivity %}
+                                    <div class="activity-owner-badge">My activity</div>
+                                {% endif %}
+                                <img class="activity-image" src="{{ activity.image_url }}" alt="{{ activity.titre }}">
+                                <div class="activity-body">
+                                    <h3 class="activity-title">{{ activity.titre }}</h3>
+                                    <div class="activity-meta">
+                                        <span class="activity-tag">{{ activity.categorie|default('Activity') }}</span>
+                                        <span class="activity-tag">{{ activity.lieu }}</span>
+                                    </div>
+                                    <div class="activity-description">
+                                        {{ activity.description|length > 120 ? activity.description|slice(0, 120) ~ '...' : activity.description }}
+                                    </div>
+                                    <div class="activity-meta">
+                                        <span class="activities-badge neutral">{{ activity.placesDisponibles }} places</span>
+                                        <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
+                                    </div>
+                                    <div class="activity-foot">
+                                        <div class="activity-price">{{ activity.prix }} coins</div>
+                                        <div class="activity-foot-right">
+                                            {% if isMyActivity %}
+                                                <button
+                                                    type="button"
+                                                    class="activity-edit"
+                                                    onclick="window.alert('Edit activity is not wired yet.'); return false;"
+                                                >Edit</button>
+                                                <button
+                                                    type="button"
+                                                    class="activity-delete"
+                                                    onclick="if (window.confirm('Delete this activity?')) { window.alert('Delete activity is not wired yet.'); } return false;"
+                                                >Delete</button>
+                                            {% else %}
+                                                <button
+                                                    type="button"
+                                                    class="activity-view js-open-activity-modal"
+                                                    onclick="window.openActivityModal(this); return false;"
+                                                    data-title="{{ activity.titre|e('html_attr') }}"
+                                                    data-description="{{ activity.description|e('html_attr') }}"
+                                                    data-location="{{ activity.lieu|e('html_attr') }}"
+                                                    data-category="{{ activity.categorie|default('-')|e('html_attr') }}"
+                                                    data-places="{{ activity.placesDisponibles }}"
+                                                    data-price="{{ activity.prix }}"
+                                                    data-status="{{ activity.statut|e('html_attr') }}"
+                                                    data-date="{{ activity.dateActivite ? activity.dateActivite|date('d M Y H:i') : '-' }}"
+                                                    data-duration="{{ activity.dureParJour }}"
+                                                    data-image="{{ activity.image_url|e('html_attr') }}"
+                                                    data-guide-name="{{ activity.guide_display_name|e('html_attr') }}"
+                                                    data-guide-image="{{ activity.guide_image_url|e('html_attr') }}"
+                                                >View</button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        {% else %}
+                            <div class="activities-empty">No activities found in the database.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="activity-modal-overlay">
+        <div class="activity-modal" role="dialog" aria-modal="true" aria-labelledby="activityModalTitle">
+            <div class="activity-modal-head">
+                <h3 class="activity-modal-title js-activity-modal-title" id="activityModalTitle">Activity</h3>
+                <button type="button" class="activity-modal-close" aria-label="Close" onclick="window.closeActivityModal(); return false;">&times;</button>
+            </div>
+
+            <div class="activity-modal-body">
+                <img class="activity-modal-image js-activity-modal-image" src="" alt="Activity image">
+
+                <div class="activity-modal-info">
+                    <p class="activity-modal-desc js-activity-modal-description"></p>
+
+                    <div class="activity-modal-grid">
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Location</span>
+                            <span class="activity-modal-value js-activity-modal-location"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Category</span>
+                            <span class="activity-modal-value js-activity-modal-category"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Places</span>
+                            <span class="activity-modal-value js-activity-modal-places"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Price</span>
+                            <span class="activity-modal-value js-activity-modal-price"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Status</span>
+                            <span class="activity-modal-value js-activity-modal-status"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Date</span>
+                            <span class="activity-modal-value js-activity-modal-date"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Duration</span>
+                            <span class="activity-modal-value js-activity-modal-duration"></span>
+                        </div>
+                    </div>
+
+                    <div class="activity-guide-box">
+                        <img class="activity-guide-avatar js-activity-modal-guide-image" src="" alt="Guide profile picture">
+                        <div>
+                            <span class="activity-modal-label">Guide</span>
+                            <p class="activity-guide-name js-activity-modal-guide-name"></p>
+                        </div>
+                    </div>
+
+                    <div class="activity-modal-actions">
+                        <a class="activity-modal-reserve" href="{{ path('app_reservations') }}">Reserver</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

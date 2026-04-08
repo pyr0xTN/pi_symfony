@@ -36,6 +36,37 @@ class HomeController extends AbstractController
         return $this->render('home/index.html.twig');
     }
 
+    #[Route('/activities', name: 'app_activities', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function activities(Connection $connection): Response
+    {
+        $activities = $connection->executeQuery(
+            'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide,
+                    u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
+                    p.image AS guide_image
+             FROM activite a
+             LEFT JOIN `user` u ON u.id = a.idGuide
+               LEFT JOIN profile p ON p.id_user = u.id
+             ORDER BY a.dateActivite DESC, a.idActivite DESC'
+        )->fetchAllAssociative();
+
+        foreach ($activities as &$activity) {
+            $firstName = trim((string) ($activity['guide_name'] ?? ''));
+            $lastName = trim((string) ($activity['guide_last_name'] ?? ''));
+            $username = trim((string) ($activity['guide_username'] ?? ''));
+            $fullName = trim($firstName . ' ' . $lastName);
+
+            $activity['guide_display_name'] = $fullName !== '' ? $fullName : ($username !== '' ? $username : 'Guide');
+            $activity['guide_image_url'] = $this->imageToUrl($activity['guide_image'] ?? null);
+            $activity['image_url'] = $this->activityImageToUrl($activity['image'] ?? null);
+        }
+        unset($activity);
+
+        return $this->render('activities/index.html.twig', [
+            'activities' => $activities,
+        ]);
+    }
+
     #[Route('/language/{locale}', name: 'app_set_locale', methods: ['GET', 'POST'])]
     public function setLocale(string $locale, Request $request, Connection $connection): Response
     {
@@ -664,8 +695,6 @@ class HomeController extends AbstractController
         switch ($view) {
             case 'services':
                 return $this->render('partials/services.html.twig');
-            case 'activities':
-                return $this->render('partials/activities.html.twig');
             case 'shop':
                 return $this->render('partials/shop.html.twig', [
                     'shop' => $this->buildShopViewData($connection),
@@ -2336,6 +2365,39 @@ class HomeController extends AbstractController
         } catch (\Throwable $e) {
             return $default;
         }
+    }
+
+    private function activityImageToUrl(mixed $image): string
+    {
+        $default = '/images/default_image.png';
+        if (empty($image)) {
+            return $default;
+        }
+
+        $imagePath = trim((string) $image);
+        if ($imagePath === '') {
+            return $default;
+        }
+
+        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://') || str_starts_with($imagePath, '/') || str_starts_with($imagePath, 'data:')) {
+            return $imagePath;
+        }
+
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $relativeCandidates = [
+            '/uploads/images/' . ltrim($imagePath, '/\\'),
+            '/uploads/images/' . basename($imagePath),
+            '/' . ltrim($imagePath, '/\\'),
+            '/' . basename($imagePath),
+        ];
+
+        foreach ($relativeCandidates as $candidate) {
+            if (is_file($projectDir . '/public' . $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return '/uploads/images/' . rawurlencode(basename($imagePath));
     }
 
     private function buildShopViewData(Connection $connection): array
