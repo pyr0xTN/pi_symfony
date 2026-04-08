@@ -38,17 +38,29 @@ class HomeController extends AbstractController
 
     #[Route('/activities', name: 'app_activities', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function activities(Connection $connection): Response
+    public function activities(Request $request, Connection $connection): Response
     {
-        $activities = $connection->executeQuery(
-            'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide,
-                    u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
-                    p.image AS guide_image
-             FROM activite a
-             LEFT JOIN `user` u ON u.id = a.idGuide
-               LEFT JOIN profile p ON p.id_user = u.id
-             ORDER BY a.dateActivite DESC, a.idActivite DESC'
-        )->fetchAllAssociative();
+        $currentSearch = trim((string) $request->query->get('q', ''));
+
+        $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide,
+                       u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
+                       p.image AS guide_image
+                FROM activite a
+                LEFT JOIN `user` u ON u.id = a.idGuide
+                LEFT JOIN profile p ON p.id_user = u.id';
+
+        $params = [];
+        $types = [];
+
+        if ($currentSearch !== '') {
+            $sql .= ' WHERE a.titre LIKE ?';
+            $params[] = '%' . $currentSearch . '%';
+            $types[] = ParameterType::STRING;
+        }
+
+        $sql .= ' ORDER BY a.dateActivite DESC, a.idActivite DESC';
+
+        $activities = $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
 
         foreach ($activities as &$activity) {
             $firstName = trim((string) ($activity['guide_name'] ?? ''));
@@ -64,6 +76,7 @@ class HomeController extends AbstractController
 
         return $this->render('activities/index.html.twig', [
             'activities' => $activities,
+            'currentSearch' => $currentSearch,
         ]);
     }
 

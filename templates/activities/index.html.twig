@@ -379,6 +379,39 @@
             cursor: pointer;
         }
 
+        .activities-search {
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.16);
+            min-width: 220px;
+            outline: none;
+        }
+
+        .activities-search-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activities-search-btn {
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.16);
+            cursor: pointer;
+        }
+
+        .activities-search::placeholder {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
         .activities-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -1126,6 +1159,18 @@
             border-color: rgba(255, 255, 255, 0.08);
         }
 
+        body.dark-mode .activities-search {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .activities-search-btn {
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e8f0f6;
+        }
+
         body.dark-mode .activity-modal-label {
             color: #8db4d7;
         }
@@ -1389,12 +1434,14 @@
             var activitiesEmptyFilter = document.querySelector('.js-activities-empty-filter');
             var activityCards = Array.prototype.slice.call(document.querySelectorAll('.activity-card'));
 
-            function applyGuideActivitiesFilter(isActive) {
+            function applyActivityFilters() {
+                var guideFilterActive = guideFilterToggle && guideFilterToggle.getAttribute('data-filter-active') === '1';
                 var visibleCards = 0;
 
                 activityCards.forEach(function (card) {
                     var isMine = card.getAttribute('data-is-my-activity') === '1';
-                    var shouldHide = isActive && !isMine;
+                    var hiddenByGuideFilter = guideFilterActive && !isMine;
+                    var shouldHide = hiddenByGuideFilter;
                     card.style.display = shouldHide ? 'none' : '';
                     if (!shouldHide) {
                         visibleCards += 1;
@@ -1402,23 +1449,34 @@
                 });
 
                 if (activitiesEmptyFilter) {
-                    activitiesEmptyFilter.style.display = isActive && visibleCards === 0 ? 'block' : 'none';
-                }
-
-                if (guideFilterToggle) {
-                    guideFilterToggle.classList.toggle('active', isActive);
-                    guideFilterToggle.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-                    guideFilterToggle.setAttribute('data-filter-active', isActive ? '1' : '0');
-                    guideFilterToggle.setAttribute('title', isActive ? 'Show all activities' : 'Show only my activities');
+                    activitiesEmptyFilter.style.display = visibleCards === 0 ? 'block' : 'none';
                 }
             }
 
             if (guideFilterToggle) {
                 guideFilterToggle.addEventListener('click', function () {
                     var nextState = guideFilterToggle.getAttribute('data-filter-active') !== '1';
-                    applyGuideActivitiesFilter(nextState);
+                    guideFilterToggle.classList.toggle('active', nextState);
+                    guideFilterToggle.setAttribute('aria-pressed', nextState ? 'true' : 'false');
+                    guideFilterToggle.setAttribute('data-filter-active', nextState ? '1' : '0');
+                    guideFilterToggle.setAttribute('title', nextState ? 'Show all activities' : 'Show only my activities');
+                    applyActivityFilters();
                 });
             }
+
+            applyActivityFilters();
+
+            document.querySelectorAll('.nav-tab[data-view]').forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    var view = tab.getAttribute('data-view');
+                    if (!view) {
+                        return;
+                    }
+
+                    // Keep the same module-driven navigation behavior as mainpage.
+                    window.location.href = '{{ path('app_mainpage') }}?module=' + encodeURIComponent(view);
+                });
+            });
 
             document.querySelectorAll('.side-menu-btn').forEach(function (button) {
                 button.addEventListener('click', function () {
@@ -1508,8 +1566,8 @@
             </div>
 
             <div class="nav-tabs">
-                <button class="nav-tab" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
-                <a class="nav-tab active" href="{{ path('app_activities') }}">🏞 {{ 'main.tab.activities'|trans }}</a>
+                <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
+                                <a class="nav-tab" href="{{ path('app_activities') }}">🏞 {{ 'main.tab.activities'|trans }}</a>
                 <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
                 <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
                 <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
@@ -1529,6 +1587,17 @@
                         </div>
                         <div class="activities-head-actions">
                             <span class="activities-pill">{{ activities|length }} total</span>
+                            <form class="activities-search-form" method="get" action="{{ path('app_activities') }}">
+                                <input
+                                    type="text"
+                                    name="q"
+                                    value="{{ currentSearch|default('') }}"
+                                    class="activities-search"
+                                    placeholder="Search by activity name"
+                                    aria-label="Search activities by name"
+                                >
+                                <button type="submit" class="activities-search-btn">Search</button>
+                            </form>
                             {% if is_granted('ROLE_GUIDE') %}
                                 <button
                                     type="button"
@@ -1560,7 +1629,7 @@
                         {% for activity in activities %}
                             {% set status = activity.statut|default('')|lower %}
                             {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
-                            <article class="activity-card" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}">
+                            <article class="activity-card" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}" data-title="{{ activity.titre|default('')|e('html_attr') }}">
                                 {% if isMyActivity %}
                                     <div class="activity-owner-badge">My activity</div>
                                 {% endif %}
@@ -1634,7 +1703,7 @@
                             <div class="activities-empty">No activities found in the database.</div>
                         {% endfor %}
                     </div>
-                    <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities created by you yet.</div>
+                    <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities match your current filters.</div>
                 </div>
             </div>
         </div>
