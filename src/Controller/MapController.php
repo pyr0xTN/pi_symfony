@@ -24,14 +24,26 @@ class MapController extends AbstractController
     ): JsonResponse {
         $posts = $pubRepo->findWithPlaces();
         $markers = [];
+        $seenCoords = [];
 
         foreach ($posts as $post) {
             $coords = $geocoding->geocode($post->getPlace());
             if ($coords) {
+                $lat = $coords['lat'];
+                $lon = $coords['lon'];
+                
+                $locKey = $lat . ',' . $lon;
+                if (isset($seenCoords[$locKey])) {
+                    $lat += (rand(-2000, 2500) / 1000); // Up to ~250km N/S
+                    $lon += (rand(-1000, 1500) / 1000); // Up to ~150km E/W
+                } else {
+                    $seenCoords[$locKey] = true;
+                }
+
                 $markers[] = [
                     'id'      => $post->getId(),
-                    'lat'     => $coords['lat'],
-                    'lon'     => $coords['lon'],
+                    'lat'     => $lat,
+                    'lon'     => $lon,
                     'place'   => $post->getPlace(),
                     'content' => mb_substr($post->getContent(), 0, 100) . (mb_strlen($post->getContent()) > 100 ? '…' : ''),
                     'author'  => $post->getUser()?->getUsername() ?? 'Anonymous',

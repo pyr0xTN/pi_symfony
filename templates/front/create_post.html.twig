@@ -11,8 +11,8 @@
               action="{{ post ? path('app_post_edit', {id: post.id}) : path('app_post_new') }}">
             
             {# ── USER STRIP ── #}
-            <div class="cpd-user-strip">
-                <div class="avatar">{{ app.user.username|first|upper|default('U') }}</div>
+            <div class="cpd-user-strip" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                <div class="avatar" style="margin: 0; width: 50px; height: 50px; font-size: 20px;">{{ app.user.username|first|upper|default('U') }}</div>
                 <div>
                     <span class="cpd-username">{{ app.user.username|default('User') }}</span>
                     <div class="cpd-audience">

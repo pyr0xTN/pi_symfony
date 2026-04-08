@@ -13,7 +13,7 @@
         {# ═══ TOP NAV BAR ═══ #}
         <header class="nav-bar">
             <div class="nav-bar-brand" style="display:flex;align-items:center;gap:12px;">
-                <a href="{{ path('app_mainpage', {module: 'post'}) }}" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back to Dashboard">⬅</a>
+                <a href="{{ app.request.attributes.get('_route') == 'app_feed' ? path('app_mainpage') : path('app_feed') }}" data-turbo="false" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back">⬅</a>
                 <div>
                     <span class="brand-text">Rehletna</span>
                     <span class="brand-dot">.tn</span>
@@ -35,7 +35,6 @@
             </div>
 
             <a href="{{ path('app_post_new') }}" class="primary-btn">+ New Post</a>
-            <button class="theme-toggle-nav" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
         </header>
         {% endif %}
 
