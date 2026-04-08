@@ -565,7 +565,7 @@
 <section class="home-landing">
     <div class="home-top-tools" aria-label="Page tools">
         <button type="button" class="home-top-icon" id="langToggleBtn" aria-label="Toggle language French and English" title="FR / EN">
-            <img id="langFlagImg" src="{{ asset('images/usa.png') }}" alt="English">
+            <img id="langFlagImg" src="{{ asset('images/france.png') }}" alt="Francais">
         </button>
     </div>
 
@@ -662,10 +662,17 @@
                     aria-label="Open developer page"
                     data-dev-name="Achref Souli"
                     data-dev-module="Performance"
+                    data-dev-photo="{{ asset('images/pic6.jpeg') }}"
                     data-dev-title="Performance et optimisation"
-                    data-dev-description="Optimisation des temps de reponse, reduction des charges inutiles et amelioration de la fluidite generale pour une plateforme plus rapide."
+                    data-dev-description="Gestion des activités, enrichissant le catalogue d'offres touristiques"
+                    data-dev-title-en="Activity management"
+                    data-dev-description-en="Activity management, enriching the catalog of tourist offers"
+                    data-dev-module-en="Activities"
+                    data-dev-title-fr="Gestion des activités"
+                    data-dev-description-fr="Gestion des activités, enrichissant le catalogue d'offres touristiques"
+                    data-dev-module-fr="Activités"
                 >
-                    <div class="home-dev-avatar" aria-hidden="true"></div>
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic6.jpeg') }}');"></div>
                     <p class="home-dev-name">Achref Souli</p>
                 </article>
                 <article
@@ -833,8 +840,8 @@
                 langToggleBtn.addEventListener('click', function () {
                     activeLang = activeLang === 'en' ? 'fr' : 'en';
                     if (langFlagImg) {
-                        langFlagImg.src = activeLang === 'en' ? '{{ asset('images/usa.png') }}' : '{{ asset('images/france.png') }}';
-                        langFlagImg.alt = activeLang === 'en' ? 'English' : 'Français';
+                        langFlagImg.src = activeLang === 'en' ? '{{ asset('images/france.png') }}' : '{{ asset('images/usa.png') }}';
+                        langFlagImg.alt = activeLang === 'en' ? 'Francais' : 'English';
                     }
                     applyLanguage();
                 });

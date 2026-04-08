@@ -144,6 +144,63 @@
             color: #3f566d;
         }
 
+        /* Dark Mode Support */
+        body.dark-mode .admin-edit-page {
+            background: #0f1724;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .dashboard-top {
+            background: #162038;
+            border-bottom-color: #2a3f5f;
+        }
+
+        body.dark-mode .dashboard-top a {
+            background: #0a2e3f;
+            border-color: #0BA4A1;
+            color: #0BA4A1;
+        }
+
+        body.dark-mode .edit-card {
+            background: #162038;
+            border-color: #2a3f5f;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .edit-title {
+            color: #d4e1ec;
+        }
+
+        body.dark-mode .edit-subtitle {
+            color: #8b9aaf;
+        }
+
+        body.dark-mode .avatar-line img {
+            border-color: #2a3f5f;
+        }
+
+        body.dark-mode .field label {
+            color: #8b9aaf;
+        }
+
+        body.dark-mode .field input,
+        body.dark-mode .field select {
+            background: #0f1724;
+            border-color: #2a3f5f;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .field input:focus,
+        body.dark-mode .field select:focus {
+            border-color: #0BA4A1;
+            box-shadow: 0 0 0 3px rgba(11, 164, 161, 0.2);
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #1d2d42;
+            color: #8b9aaf;
+        }
+
         @media (max-width: 760px) {
             .grid {
                 grid-template-columns: 1fr;
@@ -155,7 +212,6 @@
 {% block body %}
     <div class="admin-edit-page">
         <div class="dashboard-top">
-            <a href="{{ path('app_users') }}">Back to User Management</a>
             <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
         </div>
 
@@ -234,7 +290,7 @@
                     </div>
 
                     <div class="actions">
-                        <a href="{{ path('app_users') }}" class="btn btn-secondary">Cancel</a>
+                        <a href="{{ path('app_dashboard') }}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">Save Changes</button>
                     </div>
                 </form>

@@ -1635,8 +1635,8 @@ class HomeController extends AbstractController
                 $hashedPassword = $passwordHasher->hashPassword($userEntity, $password);
 
                 $connection->executeStatement(
-                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled, `block`)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         $email,
                         $role,
@@ -1646,6 +1646,7 @@ class HomeController extends AbstractController
                         (new \DateTimeImmutable())->format('Y-m-d'),
                         $username,
                         'offline',
+                        0,
                         0,
                     ],
                     [
@@ -1657,6 +1658,7 @@ class HomeController extends AbstractController
                         ParameterType::STRING,
                         ParameterType::STRING,
                         ParameterType::STRING,
+                        ParameterType::INTEGER,
                         ParameterType::INTEGER,
                     ]
                 );
@@ -1699,7 +1701,7 @@ class HomeController extends AbstractController
         $adminImageUrl = $this->getCurrentUserProfileImageUrl($connection);
 
         $allUsers = $connection->executeQuery(
-            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, p.image
+            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, u.`block` AS is_blocked, p.image
              FROM `user` u
              LEFT JOIN (
                  SELECT p1.*
@@ -1727,6 +1729,66 @@ class HomeController extends AbstractController
             'limit' => $limit,
             'totalPages' => ceil($totalUsers / $limit),
         ]);
+    }
+
+    #[Route('/users/{id}/toggle-block', name: 'app_user_toggle_block', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function toggleUserBlock(int $id, Request $request, Connection $connection): Response
+    {
+        if (!$this->isCsrfTokenValid('toggle-block-' . $id, (string) $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Invalid block toggle request token.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'Invalid block toggle request token.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User && (int) $currentUser->getId() === $id) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'You cannot block your own account while logged in.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'You cannot block your own account while logged in.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $exists = $connection->fetchOne('SELECT id FROM `user` WHERE id = ?', [$id], [ParameterType::INTEGER]);
+        if ($exists === false) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'User not found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->addFlash('error', 'User not found.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentBlockState = (int) $connection->fetchOne(
+            'SELECT COALESCE(`block`, 0) FROM `user` WHERE id = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        $nextState = $currentBlockState === 1 ? 0 : 1;
+        $connection->executeStatement(
+            'UPDATE `user` SET `block` = ? WHERE id = ?',
+            [$nextState, $id],
+            [ParameterType::INTEGER, ParameterType::INTEGER]
+        );
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'blocked' => $nextState === 1,
+                'message' => $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.',
+                'redirectUrl' => $this->generateUrl('app_dashboard'),
+            ]);
+        }
+
+        $this->addFlash('success', $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.');
+
+        return $this->redirectToRoute('app_dashboard');
     }
 
     #[Route('/users/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
@@ -1801,7 +1863,7 @@ class HomeController extends AbstractController
             }
 
             $this->addFlash('success', 'User updated successfully.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $user = $connection->executeQuery(
@@ -1842,26 +1904,34 @@ class HomeController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('delete-user-' . $id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid delete request token.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $currentUser = $this->getUser();
         if ($currentUser instanceof User && (int) $currentUser->getId() === $id) {
             $this->addFlash('error', 'You cannot delete your own admin account while logged in.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $connection->beginTransaction();
         try {
-            $this->deleteFromIfExists($connection, 'profile', 'id_user = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'todo', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'todos', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'messages', 'sender_id = ? OR receiver_id = ?', [$id, $id], [ParameterType::INTEGER, ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'message', 'sender_id = ? OR receiver_id = ?', [$id, $id], [ParameterType::INTEGER, ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'purchase', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'purchases', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'shop', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'shops', 'user_id = ?', [$id], [ParameterType::INTEGER]);
+            // Delete related records based on actual schema
+            // Using raw DELETE with error handling for non-existent tables
+            $tablesToClean = [
+                ['table' => 'message', 'column' => 'idExpediteur', 'value' => $id],
+                ['table' => 'profile', 'column' => 'id_user', 'value' => $id],
+                ['table' => 'todo', 'column' => 'user_id', 'value' => $id],
+                ['table' => 'purchases', 'column' => 'user_id', 'value' => $id],
+            ];
+            
+            foreach ($tablesToClean as $config) {
+                try {
+                    $sql = sprintf('DELETE FROM `%s` WHERE `%s` = ?', $config['table'], $config['column']);
+                    $connection->executeStatement($sql, [$config['value']], [ParameterType::INTEGER]);
+                } catch (\Throwable $tableError) {
+                    // Log but continue if table doesn't exist or operation fails
+                }
+            }
 
             $connection->executeStatement('DELETE FROM `user` WHERE id = ?', [$id], [ParameterType::INTEGER]);
             $connection->commit();
@@ -1871,7 +1941,7 @@ class HomeController extends AbstractController
             $this->addFlash('error', 'Delete failed: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('app_users');
+        return $this->redirectToRoute('app_dashboard');
     }
 
     #[Route('/todos', name: 'app_todos')]
@@ -2049,7 +2119,7 @@ class HomeController extends AbstractController
         if ($request->isMethod('POST')) {
             if (!$this->isCsrfTokenValid('shop-product-create', (string) $request->request->get('_token'))) {
                 $this->addFlash('error', 'Invalid request token. Please try again.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             $name = trim((string) $request->request->get('name', ''));
@@ -2061,19 +2131,19 @@ class HomeController extends AbstractController
 
             if ($name === '') {
                 $this->addFlash('error', 'Product name is required.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             if ($priceCoins < 0 || $quantity < 0) {
                 $this->addFlash('error', 'Price and quantity must be 0 or greater.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             $imageFile = $request->files->get('image');
             if ($imageFile !== null) {
                 if (!$imageFile->isValid()) {
                     $this->addFlash('error', 'Uploaded image is invalid.');
-                    return $this->redirectToRoute('app_admin_shop');
+                    return $this->redirectToRoute('app_dashboard');
                 }
 
                 $imageData = @file_get_contents($imageFile->getPathname());
@@ -2109,7 +2179,7 @@ class HomeController extends AbstractController
                 $this->addFlash('error', 'Unable to add product: ' . $e->getMessage());
             }
 
-            return $this->redirectToRoute('app_admin_shop');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $products = [];

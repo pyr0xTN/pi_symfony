@@ -130,6 +130,10 @@ class SecurityController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Matched user not found.'], Response::HTTP_UNAUTHORIZED);
         }
 
+        if ($matchedUser->isBlocked()) {
+            return $this->json(['success' => false, 'message' => 'You got blocked in this site from admin.'], Response::HTTP_FORBIDDEN);
+        }
+
         $userAuthenticator->authenticateUser($matchedUser, $formAuthenticator, $request);
 
         return $this->json([
