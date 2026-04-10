@@ -10,18 +10,6 @@
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
         <script>
             (function () {
-                function getStoredTheme() {
-                    return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
-                }
-
-                function applyTheme(theme) {
-                    var isDark = theme === 'dark';
-                    document.documentElement.classList.toggle('dark-mode', isDark);
-                    if (document.body) {
-                        document.body.classList.toggle('dark-mode', isDark);
-                    }
-                }
-
                 function applyPhoneViewportClass() {
                     var screenWidth = window.screen && window.screen.width ? window.screen.width : 0;
                     var screenHeight = window.screen && window.screen.height ? window.screen.height : 0;
@@ -30,20 +18,8 @@
                     document.documentElement.classList.toggle('phone-viewport-force', isPhone);
                 }
 
-                window.getStoredTheme = getStoredTheme;
-                window.applyTheme = applyTheme;
-                window.toggleTheme = function () {
-                    var next = getStoredTheme() === 'dark' ? 'light' : 'dark';
-                    localStorage.setItem('theme', next);
-                    applyTheme(next);
-                    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next } }));
-                    return next;
-                };
-
-                applyTheme(getStoredTheme());
                 applyPhoneViewportClass();
                 document.addEventListener('DOMContentLoaded', function () {
-                    applyTheme(getStoredTheme());
                     applyPhoneViewportClass();
                 });
                 window.addEventListener('resize', applyPhoneViewportClass);
@@ -1468,10 +1444,7 @@
             </div>
             <div class="global-glass-layout">
                 <div class="global-glass-actions">
-                    <button id="globalThemeButton" class="global-action-btn settings" type="button" aria-label="{{ 'panel.dark_mode'|trans }}">
-                        <span id="globalThemeIcon" class="global-action-icon">🌙</span>
-                        <span id="globalThemeLabel">{{ 'panel.dark_mode'|trans }}</span>
-                    </button>
+
                     <button id="globalCollectCoinBtn" class="global-action-btn global-action-coin" type="button" aria-label="{{ 'panel.collect'|trans }}" disabled>
                         <div class="global-coin-head">
                             <span class="global-action-icon">💎</span>
@@ -1594,9 +1567,7 @@
                 const globalGlassOverlay = document.getElementById('globalGlassOverlay');
                 const globalGlassPanel = document.getElementById('globalGlassPanel');
                 const globalGlassClose = document.getElementById('globalGlassClose');
-                const globalThemeButton = document.getElementById('globalThemeButton');
-                const globalThemeIcon = document.getElementById('globalThemeIcon');
-                const globalThemeLabel = document.getElementById('globalThemeLabel');
+
                 const globalQuickBadge = document.getElementById('globalQuickBadge');
                 const globalCollectCoinBtn = document.getElementById('globalCollectCoinBtn');
                 const globalUpgradeBtn = document.getElementById('globalUpgradeBtn');
@@ -1632,8 +1603,7 @@
                 const logoutConfirmCancel = document.getElementById('logoutConfirmCancel');
                 const logoutConfirmOk = document.getElementById('logoutConfirmOk');
                 const panelText = {
-                    darkMode: '{{ 'panel.dark_mode'|trans|e('js') }}',
-                    lightMode: '{{ 'panel.light_mode'|trans|e('js') }}',
+
                     collectNow: '{{ 'panel.collect_now'|trans|e('js') }}',
                     collectingSoon: '{{ 'panel.collecting_soon'|trans|e('js') }}',
                     collecting: '{{ 'panel.collecting'|trans|e('js') }}',
@@ -1673,14 +1643,7 @@
                     loader.setAttribute('aria-hidden', 'true');
                 };
 
-                const syncThemeIcon = () => {
-                    if (!globalThemeIcon || !globalThemeLabel) {
-                        return;
-                    }
-                    const isDark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
-                    globalThemeIcon.textContent = isDark ? '☀️' : '🌙';
-                    globalThemeLabel.textContent = isDark ? panelText.lightMode : panelText.darkMode;
-                };
+
 
                 const syncCoinNotification = () => {
                     if (!globalQuickBadge) {
@@ -2426,7 +2389,7 @@
                 window.showGlobalLoader = showLoader;
                 window.hideGlobalLoader = hideLoader;
 
-                syncThemeIcon();
+
 
                 if (globalQuickToggle) {
                     const resetTogglePosition = function () {
@@ -2480,14 +2443,7 @@
                     globalGlassClose.addEventListener('click', closeGlassPanel);
                 }
 
-                if (globalThemeButton) {
-                    globalThemeButton.addEventListener('click', function () {
-                        if (window.toggleTheme) {
-                            window.toggleTheme();
-                        }
-                        syncThemeIcon();
-                    });
-                }
+
 
                 if (globalLogoutLink) {
                     globalLogoutLink.addEventListener('click', function (event) {
@@ -2643,7 +2599,7 @@
                 checkUpgradeButton();
                 loadProfileSummary();
 
-                window.addEventListener('themechange', syncThemeIcon);
+
                 window.addEventListener('pageshow', function () {
                     hideLoader();
                     closeGlassPanel();

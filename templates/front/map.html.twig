@@ -3,6 +3,7 @@
 {% block title %}Explore Map{% endblock %}
 
 {% block stylesheets %}
+<link rel="stylesheet" href="{{ asset('css/app.css') }}">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 {% endblock %}
 
@@ -41,7 +42,12 @@ fetch('/api/map/markers')
                     <span class="map-popup-date">${m.date}</span>
                     <a href="/post/${m.id}" class="map-popup-link">View post →</a>
                 </div>`;
-            L.marker([m.lat, m.lon])
+            
+            // Add slight random jitter to prevent stacked overlaps for identical locations
+            const jitterLat = (Math.random() - 0.5) * 1.005;
+            const jitterLon = (Math.random() - 0.5) * 1.005;
+            
+            L.marker([m.lat + jitterLat, m.lon + jitterLon])
                 .addTo(map)
                 .bindPopup(popup);
         });
