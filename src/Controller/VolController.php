@@ -24,6 +24,8 @@ class VolController extends AbstractController
         private ServicesRepository     $servicesRepo,
         private SluggerInterface       $slugger,
         private HttpClientInterface    $httpClient,
+        #[\Symfony\Component\DependencyInjection\Attribute\Autowire('%aviationstack_api_key%')]
+        private string $aviationstackApiKey,
     ) {}
 
 
@@ -73,6 +75,44 @@ class VolController extends AbstractController
         ]);
     }
 
+    #[Route('/autofill', name: 'vol_autofill', methods: ['GET'])]
+    public function autofill(Request $request): JsonResponse
+    {
+        $numeroVol = $request->query->get('numeroVol', '');
+
+        if (!$numeroVol) {
+            return $this->json(['error' => 'Numéro de vol requis.'], 400);
+        }
+
+        try {
+            // Example: AviationStack API — replace with your actual API key & endpoint
+            $response = $this->httpClient->request('GET', 'http://api.aviationstack.com/v1/flights', [
+                'query' => [
+                    'access_key' => $this->aviationstackApiKey,
+                    'flight_iata' => $numeroVol,
+                ],
+            ]);
+
+            $data   = $response->toArray();
+            $flight = $data['data'][0] ?? null;
+
+            if (!$flight) {
+                return $this->json(['error' => 'Vol introuvable.'], 404);
+            }
+
+            // Return fields to pre-fill the form via JavaScript
+            return $this->json([
+                'villeDepart'  => $flight['departure']['airport'] ?? '',
+                'villeArrivee' => $flight['arrival']['airport']   ?? '',
+                'dateDepart'   => $flight['departure']['scheduled'] ?? '',
+                'dateArrivee'  => $flight['arrival']['scheduled']   ?? '',
+                'nom'          => ($flight['airline']['name'] ?? '') . ' ' . ($flight['flight']['iata'] ?? ''),
+                'capacite'     => $flight['aircraft']['seats'] ?? 180, 
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur API : ' . $e->getMessage()], 500);
+        }
+    }
 
     #[Route('/{id}', name: 'vol_show', methods: ['GET'])]
     public function show(int $id): Response
@@ -161,43 +201,6 @@ class VolController extends AbstractController
 
  
 
-    #[Route('/autofill', name: 'vol_autofill', methods: ['GET'])]
-    public function autofill(Request $request): JsonResponse
-    {
-        $numeroVol = $request->query->get('numeroVol', '');
-
-        if (!$numeroVol) {
-            return $this->json(['error' => 'Numéro de vol requis.'], 400);
-        }
-
-        try {
-            // Example: AviationStack API — replace with your actual API key & endpoint
-            $response = $this->httpClient->request('GET', 'http://api.aviationstack.com/v1/flights', [
-                'query' => [
-                    'access_key' => $_ENV['AVIATIONSTACK_API_KEY'] ?? '',
-                    'flight_iata' => $numeroVol,
-                ],
-            ]);
-
-            $data   = $response->toArray();
-            $flight = $data['data'][0] ?? null;
-
-            if (!$flight) {
-                return $this->json(['error' => 'Vol introuvable.'], 404);
-            }
-
-            // Return fields to pre-fill the form via JavaScript
-            return $this->json([
-                'villeDepart'  => $flight['departure']['airport'] ?? '',
-                'villeArrivee' => $flight['arrival']['airport']   ?? '',
-                'dateDepart'   => $flight['departure']['scheduled'] ?? '',
-                'dateArrivee'  => $flight['arrival']['scheduled']   ?? '',
-            ]);
-
-        } catch (\Exception $e) {
-            return $this->json(['error' => 'Erreur API : ' . $e->getMessage()], 500);
-        }
-    }
 
 
 

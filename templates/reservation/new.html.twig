@@ -58,9 +58,11 @@
                 </div>
 
                 {# Hidden input that stores the selected seat value #}
-                {{ form_widget(form.siege, { attr: { id: 'selectedSeatInput' } }) }}
-
-                {# Seat grid — 6 seats per row with aisle gap between col 3 and 4 #}
+{# Hide the Symfony field — we'll sync to a plain hidden input instead #}
+<div style="display:none">
+    {{ form_widget(form.siege, { attr: { id: 'sfSiegeInput' } }) }}
+</div>
+<input type="hidden" id="selectedSeatInput" name="{{ form.siege.vars.full_name }}" value="" />                {# Seat grid — 6 seats per row with aisle gap between col 3 and 4 #}
                 <div class="seat-grid" id="seatGrid">
                     {% for seat in seats %}
                         {# Add row label at the start of each row (every 6 seats) #}
@@ -154,6 +156,7 @@
                 // Deselect all seats
                 seatGrid.querySelectorAll('.seat-btn').forEach(function(b) {
                     b.classList.remove('seat-selected');
+                   
                 });
 
                 // Select this seat

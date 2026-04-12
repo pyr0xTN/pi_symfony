@@ -126,7 +126,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Ajouter le Vol</button>
                 {# Auto-fill from external flight API — handled via a separate route or JS fetch #}
-                <a href="{{ path('vol_autofill') }}" class="btn-submit" id="btnAutoFill">Auto remplissage</a>
+    <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
                 <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
             </div>
 
@@ -137,42 +137,84 @@
 {% endblock %}
 {% block javascripts %}
     {{ parent() }}
-    <script>
-        // Wait for the HTML to fully load before running the script
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            // Get the exact ID Symfony generated for the input
-            const inputId = '{{ form.photo.vars.id }}';
-            const photoInput = document.getElementById(inputId);
-            const preview = document.getElementById('imgPreview');
+ <script>
+ document.addEventListener('DOMContentLoaded', function () {
 
-            // Make sure the input exists on the page to prevent JS errors
-            if (photoInput) {
-                photoInput.addEventListener('change', function (e) {
-                    const file = e.target.files[0];
-                    
-                    if (file) {
-                        // Check if it's actually an image
-                        if (!file.type.startsWith('image/')) {
-                            alert('Veuillez sélectionner une image valide.');
-                            e.target.value = ''; 
-                            return;
-                        }
+    // ── Photo preview ──
+    const photoInput = document.getElementById('{{ form.photo.vars.id }}');
+    const preview    = document.getElementById('imgPreview');
 
-                        preview.src = URL.createObjectURL(file);
-                        preview.style.display = 'block';
-
-                        // Free up memory
-                        preview.onload = function() {
-                            URL.revokeObjectURL(preview.src);
-                        };
-                    } else {
-                        // Hide preview if user cancels
-                        preview.src = '#';
-                        preview.style.display = 'none';
-                    }
-                });
+    if (photoInput) {
+        photoInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('Veuillez sélectionner une image valide.');
+                    e.target.value = '';
+                    return;
+                }
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                preview.onload = () => URL.revokeObjectURL(preview.src);
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
             }
         });
-    </script>
+    }
+
+    // ── Autofill ──
+    const btnAutoFill   = document.getElementById('btnAutoFill');
+    const numeroVolInput = document.getElementById('{{ form.numeroVol.vars.id }}');
+
+    btnAutoFill.addEventListener('click', async function () {
+        const numeroVol = numeroVolInput.value.trim();
+
+        if (!numeroVol) {
+            alert('Veuillez saisir un numéro de vol avant de lancer l\'auto-remplissage.');
+            numeroVolInput.focus();
+            return;
+        }
+
+        btnAutoFill.textContent = '⏳ Chargement...';
+        btnAutoFill.disabled = true;
+
+        try {
+            const res  = await fetch('{{ path("vol_autofill") }}?numeroVol=' + encodeURIComponent(numeroVol));
+            const data = await res.json();
+
+            if (data.error) {
+                alert('Erreur : ' + data.error);
+                return;
+            }
+
+            // Fill in the fields using Symfony's generated IDs
+            document.getElementById('{{ form.villeDepart.vars.id }}').value  = data.villeDepart  ?? '';
+            document.getElementById('{{ form.villeArrivee.vars.id }}').value = data.villeArrivee ?? '';
+            document.getElementById('{{ form.nom.vars.id }}').value          = data.nom          ?? '';
+            document.getElementById('{{ form.capacite.vars.id }}').value     = data.capacite     ?? '';
+
+if (data.dateDepart) {
+    document.getElementById('{{ form.dateDepart.vars.id }}').value = data.dateDepart.substring(0, 10);
+}
+if (data.dateArrivee) {
+    document.getElementById('{{ form.dateArrive.vars.id }}').value = data.dateArrivee.substring(0, 10);
+}
+            // Symfony date inputs expect YYYY-MM-DD
+            if (data.dateDepart)  {
+                document.getElementById('{{ form.dateDepart.vars.id }}').value  = data.dateDepart.substring(0, 10);
+            }
+            if (data.dateArrivee) {
+                document.getElementById('{{ form.dateArrive.vars.id }}').value  = data.dateArrivee.substring(0, 10);
+            }
+
+        } catch (err) {
+            alert('Erreur réseau : ' + err.message);
+        } finally {
+            btnAutoFill.textContent = '⚡ Auto remplissage';
+            btnAutoFill.disabled = false;
+        }
+    });
+});
+ </script>
 {% endblock %}

@@ -82,7 +82,7 @@ class ReservationController extends AbstractController
             } else {
                 $reservation->setSeatNb(0); 
             }
-           if ($serviceDisponibilite) {
+           if ($serviceDisponibilite=true) {
             $this->em->persist($reservation);
             $this->em->flush();
             $this->addFlash('success', 'Réservation créée avec succès !');
