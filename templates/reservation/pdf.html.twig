@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DejaVu Sans', sans-serif;
+            font-size: 13px;
+            color: #333;
+            background: #fff;
+        }
+
+        /* ── Header banner ── */
+        .header {
+            background: #1a2b4a;
+            color: white;
+            padding: 28px 36px;
+            display: block;
+        }
+
+        .header-top {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .ticket-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ── Status stripe ── */
+        .status-stripe {
+            background: #4ba3a1;
+            color: white;
+            text-align: center;
+            padding: 8px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* ── Body ── */
+        .body {
+            padding: 32px 36px;
+        }
+
+        /* ── Service hero ── */
+        .service-hero {
+            background: #f7f9fc;
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            border-left: 4px solid #4ba3a1;
+        }
+
+        .service-type {
+            font-size: 11px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .service-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a2b4a;
+            margin-top: 4px;
+        }
+
+        .service-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4ba3a1;
+            margin-top: 6px;
+        }
+
+        /* ── Two column grid ── */
+        .grid {
+            width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .grid table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .grid td {
+            width: 50%;
+            vertical-align: top;
+            padding: 0 12px 0 0;
+        }
+
+        .grid td:last-child {
+            padding-left: 12px;
+            border-left: 1px solid #eee;
+        }
+
+        /* ── Section ── */
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-row {
+            margin-bottom: 12px;
+        }
+
+        .detail-label {
+            font-size: 10px;
+            color: #bbb;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a2b4a;
+            margin-top: 2px;
+        }
+
+        .seat-value {
+            color: #2980b9;
+            font-size: 16px;
+        }
+
+        /* ── Divider ── */
+        .divider {
+            border: none;
+            border-top: 1px dashed #ddd;
+            margin: 24px 0;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            background: #f7f9fc;
+            padding: 16px 36px;
+            text-align: center;
+            font-size: 11px;
+            color: #aaa;
+            border-top: 1px solid #eee;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        .ref-number {
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    {# ── Header ── #}
+    <div class="header">
+        <div class="header-top">
+            <div class="company-name">✈ Rehletna</div>
+            <div class="ticket-label">Confirmation de Réservation</div>
+        </div>
+        <div class="ref-number">Réf : #{{ reservation.idReservation }}</div>
+    </div>
+
+    {# ── Status stripe ── #}
+    <div class="status-stripe">✔ {{ reservation.statut }}</div>
+
+    <div class="body">
+
+        {# ── Service hero ── #}
+        <div class="service-hero">
+            <div class="service-type">
+                {{ reservation.idService.type == 'hotel' ? '🏨 Hôtel' : '✈ Vol' }}
+            </div>
+            <div class="service-name">{{ reservation.idService.nom }}</div>
+            <div class="service-price">{{ reservation.idService.prix }} TND</div>
+        </div>
+
+        {# ── Two columns ── #}
+        <div class="grid">
+            <table>
+                <tr>
+                    {# Left: Client info #}
+                    <td>
+                        <div class="section-title">Informations Client</div>
+
+                        <div class="detail-row">
+                            <div class="detail-label">Nom</div>
+                            <div class="detail-value">{{ reservation.nom }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Date Réservation</div>
+                            <div class="detail-value">{{ reservation.dateReservation|date('d/m/Y') }}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Mode Paiement</div>
+                            <div class="detail-value">{{ reservation.modePaiement }}</div>
+                        </div>
+                        {% if reservation.seatNb is defined and reservation.seatNb > 0 %}
+                        <div class="detail-row">
+                            <div class="detail-label">Siège</div>
+                            <div class="detail-value seat-value">{{ reservation.seatNb }}</div>
+                        </div>
+                        {% endif %}
+                    </td>
+
+                    {# Right: Service info #}
+                    <td>
+                        <div class="section-title">Détails du Service</div>
+
+                        {% if reservation.idService.type == 'hotel' %}
+                            <div class="detail-row">
+                                <div class="detail-label">Localisation</div>
+                                <div class="detail-value">{{ reservation.idService.localisation }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Type Chambre</div>
+                                <div class="detail-value">{{ reservation.idService.typeChambre }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Étoiles</div>
+                                <div class="detail-value">
+                                    {% for i in 1..reservation.idService.nombreEtoiles %}★{% endfor %}
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="detail-row">
+                                <div class="detail-label">Trajet</div>
+                                <div class="detail-value">
+                                    {{ reservation.idService.villeDepart }} → {{ reservation.idService.villeArrivee }}
+                                </div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Date Départ</div>
+                                <div class="detail-value">{{ reservation.idService.dateDepart|date('d/m/Y') }}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Numéro Vol</div>
+                                <div class="detail-value">{{ reservation.idService.numeroVol }}</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="detail-row">
+                            <div class="detail-label">Capacité</div>
+                            <div class="detail-value">{{ reservation.idService.capacite }} personnes</div>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <hr class="divider" />
+
+        <div style="text-align:center; color:#aaa; font-size:11px;">
+            Document généré le {{ "now"|date('d/m/Y à H:i') }} — Rehletna Travel Services
+        </div>
+
+    </div>
+
+    {# ── Footer ── #}
+    <div class="footer">
+        Merci pour votre confiance · Rehletna · Ce document tient lieu de confirmation officielle
+    </div>
+
+</body>
+</html>

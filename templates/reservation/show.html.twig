@@ -103,7 +103,12 @@
         <div class="rsd-actions">
             <a href="{{ path('myreservations_index') }}" class="btn-back">← Retour</a>
 
-           
+               {% if reservation.statut|lower == 'confirmée' %}
+        <a href="{{ path('reservation_pdf', { id: reservation.idReservation }) }}"
+           class="btn-submit" target="_blank">
+            🖨 Imprimer le Ticket
+        </a>
+    {% endif %}
             <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
                class="btn-delete"
                onclick="return confirm('Supprimer cette réservation ?')">

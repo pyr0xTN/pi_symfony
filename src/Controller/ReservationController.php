@@ -12,6 +12,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 #[Route('/reservation')]
 class ReservationController extends AbstractController
@@ -133,14 +135,14 @@ class ReservationController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
 
-            
+           
             if ($serviceType === 'vol') {
                 $seatNb = $form->get('siege')->getData();
                 
-                // Validate that a seat was selected
+                
                 if (empty($seatNb)) {
                     $this->addFlash('error', 'Veuillez sélectionner un siège.');
-                    return $this->render('reservation/newreservation.html.twig', [
+                    return $this->render('reservation/new.html.twig', [
                         'active_page' => 'reservations',
                         'form'        => $form,
                         'service'     => $service,
@@ -153,17 +155,17 @@ class ReservationController extends AbstractController
             } else {
                 $reservation->setSeatNb(0); 
             }
-
-            if ($serviceDisponibilite) {
-                $this->em->persist($reservation);
-                $this->em->flush();
-                $this->addFlash('success', 'Réservation créée avec succès !');
-                return $this->redirectToRoute('ourservices_index');
-               }
-               else {
-                $this->addFlash('danger', 'Service indisponible');
-               }
-        
+           if ($serviceDisponibilite=true) {
+            $this->em->persist($reservation);
+            $this->em->flush();
+            $this->addFlash('success', 'Réservation créée avec succès !');
+            return $this->redirectToRoute('myreservations_index');
+           }
+           else {
+            $this->addFlash('danger', 'Service indisponible');
+           }
+          
+            
         }
 
        
@@ -172,7 +174,7 @@ class ReservationController extends AbstractController
             $seats = $this->buildSeatMap($service);
         }
 
-        return $this->render('reservation/newreservation.html.twig', [
+        return $this->render('reservation/new.html.twig', [
             'active_page' => 'reservations',
             'form'        => $form,
             'service'     => $service,
@@ -250,6 +252,45 @@ public function byService(int $serviceId): Response
     ]);
 }
 
+#[Route('/{id}/pdf', name: 'reservation_pdf', methods: ['GET'])]
+public function pdf(int $id): Response
+{
+    $reservation = $this->reservationsRepo->find($id);
+    if (!$reservation) {
+        throw $this->createNotFoundException("Réservation #$id introuvable.");
+    }
+
+    // Only confirmed reservations can be printed
+    if (strtolower($reservation->getStatut()) !== 'confirmée') {
+        $this->addFlash('error', 'Seules les réservations confirmées peuvent être imprimées.');
+        return $this->redirectToRoute('reservation_show', ['id' => $id]);
+    }
+
+    $options = new Options();
+    $options->set('defaultFont', 'DejaVu Sans');
+    $options->set('isRemoteEnabled', true);
+
+    $dompdf = new Dompdf($options);
+
+    $html = $this->renderView('reservation/pdf.html.twig', [
+        'reservation' => $reservation,
+    ]);
+
+    $dompdf->loadHtml($html);
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    $filename = 'reservation-' . $reservation->getIdReservation() . '.pdf';
+
+    return new Response(
+        $dompdf->output(),
+        200,
+        [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]
+    );
+}
   
     private function buildSeatMap(Services $vol): array
     {
