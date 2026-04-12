@@ -647,6 +647,24 @@
             font-weight: 800;
         }
 
+        .reservations-close {
+            background: rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .reservations-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        body.dark-mode .reservations-close {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .reservations-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
         .activity-modal-body {
             display: grid;
             grid-template-columns: minmax(280px, 360px) 1fr;
@@ -1481,6 +1499,206 @@
             border-color: rgba(255, 255, 255, 0.09);
         }
 
+        .reservations-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 10, 18, 0.56);
+            backdrop-filter: blur(3px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
+            padding: 20px;
+        }
+
+        .reservations-overlay.show {
+            display: flex;
+        }
+
+        .reservations-modal {
+            width: min(980px, 96vw);
+            max-height: 88vh;
+            overflow: auto;
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid rgba(95, 123, 152, 0.22);
+            box-shadow: 0 24px 64px rgba(8, 23, 39, 0.24);
+        }
+
+        .reservations-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px;
+            background: #1f3a52;
+            border-bottom: none;
+        }
+
+        .reservations-title {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.3px;
+        }
+
+        .reservations-content {
+            padding: 24px;
+        }
+
+        .reservations-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+            gap: 12px;
+        }
+
+        .reservations-upload-btn {
+            border: 1px solid #2b4a63;
+            background: #244868;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reservations-upload-btn:hover {
+            background: #1d3a52;
+            border-color: #34526b;
+            box-shadow: 0 2px 8px rgba(8, 23, 39, 0.15);
+        }
+
+        .reservations-message {
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(66, 117, 158, 0.25);
+            color: #2b4a63;
+            background: #f0f6fb;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .reservations-message.show {
+            display: block;
+        }
+
+        .reservations-table-wrap {
+            overflow-x: auto;
+            border: 1px solid #e8ecf3;
+            border-radius: 8px;
+        }
+
+        .reservations-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+            font-size: 14px;
+        }
+
+        .reservations-table th,
+        .reservations-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e8ecf3;
+        }
+
+        .reservations-table thead th {
+            background: #f8fafb;
+            color: #1f3a52;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .reservations-table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        .reservations-table tbody tr:hover {
+            background-color: #f8fafb;
+        }
+
+        .reservations-table tbody td {
+            color: #34526b;
+            font-weight: 500;
+        }
+
+        .reservations-avatar-cell {
+            text-align: center;
+            padding: 8px 16px !important;
+        }
+
+        .reservations-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e8ecf3;
+            background: #f8fafb;
+            display: inline-block;
+        }
+
+        body.dark-mode .reservations-avatar {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .reservations-modal {
+            background: linear-gradient(170deg, rgba(21, 28, 41, 0.98), rgba(18, 24, 34, 0.98));
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        body.dark-mode .reservations-head {
+            background: #0f1a28;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-mode .reservations-title {
+            color: #e8f0f6;
+        }
+
+        body.dark-mode .reservations-table,
+        body.dark-mode .reservations-table tbody td {
+            color: #c5d9e8;
+        }
+
+        body.dark-mode .reservations-table thead th {
+            background: rgba(255, 255, 255, 0.08);
+            color: #d7e7f5;
+        }
+
+        body.dark-mode .reservations-table th,
+        body.dark-mode .reservations-table td,
+        body.dark-mode .reservations-table-wrap {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        body.dark-mode .reservations-table tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        body.dark-mode .reservations-message {
+            color: #b9d3e8;
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        body.dark-mode .reservations-upload-btn {
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(66, 117, 158, 0.2);
+        }
+
+        body.dark-mode .reservations-upload-btn:hover {
+            background: rgba(66, 117, 158, 0.3);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
         @media (max-width: 992px) {
             .side-menu {
                 box-shadow: none;
@@ -1523,6 +1741,23 @@
             var createModalOverlay = document.querySelector('.activity-create-overlay');
             if (createModalOverlay) {
                 createModalOverlay.classList.remove('show');
+            }
+        };
+
+        window.closeReservationsModal = function () {
+            var reservationsOverlay = document.querySelector('.reservations-overlay');
+            var reservationsBody = document.querySelector('.js-reservations-body');
+            var reservationsMessage = document.querySelector('.js-reservations-message');
+
+            if (reservationsOverlay) {
+                reservationsOverlay.classList.remove('show');
+            }
+            if (reservationsBody) {
+                reservationsBody.innerHTML = '';
+            }
+            if (reservationsMessage) {
+                reservationsMessage.classList.remove('show');
+                reservationsMessage.textContent = '';
             }
         };
 
@@ -1704,6 +1939,13 @@
             var editModalClose = document.querySelector('.activity-edit-close');
             var createModalOverlay = document.querySelector('.activity-create-overlay');
             var createModalClose = document.querySelector('.activity-create-close');
+            var reservationsOverlay = document.querySelector('.reservations-overlay');
+            var reservationsClose = document.querySelector('.reservations-close');
+            var reservationsTitle = document.querySelector('.js-reservations-title');
+            var reservationsBody = document.querySelector('.js-reservations-body');
+            var reservationsMessage = document.querySelector('.js-reservations-message');
+            var reservationsUploadButton = document.querySelector('.js-reservations-upload-btn');
+            var currentReservationsPdfUrl = '';
             var paymentOverlay = document.querySelector('.payment-overlay');
             var paymentClose = document.querySelector('.payment-close');
             var reserveButton = document.querySelector('.activity-modal-reserve');
@@ -1724,6 +1966,81 @@
             var stripeElements = null;
             var stripePaymentElement = null;
             var stripeInitTimer = null;
+
+            function showReservationsMessage(message) {
+                if (!reservationsMessage) {
+                    return;
+                }
+                reservationsMessage.textContent = message;
+                reservationsMessage.classList.add('show');
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            async function openReservationsModal(url, fallbackTitle) {
+                if (!reservationsOverlay || !reservationsBody) {
+                    return;
+                }
+
+                if (reservationsTitle) {
+                    reservationsTitle.textContent = 'Reservations - ' + (fallbackTitle || 'Activity');
+                }
+
+                reservationsBody.innerHTML = '';
+                showReservationsMessage('Chargement des reservations...');
+                reservationsOverlay.classList.add('show');
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json().catch(function () { return {}; });
+                    if (!response.ok || !data.success) {
+                        throw new Error((data && data.message) ? data.message : 'Impossible de charger les reservations.');
+                    }
+
+                    if (reservationsTitle && data.activity && data.activity.titre) {
+                        reservationsTitle.textContent = 'Reservations - ' + data.activity.titre;
+                    }
+
+                    if (reservationsMessage) {
+                        reservationsMessage.classList.remove('show');
+                    }
+
+                    var rows = Array.isArray(data.reservations) ? data.reservations : [];
+                    if (rows.length === 0) {
+                        showReservationsMessage('Aucune reservation pour cette activite.');
+                        return;
+                    }
+
+                    reservationsBody.innerHTML = rows.map(function (row) {
+                        var usernameSuffix = row.username ? ' <small>(' + escapeHtml(row.username) + ')</small>' : '';
+                        var avatarHtml = '<img src="' + escapeHtml(row.avatarUrl) + '" alt="' + escapeHtml(row.fullName) + '" class="reservations-avatar" />';
+                        return '<tr>'
+                            + '<td class="reservations-avatar-cell">' + avatarHtml + '</td>'
+                            + '<td>' + escapeHtml(row.fullName || '-') + usernameSuffix + '</td>'
+                            + '<td>' + escapeHtml(row.email || '-') + '</td>'
+                            + '<td>' + escapeHtml(row.nbPlaces || 0) + '</td>'
+                            + '<td>' + escapeHtml(row.montantTotal || '0') + ' DT</td>'
+                            + '<td>' + escapeHtml(row.statut || '-') + '</td>'
+                            + '<td>' + escapeHtml(row.dateAchat || '-') + '</td>'
+                            + '</tr>';
+                    }).join('');
+                } catch (e) {
+                    showReservationsMessage(e && e.message ? e.message : 'Erreur de chargement des reservations.');
+                }
+            }
 
             function closeMenu() {
                 if (sideMenu) {
@@ -1776,6 +2093,28 @@
                     if (event.target === createModalOverlay) {
                         closeActivityCreateModal();
                     }
+                });
+            }
+
+            if (reservationsClose) {
+                reservationsClose.addEventListener('click', closeReservationsModal);
+            }
+
+            if (reservationsOverlay) {
+                reservationsOverlay.addEventListener('click', function (event) {
+                    if (event.target === reservationsOverlay) {
+                        closeReservationsModal();
+                    }
+                });
+            }
+
+            if (reservationsUploadButton) {
+                reservationsUploadButton.addEventListener('click', function () {
+                    if (!currentReservationsPdfUrl) {
+                        showReservationsMessage('No activity selected for PDF export.');
+                        return;
+                    }
+                    window.location.href = currentReservationsPdfUrl;
                 });
             }
 
@@ -2043,11 +2382,24 @@
                 });
             });
 
+            document.querySelectorAll('.js-open-reservations-modal').forEach(function (button) {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    var reservationsUrl = button.getAttribute('data-reservations-url') || '';
+                    currentReservationsPdfUrl = button.getAttribute('data-reservations-pdf-url') || '';
+                    if (!reservationsUrl) {
+                        return;
+                    }
+                    openReservationsModal(reservationsUrl, button.getAttribute('data-activity-title') || 'Activity');
+                });
+            });
+
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape') {
                     closeActivityModal();
                     closeActivityEditModal();
                     closeActivityCreateModal();
+                    closeReservationsModal();
                     closePaymentModal();
                 }
             });
@@ -2289,7 +2641,18 @@
                                         {{ activity.description|length > 120 ? activity.description|slice(0, 120) ~ '...' : activity.description }}
                                     </div>
                                     <div class="activity-meta">
-                                        <span class="activities-badge neutral">{{ activity.placesDisponibles }} places</span>
+                                        {% if isMyActivity and is_granted('ROLE_GUIDE') %}
+                                            <button
+                                                type="button"
+                                                class="activities-badge neutral js-open-reservations-modal"
+                                                data-reservations-url="{{ path('app_activities_reservations_data', { id: activity.idActivite }) }}"
+                                                data-reservations-pdf-url="{{ path('app_activities_reservations_pdf', { id: activity.idActivite }) }}"
+                                                data-activity-title="{{ activity.titre|e('html_attr') }}"
+                                                title="Voir les reservations de cette activite"
+                                            >{{ activity.placesDisponibles }} places</button>
+                                        {% else %}
+                                            <span class="activities-badge neutral">{{ activity.placesDisponibles }} places</span>
+                                        {% endif %}
                                         <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
                                     </div>
                                     <div class="activity-foot">
@@ -2410,6 +2773,37 @@
                     <div class="activity-modal-actions">
                         <button type="button" class="activity-modal-reserve" data-activity-id="0" data-amount="0" data-activity-title="Activity">Reserver</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="reservations-overlay">
+        <div class="reservations-modal" role="dialog" aria-modal="true" aria-labelledby="reservationsTitle">
+            <div class="reservations-head">
+                <h3 class="reservations-title js-reservations-title" id="reservationsTitle">Reservations</h3>
+                <button type="button" class="activity-modal-close reservations-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="reservations-content">
+                <div class="reservations-message js-reservations-message"></div>
+                <div class="reservations-table-wrap">
+                    <table class="reservations-table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Client</th>
+                                <th>Email</th>
+                                <th>Places</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="js-reservations-body"></tbody>
+                    </table>
+                </div>
+                <div class="reservations-actions">
+                    <button type="button" class="reservations-upload-btn js-reservations-upload-btn">Upload</button>
                 </div>
             </div>
         </div>
