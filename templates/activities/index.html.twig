@@ -418,6 +418,21 @@
             gap: 14px;
         }
 
+        .activities-banner {
+            margin-top: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .activities-banner.success {
+            color: #0b7a5a;
+            background: rgba(16, 185, 129, 0.13);
+            border-color: rgba(16, 185, 129, 0.35);
+        }
+
         .activity-card {
             border: 1px solid rgba(126, 152, 178, 0.28);
             border-radius: 18px;
@@ -1488,6 +1503,7 @@
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="https://js.stripe.com/v3/"></script>
     <script>
         window.closeActivityModal = function () {
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
@@ -1571,10 +1587,11 @@
             if (activityModalFields.duration) {
                 activityModalFields.duration.textContent = (button.dataset.duration || '-') + ' h';
             }
-
             if (activityModalReserve) {
+                activityModalReserve.setAttribute('data-activity-id', button.dataset.activityId || '0');
                 activityModalReserve.setAttribute('data-amount', button.dataset.price || '0');
                 activityModalReserve.setAttribute('data-activity-title', button.dataset.title || 'Activity');
+                activityModalReserve.setAttribute('data-max-places', button.dataset.places || '1');
             }
 
             activityModalOverlay.classList.add('show');
@@ -1631,11 +1648,15 @@
             var paymentOverlay = document.querySelector('.payment-overlay');
             var paymentForm = document.querySelector('.js-payment-form');
             var paymentSuccess = document.querySelector('.js-payment-success');
+            var stripeElementContainer = document.querySelector('.js-stripe-payment-element');
             if (paymentOverlay) {
                 paymentOverlay.classList.remove('show');
             }
             if (paymentForm) {
                 paymentForm.reset();
+            }
+            if (stripeElementContainer) {
+                stripeElementContainer.innerHTML = '';
             }
             if (paymentSuccess) {
                 paymentSuccess.classList.remove('show');
@@ -1686,19 +1707,23 @@
             var paymentOverlay = document.querySelector('.payment-overlay');
             var paymentClose = document.querySelector('.payment-close');
             var reserveButton = document.querySelector('.activity-modal-reserve');
+            var paymentPlaces = document.querySelector('.js-payment-places');
+            var errorPaymentPlaces = document.querySelector('.js-payment-error-places');
             var paymentForm = document.querySelector('.js-payment-form');
-            var paymentCardNumber = document.querySelector('.js-payment-card-number');
-            var paymentCardHolder = document.querySelector('.js-payment-card-holder');
-            var paymentCardExpiry = document.querySelector('.js-payment-card-expiry');
-            var paymentCardCvv = document.querySelector('.js-payment-card-cvv');
             var cardNumberDisplay = document.querySelector('.js-card-number-display');
             var cardHolderDisplay = document.querySelector('.js-card-holder-display');
             var cardExpiryDisplay = document.querySelector('.js-card-expiry-display');
             var paymentSuccess = document.querySelector('.js-payment-success');
-            var errorCardNumber = document.querySelector('.js-payment-error-number');
-            var errorCardHolder = document.querySelector('.js-payment-error-holder');
-            var errorCardExpiry = document.querySelector('.js-payment-error-expiry');
-            var errorCardCvv = document.querySelector('.js-payment-error-cvv');
+            var errorStripePayment = document.querySelector('.js-payment-error-stripe');
+            var paymentCheckoutToken = document.querySelector('.js-payment-checkout-token');
+            var checkoutUrl = '{{ path('app_activities_create_checkout_session') }}';
+            var finalizeUrl = '{{ path('app_activities_finalize_payment') }}';
+            var stripeReturnUrl = '{{ url('app_activities', {'payment': 'success'}) }}';
+            var stripePaymentElementContainer = document.querySelector('.js-stripe-payment-element');
+            var stripeInstance = null;
+            var stripeElements = null;
+            var stripePaymentElement = null;
+            var stripeInitTimer = null;
 
             function closeMenu() {
                 if (sideMenu) {
@@ -1769,120 +1794,245 @@
             if (reserveButton) {
                 reserveButton.addEventListener('click', function (event) {
                     event.preventDefault();
-                    var amount = reserveButton.getAttribute('data-amount') || '0';
+
+                    var amount = parseInt(reserveButton.getAttribute('data-amount') || '0', 10);
                     var activityTitle = reserveButton.getAttribute('data-activity-title') || 'Activity';
+                    var activityId = parseInt(reserveButton.getAttribute('data-activity-id') || '0', 10);
+                    var maxPlaces = parseInt(reserveButton.getAttribute('data-max-places') || '1', 10);
+
+                    if (paymentForm) {
+                        paymentForm.setAttribute('data-unit-amount', String(amount > 0 ? amount : 0));
+                        paymentForm.setAttribute('data-activity-id', String(activityId > 0 ? activityId : 0));
+                        paymentForm.setAttribute('data-max-places', String(maxPlaces > 0 ? maxPlaces : 1));
+                    }
+
+                    if (paymentPlaces) {
+                        paymentPlaces.value = '1';
+                        paymentPlaces.max = String(maxPlaces > 0 ? maxPlaces : 1);
+                    }
+
                     openPaymentModal(amount, activityTitle);
+                    refreshPaymentTotal();
+                    initializeStripeElement();
                 });
             }
 
-            function formatCardNumber(value) {
-                var digits = String(value || '').replace(/\D/g, '').slice(0, 16);
-                return digits.replace(/(.{4})/g, '$1 ').trim();
-            }
+            function refreshPaymentTotal() {
+                var amountLabel = document.querySelector('.js-payment-amount');
+                var unitAmount = parseInt((paymentForm && paymentForm.getAttribute('data-unit-amount')) || '0', 10);
+                var places = parseInt((paymentPlaces && paymentPlaces.value) || '1', 10);
 
-            function formatExpiry(value) {
-                var digits = String(value || '').replace(/\D/g, '').slice(0, 4);
-                if (digits.length <= 2) {
-                    return digits;
+                if (!Number.isFinite(places) || places < 1) {
+                    places = 1;
                 }
-                return digits.slice(0, 2) + '/' + digits.slice(2);
+
+                if (amountLabel) {
+                    amountLabel.textContent = String(unitAmount * places) + ' DT';
+                }
             }
 
-            if (paymentCardNumber) {
-                paymentCardNumber.addEventListener('input', function () {
-                    paymentCardNumber.value = formatCardNumber(paymentCardNumber.value);
-                    if (cardNumberDisplay) {
-                        cardNumberDisplay.textContent = paymentCardNumber.value || '•••• •••• •••• ••••';
+            if (paymentPlaces) {
+                paymentPlaces.addEventListener('input', function () {
+                    var maxPlaces = parseInt((paymentForm && paymentForm.getAttribute('data-max-places')) || '1', 10);
+                    var places = parseInt(paymentPlaces.value || '1', 10);
+
+                    if (!Number.isFinite(places) || places < 1) {
+                        places = 1;
                     }
-                    if (errorCardNumber) {
-                        errorCardNumber.classList.remove('show');
+                    if (Number.isFinite(maxPlaces) && maxPlaces > 0 && places > maxPlaces) {
+                        places = maxPlaces;
                     }
+
+                    paymentPlaces.value = String(places);
+                    if (errorPaymentPlaces) {
+                        errorPaymentPlaces.classList.remove('show');
+                    }
+                    refreshPaymentTotal();
+
+                    if (stripeInitTimer) {
+                        window.clearTimeout(stripeInitTimer);
+                    }
+                    stripeInitTimer = window.setTimeout(function () {
+                        initializeStripeElement();
+                    }, 350);
                 });
             }
 
-            if (paymentCardHolder) {
-                paymentCardHolder.addEventListener('input', function () {
-                    if (cardHolderDisplay) {
-                        cardHolderDisplay.textContent = paymentCardHolder.value || 'VOTRE NOM';
-                    }
-                    if (errorCardHolder) {
-                        errorCardHolder.classList.remove('show');
-                    }
-                });
-            }
+            async function initializeStripeElement() {
+                if (!paymentForm || !paymentCheckoutToken || !stripePaymentElementContainer) {
+                    return false;
+                }
 
-            if (paymentCardExpiry) {
-                paymentCardExpiry.addEventListener('input', function () {
-                    paymentCardExpiry.value = formatExpiry(paymentCardExpiry.value);
-                    if (cardExpiryDisplay) {
-                        cardExpiryDisplay.textContent = paymentCardExpiry.value || 'MM/AA';
-                    }
-                    if (errorCardExpiry) {
-                        errorCardExpiry.classList.remove('show');
-                    }
-                });
-            }
+                var places = parseInt(String(paymentPlaces ? paymentPlaces.value : '1'), 10);
+                var maxPlaces = parseInt((paymentForm && paymentForm.getAttribute('data-max-places')) || '1', 10);
+                var unitAmount = parseInt((paymentForm && paymentForm.getAttribute('data-unit-amount')) || '0', 10);
+                var activityId = parseInt((paymentForm && paymentForm.getAttribute('data-activity-id')) || '0', 10);
+                var token = String(paymentCheckoutToken.value || '');
 
-            if (paymentCardCvv) {
-                paymentCardCvv.addEventListener('input', function () {
-                    paymentCardCvv.value = String(paymentCardCvv.value || '').replace(/\D/g, '').slice(0, 4);
-                    if (errorCardCvv) {
-                        errorCardCvv.classList.remove('show');
+                if (!Number.isFinite(places) || places < 1) {
+                    places = 1;
+                }
+                if (Number.isFinite(maxPlaces) && maxPlaces > 0 && places > maxPlaces) {
+                    places = maxPlaces;
+                }
+
+                if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+                    return false;
+                }
+                if (!Number.isFinite(activityId) || activityId <= 0) {
+                    return false;
+                }
+
+                if (errorStripePayment) {
+                    errorStripePayment.classList.remove('show');
+                }
+                stripePaymentElementContainer.innerHTML = '';
+
+                try {
+                    const response = await fetch(checkoutUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: new URLSearchParams({
+                            _token: token,
+                            activity_id: String(activityId),
+                            quantity: String(places)
+                        }).toString()
+                    });
+
+                    const data = await response.json().catch(function () { return {}; });
+                    if (!response.ok || !data.success || !data.clientSecret || !data.publishableKey) {
+                        throw new Error((data && data.message) ? data.message : 'Unable to initialize payment form.');
                     }
-                });
+
+                    if (!stripeInstance || stripeInstance.__key !== data.publishableKey) {
+                        stripeInstance = Stripe(data.publishableKey);
+                        stripeInstance.__key = data.publishableKey;
+                    }
+
+                    stripeElements = stripeInstance.elements({ clientSecret: data.clientSecret });
+                    stripePaymentElement = stripeElements.create('payment');
+                    stripePaymentElement.mount(stripePaymentElementContainer);
+
+                    return true;
+                } catch (e) {
+                    if (errorStripePayment) {
+                        errorStripePayment.textContent = e && e.message ? e.message : "Impossible d'initialiser le formulaire de paiement.";
+                        errorStripePayment.classList.add('show');
+                    }
+                    return false;
+                }
             }
 
             if (paymentForm) {
                 paymentForm.addEventListener('submit', function (event) {
                     event.preventDefault();
 
-                    var rawNumber = String(paymentCardNumber ? paymentCardNumber.value : '').replace(/\s/g, '');
-                    var holder = String(paymentCardHolder ? paymentCardHolder.value : '').trim();
-                    var expiry = String(paymentCardExpiry ? paymentCardExpiry.value : '').trim();
-                    var cvv = String(paymentCardCvv ? paymentCardCvv.value : '').trim();
-                    var expiryOk = /^(0[1-9]|1[0-2])\/[0-9]{2}$/.test(expiry);
+                    var places = parseInt(String(paymentPlaces ? paymentPlaces.value : '1'), 10);
+                    var maxPlaces = parseInt((paymentForm && paymentForm.getAttribute('data-max-places')) || '1', 10);
+                    var unitAmount = parseInt((paymentForm && paymentForm.getAttribute('data-unit-amount')) || '0', 10);
+                    var activityId = parseInt((paymentForm && paymentForm.getAttribute('data-activity-id')) || '0', 10);
 
                     var isValid = true;
-                    if (errorCardNumber) {
-                        var numberInvalid = rawNumber.length < 13 || rawNumber.length > 19;
-                        errorCardNumber.classList.toggle('show', numberInvalid);
-                        if (numberInvalid) {
+
+                    if (errorPaymentPlaces) {
+                        var placesInvalid = !Number.isFinite(places) || places < 1 || (Number.isFinite(maxPlaces) && maxPlaces > 0 && places > maxPlaces);
+                        errorPaymentPlaces.classList.toggle('show', placesInvalid);
+                        if (placesInvalid) {
                             isValid = false;
                         }
                     }
-                    if (errorCardHolder) {
-                        var holderInvalid = holder.length < 3;
-                        errorCardHolder.classList.toggle('show', holderInvalid);
-                        if (holderInvalid) {
-                            isValid = false;
-                        }
+
+                    if (!Number.isFinite(unitAmount) || unitAmount <= 0) {
+                        isValid = false;
                     }
-                    if (errorCardExpiry) {
-                        errorCardExpiry.classList.toggle('show', !expiryOk);
-                        if (!expiryOk) {
-                            isValid = false;
-                        }
-                    }
-                    if (errorCardCvv) {
-                        var cvvInvalid = !/^\d{3,4}$/.test(cvv);
-                        errorCardCvv.classList.toggle('show', cvvInvalid);
-                        if (cvvInvalid) {
-                            isValid = false;
-                        }
+                    if (!Number.isFinite(activityId) || activityId <= 0) {
+                        isValid = false;
                     }
 
                     if (!isValid) {
                         return;
                     }
 
+                    var submitButton = paymentForm.querySelector('.payment-confirm');
                     if (paymentSuccess) {
+                        paymentSuccess.textContent = 'Creation du paiement...';
+                        paymentSuccess.style.color = '#0d5e8a';
+                        paymentSuccess.style.background = 'rgba(13, 94, 138, 0.12)';
+                        paymentSuccess.style.borderColor = 'rgba(13, 94, 138, 0.28)';
                         paymentSuccess.classList.add('show');
                     }
 
-                    window.setTimeout(function () {
-                        closePaymentModal();
-                        closeActivityModal();
-                    }, 1200);
+                    if (submitButton) {
+                        submitButton.disabled = true;
+                        submitButton.textContent = 'Traitement...';
+                    }
+
+                    Promise.resolve()
+                        .then(async function () {
+                            var ready = stripeElements ? true : await initializeStripeElement();
+                            if (!ready || !stripeInstance || !stripeElements) {
+                                throw new Error("Le formulaire de paiement n'est pas prêt.");
+                            }
+
+                            const result = await stripeInstance.confirmPayment({
+                                elements: stripeElements,
+                                confirmParams: {
+                                    return_url: stripeReturnUrl
+                                },
+                                redirect: 'if_required'
+                            });
+
+                            if (result.error) {
+                                throw new Error(result.error.message || 'Paiement refuse.');
+                            }
+
+                            if (result.paymentIntent && result.paymentIntent.status === 'succeeded') {
+                                const finalizeResponse = await fetch(finalizeUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                    },
+                                    body: new URLSearchParams({
+                                        _token: String(paymentCheckoutToken ? paymentCheckoutToken.value : ''),
+                                        payment_intent_id: String(result.paymentIntent.id || '')
+                                    }).toString()
+                                });
+
+                                const finalizeData = await finalizeResponse.json().catch(function () { return {}; });
+                                if (!finalizeResponse.ok || !finalizeData.success) {
+                                    throw new Error((finalizeData && finalizeData.message) ? finalizeData.message : "Paiement confirme, mais l'enregistrement a echoue.");
+                                }
+
+                                window.location.href = '{{ path('app_activities', {'payment': 'success'}) }}';
+                                return;
+                            }
+
+                            if (result.paymentIntent && result.paymentIntent.status === 'processing') {
+                                if (paymentSuccess) {
+                                    paymentSuccess.textContent = 'Paiement en cours de traitement...';
+                                    paymentSuccess.style.color = '#0d5e8a';
+                                    paymentSuccess.style.background = 'rgba(13, 94, 138, 0.12)';
+                                    paymentSuccess.style.borderColor = 'rgba(13, 94, 138, 0.28)';
+                                }
+                                return;
+                            }
+                        })
+                        .catch(function (err) {
+                            if (paymentSuccess) {
+                                paymentSuccess.textContent = err && err.message ? err.message : 'Erreur de paiement. Veuillez reessayer.';
+                                paymentSuccess.style.color = '#c6364f';
+                                paymentSuccess.style.background = 'rgba(198, 54, 79, 0.12)';
+                                paymentSuccess.style.borderColor = 'rgba(198, 54, 79, 0.28)';
+                            }
+                        })
+                        .finally(function () {
+                            if (submitButton) {
+                                submitButton.disabled = false;
+                                submitButton.textContent = 'Confirmer le paiement';
+                            }
+                        });
                 });
             }
 
@@ -2066,6 +2216,8 @@
             </div>
 
             <div class="content-area">
+                {% set paymentStatus = app.request.query.get('payment') %}
+
                 <div class="activities-module">
                     <div class="activities-head">
                         <div>
@@ -2111,6 +2263,12 @@
                             <a class="activities-pill" href="{{ path('app_mainpage') }}">Back to main</a>
                         </div>
                     </div>
+
+                    {% if paymentStatus == 'success' %}
+                        <div class="activities-banner success">
+                            Payment completed successfully. Your reservation has been confirmed.
+                        </div>
+                    {% endif %}
 
                     <div class="activities-grid">
                         {% for activity in activities %}
@@ -2168,6 +2326,7 @@
                                                     type="button"
                                                     class="activity-view js-open-activity-modal"
                                                     onclick="window.openActivityModal(this); return false;"
+                                                    data-activity-id="{{ activity.idActivite }}"
                                                     data-title="{{ activity.titre|e('html_attr') }}"
                                                     data-description="{{ activity.description|e('html_attr') }}"
                                                     data-location="{{ activity.lieu|e('html_attr') }}"
@@ -2249,7 +2408,7 @@
                     </div>
 
                     <div class="activity-modal-actions">
-                        <button type="button" class="activity-modal-reserve" data-amount="0" data-activity-title="Activity">Reserver</button>
+                        <button type="button" class="activity-modal-reserve" data-activity-id="0" data-amount="0" data-activity-title="Activity">Reserver</button>
                     </div>
                 </div>
             </div>
@@ -2287,29 +2446,20 @@
             <div class="payment-success js-payment-success">Payment confirmed successfully.</div>
 
             <form class="payment-form js-payment-form" novalidate>
+                <input type="hidden" class="js-payment-checkout-token" value="{{ csrf_token('activities-checkout') }}">
+
                 <div class="payment-field">
-                    <label class="payment-label" for="pay-card-number">Numero de carte</label>
-                    <input class="payment-input js-payment-card-number" id="pay-card-number" type="text" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" required>
-                    <span class="payment-error js-payment-error-number">Numero de carte invalide.</span>
+                    <label class="payment-label" for="pay-places">Nombre de places</label>
+                    <input class="payment-input js-payment-places" id="pay-places" type="number" min="1" step="1" value="1" required>
+                    <span class="payment-error js-payment-error-places">Nombre de places invalide.</span>
                 </div>
 
                 <div class="payment-field">
-                    <label class="payment-label" for="pay-card-holder">Nom du titulaire</label>
-                    <input class="payment-input js-payment-card-holder" id="pay-card-holder" type="text" autocomplete="cc-name" placeholder="PRENOM NOM" required>
-                    <span class="payment-error js-payment-error-holder">Nom requis.</span>
-                </div>
-
-                <div class="payment-split">
-                    <div class="payment-field">
-                        <label class="payment-label" for="pay-card-expiry">Expiration</label>
-                        <input class="payment-input js-payment-card-expiry" id="pay-card-expiry" type="text" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/AA" required>
-                        <span class="payment-error js-payment-error-expiry">Date invalide.</span>
+                    <label class="payment-label">Informations de carte</label>
+                    <div class="payment-input" style="padding: 14px; background: rgba(255, 255, 255, 0.88);">
+                        <div class="js-stripe-payment-element"></div>
                     </div>
-                    <div class="payment-field">
-                        <label class="payment-label" for="pay-card-cvv">Code CVV</label>
-                        <input class="payment-input js-payment-card-cvv" id="pay-card-cvv" type="password" inputmode="numeric" autocomplete="cc-csc" placeholder="***" required>
-                        <span class="payment-error js-payment-error-cvv">CVV invalide.</span>
-                    </div>
+                    <span class="payment-error js-payment-error-stripe">Impossible d'initialiser le formulaire de paiement.</span>
                 </div>
 
                 <div class="payment-actions">
