@@ -26,21 +26,15 @@
 
                         <!-- Nav brand -->
                       <div class="sidebar-logo">
-        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
-    </div>
+                      <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+                       </div>
 
-                        <!-- Navbar Toggler -->
-                        <div class="classy-navbar-toggler">
-                            <span class="navbarToggler"><span></span><span></span><span></span></span>
-                        </div>
+                    
 
                         <!-- Menu -->
                         <div class="classy-menu">
 
-                            <!-- close btn -->
-                            <div class="classycloseIcon">
-                                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
-                            </div>
+                         
 
                             <!-- Nav Start -->
                             <div class="classynav">
@@ -50,7 +44,7 @@
                                 </ul>
                                 <!-- Button -->
                                 <div class="menu-btn">
-                                    <a href="#" class="btn palatin-btn">Make a Reservation</a>
+                                    <a href="#" class="btn palatin-btn">HOME</a>
                                 </div>
 
                             </div>
@@ -190,18 +184,15 @@
     </section>
     <!-- ##### Service Intro Area End ##### -->
 
-
-    <section class="core-features-area">
+<div class="services-wrapper">
+  
   {% if services is empty %}
         <div class="empty-state">
             <span class="empty-icon">🔍</span>
             <p>Aucun service disponible pour le moment.</p>
         </div>
     {% else %}
-        <div class="cards-grid" style="display: flex;
-  justify-content: center;
-  align-items: center;
-  ">
+ <div class="cards-grid">
             {% for service in services %}
 
                 <div class="service-card">
@@ -274,11 +265,12 @@
 
                     </div>
                 </div>
-
             {% endfor %}
         </div>
     {% endif %}
-    </section>
+
+</div>
+
     <!-- ##### Services Area Start ##### -->
     <section class="services-area">
         <div class="container">

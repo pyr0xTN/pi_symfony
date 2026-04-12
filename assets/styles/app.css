@@ -1160,3 +1160,282 @@ input[type="date"].form-input {
 .rc-btn-success:hover {
     background-color: #218838;
 }
+.services-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 20px 80px;
+  }
+  
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    width: 100%;
+    max-width: 1200px;
+  }
+  /* ═══════════════════════════════════════
+   HOTEL DETAIL PAGE
+═══════════════════════════════════════ */
+
+.detail-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 20px 80px;
+}
+
+.detail-card {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.09);
+    width: 100%;
+    max-width: 860px;
+    overflow: hidden;
+}
+
+/* ── Hero ── */
+.detail-hero {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    background: #e8f4f8;
+    overflow: hidden;
+}
+
+.detail-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.detail-hero-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 80px;
+    background: linear-gradient(135deg, #e8f4f8 0%, #d6eaf8 100%);
+}
+
+/* ── Overlaid badges ── */
+.detail-badge {
+    position: absolute;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.4px;
+}
+
+.detail-badge--type {
+    top: 16px;
+    left: 16px;
+    background: rgba(75, 163, 161, 0.9);
+    color: #fff;
+}
+
+.detail-badge--dispo {
+    top: 16px;
+    right: 16px;
+}
+
+.badge-avail  { background: rgba(39, 174, 96, 0.9);  color: #fff; }
+.badge-unavail{ background: rgba(231, 76, 60, 0.85); color: #fff; }
+
+/* ── Title Row ── */
+.detail-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 28px 32px 0;
+    flex-wrap: wrap;
+}
+
+.detail-name {
+    font-size: 26px;
+    font-weight: 800;
+    color: #1a2b4a;
+    margin: 0 0 6px;
+}
+
+.detail-location {
+    font-size: 14px;
+    color: #888;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.weather-chip {
+    background: #eaf7ff;
+    color: #1a7aad;
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.detail-price-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.detail-price {
+    font-size: 32px;
+    font-weight: 900;
+    color: #4ba3a1;
+    line-height: 1;
+}
+
+.detail-price-label {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 500;
+}
+
+/* ── Divider ── */
+.detail-divider {
+    border: none;
+    border-top: 1px solid #f0f2f5;
+    margin: 24px 32px;
+}
+
+/* ── Info Chips ── */
+.detail-chips {
+    display: flex;
+    gap: 16px;
+    padding: 0 32px;
+    flex-wrap: wrap;
+}
+
+.detail-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f7f9fc;
+    border-radius: 12px;
+    padding: 14px 20px;
+    flex: 1;
+    min-width: 160px;
+}
+
+.chip-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.chip-label {
+    display: block;
+    font-size: 11px;
+    color: #aaa;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.chip-value {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2b4a;
+    margin-top: 2px;
+}
+
+/* ── Description ── */
+.detail-description {
+    padding: 0 32px;
+}
+
+.detail-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a2b4a;
+    margin: 0 0 10px;
+}
+
+.detail-description p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* ── Actions ── */
+.detail-actions {
+    display: flex;
+    gap: 12px;
+    padding: 28px 32px 32px;
+    flex-wrap: wrap;
+}
+
+.detail-actions .btn-back,
+.detail-actions .btn-submit {
+    flex: 1;
+    text-align: center;
+    min-width: 160px;
+}
+/* ═══════════════════════════════════════
+   FLIGHT ROUTE BANNER
+═══════════════════════════════════════ */
+
+.flight-route {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 32px;
+    flex-wrap: wrap;
+}
+
+.flight-city {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.flight-city--right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.flight-city-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1a2b4a;
+}
+
+.flight-city-date {
+    font-size: 13px;
+    color: #888;
+}
+
+.flight-arrow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 80px;
+}
+
+.flight-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, #4ba3a1, #d6eaf8);
+    border-radius: 2px;
+}
+
+.flight-city--right ~ * .flight-line,
+.flight-arrow .flight-line:last-child {
+    background: linear-gradient(to right, #d6eaf8, #4ba3a1);
+}
+
+.flight-plane {
+    font-size: 22px;
+    color: #4ba3a1;
+}

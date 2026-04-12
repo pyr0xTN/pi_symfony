@@ -6,9 +6,6 @@ use App\Entity\Reservations;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Reservations>
- */
 class ReservationsRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)

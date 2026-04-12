@@ -73,68 +73,74 @@
 
     
 
-<div class="form-wrapper">
-    <div class="form-card">
+<div class="detail-wrapper">
+    <div class="detail-card">
 
-        {# Header #}
-        <div class="detail-header">
-            <h2 class="form-title">🏨 Détails de l'Hôtel</h2>
-            <h3 class="detail-name">{{ hotel.nom }}</h3>
+        {# ── Hero ── #}
+        <div class="detail-hero">
+            {% if hotel.imgUrl is defined and hotel.imgUrl %}
+                <img src="{{ asset(hotel.imgUrl) }}" alt="{{ hotel.nom }}" class="detail-hero-img" />
+            {% else %}
+                <div class="detail-hero-placeholder">🏨</div>
+            {% endif %}
+
+            <span class="detail-badge detail-badge--type">Hôtel</span>
+            <span class="detail-badge detail-badge--dispo {% if hotel.disponibilite %}badge-avail{% else %}badge-unavail{% endif %}">
+                {{ hotel.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+            </span>
         </div>
 
-        <hr class="separator" />
-
-        {# Details Grid #}
-        <div class="detail-grid">
-
-            <div class="detail-row">
-                <span class="form-label">Localisation :</span>
-                <span class="detail-value">
-                    {{ hotel.localisation }}
+        {# ── Title Row ── #}
+        <div class="detail-title-row">
+            <div>
+                <h2 class="detail-name">{{ hotel.nom }}</h2>
+                <p class="detail-location">
+                    📍 {{ hotel.localisation }}
                     {% if weather is defined %}
-                        <span class="weather-badge">{{ weather }}°C</span>
+                        <span class="weather-chip">🌡 {{ weather }}°C</span>
                     {% endif %}
-                    
-                </span>
-
-                <span class="form-label">Prix / Nuit :</span>
-                <span class="detail-value">{{ hotel.prix }} TND</span>
+                </p>
             </div>
-
-            <div class="detail-row">
-                <span class="form-label">Nombre Étoiles :</span>
-                <span class="detail-value">
-                    {% for i in 1..hotel.nombre_etoiles %}★{% endfor %}
-                </span>
-
-                <span class="form-label">Type Chambre :</span>
-                <span class="detail-value">{{ hotel.typeChambre }}</span>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ hotel.prix }}</span>
+                <span class="detail-price-label">TND / nuit</span>
             </div>
-
-            <div class="detail-row">
-                <span class="form-label">Capacité :</span>
-                <span class="detail-value">{{ hotel.capacite }}</span>
-
-                <span class="form-label">Statut :</span>
-                <span class="detail-value badge {% if hotel.disponibilite %}badge-success{% else %}badge-danger{% endif %}">
-                    {{ hotel.disponibilite ? 'Disponible' : 'Indisponible' }}
-                </span>
-            </div>
-
-            <div class="detail-row detail-row-full">
-                <span class="form-label">Description :</span>
-                <span class="detail-value">{{ hotel.description }}</span>
-            </div>
-
         </div>
 
-        <hr class="separator" />
+        <hr class="detail-divider" />
 
-        {# Action Buttons #}
-        <div class="form-actions">
+        {# ── Info Chips ── #}
+        <div class="detail-chips">
+            <div class="detail-chip">
+                <span class="chip-icon">⭐</span>
+                <div>
+                    <span class="chip-label">Étoiles</span>
+                    <span class="chip-value">{% for i in 1..hotel.nombre_etoiles %}★{% endfor %}</span>
+                </div>
+            </div>
+        
+            <div class="detail-chip">
+                <span class="chip-icon">👥</span>
+                <div>
+                    <span class="chip-label">Capacité</span>
+                    <span class="chip-value">{{ hotel.capacite }} personnes</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Description ── #}
+        <div class="detail-description">
+            <h4 class="detail-section-title">À propos</h4>
+            <p>{{ hotel.description }}</p>
+        </div>
+
+        {# ── Actions ── #}
+        <div class="detail-actions">
             <a href="{{ path('ourservices_index') }}" class="btn-back">← Retour</a>
             <a href="{{ path('reservation_newfront', { serviceId: hotel.idService, serviceType: 'hotel' }) }}" class="btn-submit">
-                Réserver une chambre
+                Réserver une chambre →
             </a>
         </div>
 
@@ -155,7 +161,8 @@
                     <div class="footer-widget-area mt-50">
                       <div class="sidebar-logo">
         <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
-    </div>                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
+    </div>                        
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
                     </div>
                 </div>
 

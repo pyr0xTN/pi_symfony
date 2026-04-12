@@ -126,9 +126,7 @@ class HotelController extends AbstractController
         ]);
     }
 
-    // ──────────────────────────────────────────────
-    // DELETE
-    // ──────────────────────────────────────────────
+ 
 
     #[Route('/{id}/delete', name: 'hotel_delete', methods: ['GET', 'POST'])]
     public function delete(Request $request, int $id): Response
