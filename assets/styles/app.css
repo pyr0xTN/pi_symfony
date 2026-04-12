@@ -1618,3 +1618,48 @@ input[type="date"].form-input {
     color: white;
     border-color: #d9534f;
 }
+/* ═══════════════════════════════════════
+   PAYMENT PAGE
+═══════════════════════════════════════ */
+
+.payment-option {
+    background: #f7f9fc;
+    border-radius: 12px;
+    padding: 24px;
+    border: 1px solid #eee;
+    transition: box-shadow 0.2s;
+}
+
+.payment-option:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+}
+
+.payment-option-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #1a2b4a;
+    margin: 0 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.btn-paypal {
+    display: block;
+    text-align: center;
+    padding: 13px;
+    background: #ffc439;
+    color: #003087;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.btn-paypal:hover {
+    background: #f0b429;
+    color: #003087;
+}

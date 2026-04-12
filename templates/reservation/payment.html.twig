@@ -1,0 +1,166 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
+{% endblock %}
+
+{% block body %}
+<body>
+
+<div class="detail-wrapper">
+    <div class="detail-card">
+
+        {# ── Banner ── #}
+        <div class="detail-hero" style="background: linear-gradient(135deg, #1a2b4a, #2c4a7c);
+             height:160px; display:flex; align-items:center; justify-content:center;
+             flex-direction:column; gap:8px;">
+            <span style="font-size:40px;">💳</span>
+            <h2 style="color:white; margin:0; font-size:22px;">Paiement</h2>
+            <span style="color:rgba(255,255,255,0.6); font-size:13px;">
+                Réf #{{ reservation.idReservation }}
+            </span>
+        </div>
+
+        {# ── Summary ── #}
+        <div class="detail-title-row">
+            <div>
+                <h3 class="detail-name">{{ reservation.idService.nom }}</h3>
+                <p class="detail-location">👤 {{ reservation.nom }}</p>
+            </div>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ amount }}</span>
+                <span class="detail-price-label">TND</span>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        <div style="padding: 0 32px 40px; display:flex; flex-direction:column; gap:20px;">
+
+            {# Flash messages #}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ type }}">{{ message }}</div>
+                {% endfor %}
+            {% endfor %}
+
+            {# ── Stripe Card ── #}
+            <div class="payment-option">
+                <h4 class="payment-option-title">💳 Payer par Carte Bancaire (Stripe)</h4>
+                <form id="stripeForm"
+                      action="{{ path('reservation_pay_stripe', { id: reservation.idReservation }) }}"
+                      method="POST">
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label class="form-label">Informations de carte</label>
+                        <div id="card-element"
+                             style="padding:12px; border:1px solid #dde1e7;
+                                    border-radius:7px; background:#f9fafb;">
+                        </div>
+                        <div id="card-errors"
+                             style="color:#d9534f; font-size:12px; margin-top:6px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-submit" style="width:100%;">
+                        Payer {{ amount }} TND par Carte
+                    </button>
+                </form>
+            </div>
+
+            <div style="text-align:center; color:#aaa; font-size:13px; font-weight:600;">
+                ── ou ──
+            </div>
+
+            {# ── PayPal ── #}
+            <div class="payment-option">
+                <h4 class="payment-option-title">🅿 Payer par PayPal</h4>
+                <form action="{{ path('reservation_paypal_create', { id: reservation.idReservation }) }}"
+                      method="POST">
+                    <button type="submit" class="btn-paypal">
+                        <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg"
+                             alt="PayPal"
+                             style="height:20px; vertical-align:middle; margin-right:8px;">
+                        Payer {{ amount }} TND via PayPal
+                    </button>
+                </form>
+            </div>
+
+            {# ── Cancel ── #}
+            <a href="{{ path('ourservices_index') }}"
+               class="btn-back"
+               style="text-align:center;">
+                ✖ Annuler
+            </a>
+
+        </div>
+    </div>
+</div>
+
+</body>
+{% endblock %}
+
+{% block javascripts %}
+{{ parent() }}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    const stripe   = Stripe('{{ stripe_pub_key }}');
+    const elements = stripe.elements();
+    const card     = elements.create('card', {
+        style: {
+            base: {
+                fontSize: '14px',
+                color: '#333',
+                fontFamily: '"Segoe UI", Helvetica, sans-serif',
+                '::placeholder': { color: '#aaa' }
+            },
+            invalid: { color: '#d9534f' }
+        }
+    });
+
+    card.mount('#card-element');
+
+    card.on('change', function(e) {
+        document.getElementById('card-errors').textContent =
+            e.error ? e.error.message : '';
+    });
+
+  document.getElementById('stripeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type=submit]');
+    btn.disabled    = true;
+    btn.textContent = '⏳ Traitement...';
+
+    try {
+        const { token, error } = await stripe.createToken(card);
+
+        if (error) {
+            document.getElementById('card-errors').textContent = error.message;
+            btn.disabled    = false;
+            btn.textContent = 'Payer {{ amount }} TND par Carte';
+            return;
+        }
+
+        // Make sure any old token input is removed first
+        const existing = document.getElementById('stripeTokenInput');
+        if (existing) existing.remove();
+
+        // Create and append the hidden input
+        const input   = document.createElement('input');
+        input.type    = 'hidden';
+        input.name    = 'stripeToken';
+        input.id      = 'stripeTokenInput';
+        input.value   = token.id;
+        document.getElementById('stripeForm').appendChild(input);
+
+        console.log('Token created:', token.id);
+        console.log('Input value:', input.value);
+
+        // Use native form submit to bypass any interference
+        HTMLFormElement.prototype.submit.call(document.getElementById('stripeForm'));
+
+    } catch(err) {
+        document.getElementById('card-errors').textContent = 'Erreur: ' + err.message;
+        btn.disabled    = false;
+        btn.textContent = 'Payer {{ amount }} TND par Carte';
+    }
+});
+</script>
+{% endblock %}
