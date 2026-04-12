@@ -65,7 +65,11 @@
                     <span class="col badge {% if service.disponibilite %}badge-success{% else %}badge-danger{% endif %}">
                         {{ service.disponibilite ? 'Disponible' : 'Indisponible' }}
                     </span>
-                    <span class="col"></span>
+                    <span class="col"><a href="{{ path('reservations_by_service', { serviceId: service.idService }) }}"
+   class="btn-card-action">
+    📋 Réservations
+</a>
+</span>
                 </div>
             {% else %}
                 <p class="empty-state">Aucun service trouvé.</p>
@@ -74,33 +78,6 @@
 
     </section>
 
-    {# ===== RESERVATIONS SECTION ===== #}
-    <section class="dashboard-section">
 
-        <h2 class="section-header">Réservations</h2>
-
-        <div class="table-header">
-            <span class="col">Nom</span>
-            <span class="col-wide">Date Réservation</span>
-            <span class="col">Paiement</span>
-            <span class="col">Service</span>
-            <span class="col">Statut</span>
-        </div>
-
-        <div class="table-body">
-            {% for reservation in reservations %}
-                <div class="table-row">
-                    <span class="col">{{ reservation.nom }}</span>
-                    <span class="col-wide">{{ reservation.dateReservation|date('d/m/Y') }}</span>
-                    <span class="col">{{ reservation.modePaiement }}</span>
-                    <span class="col">{{ reservation.idService.nom }}</span>
-                    <span class="col badge badge-info">{{ reservation.statut }}</span>
-                </div>
-            {% else %}
-                <p class="empty-state">Aucune réservation trouvée.</p>
-            {% endfor %}
-        </div>
-
-    </section>
 
 {% endblock %}

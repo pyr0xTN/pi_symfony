@@ -44,6 +44,7 @@ class ReservationController extends AbstractController
        
         $serviceId   = $request->query->getInt('serviceId');
         $serviceType = $request->query->get('serviceType', '');
+        $serviceDisponibilite=$request->query->getBoolean('disponibilite');
 
         $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
         if (!$service) {
@@ -81,12 +82,17 @@ class ReservationController extends AbstractController
             } else {
                 $reservation->setSeatNb(0); 
             }
-
+           if ($serviceDisponibilite) {
             $this->em->persist($reservation);
             $this->em->flush();
-
             $this->addFlash('success', 'Réservation créée avec succès !');
             return $this->redirectToRoute('reservations_index');
+           }
+           else {
+            $this->addFlash('danger', 'Service indisponible');
+           }
+          
+            
         }
 
        
@@ -109,6 +115,7 @@ class ReservationController extends AbstractController
         
         $serviceId   = $request->query->getInt('serviceId');
         $serviceType = $request->query->get('serviceType', '');
+        $serviceDisponibilite=$request->query->getBoolean('disponibilite');
 
         $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
         if (!$service) {
@@ -147,11 +154,16 @@ class ReservationController extends AbstractController
                 $reservation->setSeatNb(0); 
             }
 
-            $this->em->persist($reservation);
-            $this->em->flush();
-
-            $this->addFlash('success', 'Réservation créée avec succès !');
-            return $this->redirectToRoute('ourservices_index');
+            if ($serviceDisponibilite) {
+                $this->em->persist($reservation);
+                $this->em->flush();
+                $this->addFlash('success', 'Réservation créée avec succès !');
+                return $this->redirectToRoute('ourservices_index');
+               }
+               else {
+                $this->addFlash('danger', 'Service indisponible');
+               }
+        
         }
 
        
@@ -222,6 +234,21 @@ class ReservationController extends AbstractController
         $this->addFlash('success', 'Réservation confirmée.');
         return $this->redirectToRoute('reservations_index');
     }
+    #[Route('/by-service/{serviceId}', name: 'reservations_by_service', methods: ['GET'])]
+public function byService(int $serviceId): Response
+{
+    $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
+    if (!$service) {
+        throw $this->createNotFoundException('Service introuvable.');
+    }
+
+    $reservations = $this->reservationsRepo->findBy(['idService' => $service]);
+
+    return $this->render('reservation/index.html.twig', [
+        'active_page'  => 'reservations',
+        'reservations' => $reservations,
+    ]);
+}
   
     private function buildSeatMap(Services $vol): array
     {
