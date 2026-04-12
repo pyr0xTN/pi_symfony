@@ -1439,3 +1439,182 @@ input[type="date"].form-input {
     font-size: 22px;
     color: #4ba3a1;
 }
+/* ═══════════════════════════════════════
+   RESERVATION SHOW / DETAIL PAGE
+═══════════════════════════════════════ */
+
+.rsd-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 32px 20px 60px;
+}
+
+.rsd-card {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 860px;
+    overflow: hidden;
+}
+
+/* ── Banner ── */
+.rsd-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.rsd-banner--pending   { background: linear-gradient(135deg, #f6c750, #e5b030); }
+.rsd-banner--confirmed { background: linear-gradient(135deg, #4ba3a1, #3a8a88); }
+.rsd-banner--cancelled { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+
+.rsd-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.rsd-banner-icon {
+    font-size: 42px;
+    line-height: 1;
+}
+
+.rsd-banner-service {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+}
+
+.rsd-banner-type {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    margin: 0;
+    margin-top: 2px;
+}
+
+.rsd-banner-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.rsd-status-badge {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+}
+
+.rsd-ref {
+    color: rgba(255,255,255,0.6);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ── Body ── */
+.rsd-body {
+    display: flex;
+    gap: 0;
+    padding: 32px;
+    flex-wrap: wrap;
+}
+
+.rsd-section {
+    flex: 1;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rsd-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 0 0 4px;
+}
+
+.rsd-detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.rsd-label {
+    font-size: 11px;
+    color: #bbb;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.rsd-value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2b4a;
+}
+
+.rsd-price {
+    font-size: 20px;
+    font-weight: 800;
+    color: #4ba3a1;
+}
+
+.rsd-seat {
+    font-size: 16px;
+    color: #2980b9;
+}
+
+.rsd-divider {
+    width: 1px;
+    background: #f0f2f5;
+    margin: 0 32px;
+    align-self: stretch;
+}
+
+/* ── Actions ── */
+.rsd-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 32px 28px;
+    border-top: 1px solid #f0f2f5;
+    flex-wrap: wrap;
+}
+
+.rsd-actions form {
+    margin: 0;
+}
+
+.btn-delete {
+    background: transparent;
+    color: #d9534f;
+    border: 1px solid rgba(217, 83, 79, 0.3);
+    border-radius: 7px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.btn-delete:hover {
+    background: #d9534f;
+    color: white;
+    border-color: #d9534f;
+}

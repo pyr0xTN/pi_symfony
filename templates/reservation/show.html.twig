@@ -1,0 +1,117 @@
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Détails Réservation {% endblock %}
+
+{% block content %}
+
+{# ── Status banner color ── #}
+{% set bannerClass = 'rsd-banner--pending' %}
+{% if reservation.statut|lower == 'confirmée' %}
+    {% set bannerClass = 'rsd-banner--confirmed' %}
+{% elseif reservation.statut|lower == 'annulée' %}
+    {% set bannerClass = 'rsd-banner--cancelled' %}
+{% endif %}
+
+<div class="rsd-wrapper">
+    <div class="rsd-card">
+
+        {# ── Top Banner ── #}
+        <div class="rsd-banner {{ bannerClass }}">
+            <div class="rsd-banner-left">
+                <span class="rsd-banner-icon">
+                    {{ reservation.idService.type == 'hotel' ? '🏨' : '✈️' }}
+                </span>
+                <div>
+                    <p class="rsd-banner-service">{{ reservation.idService.nom }}</p>
+                    <p class="rsd-banner-type">{{ reservation.idService.type == 'hotel' ? 'Hôtel' : 'Vol' }}</p>
+                </div>
+            </div>
+            <div class="rsd-banner-right">
+                <span class="rsd-status-badge">{{ reservation.statut }}</span>
+                <span class="rsd-ref">#{{ reservation.idReservation }}</span>
+            </div>
+        </div>
+
+        {# ── Body ── #}
+        <div class="rsd-body">
+
+            {# Left column #}
+            <div class="rsd-section">
+                <h4 class="rsd-section-title">👤 Client</h4>
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Nom</span>
+                    <span class="rsd-value">{{ reservation.nom }}</span>
+                </div>
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Date réservation</span>
+                    <span class="rsd-value">{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                </div>
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Mode paiement</span>
+                    <span class="rsd-value">💳 {{ reservation.modePaiement }}</span>
+                </div>
+                {% if reservation.seatNb is defined and reservation.seatNb > 0 %}
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Siège</span>
+                    <span class="rsd-value rsd-seat">💺 {{ reservation.seatNb }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            {# Divider #}
+            <div class="rsd-divider"></div>
+
+            {# Right column — Service info #}
+            <div class="rsd-section">
+                <h4 class="rsd-section-title">🛎 Service</h4>
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Nom</span>
+                    <span class="rsd-value">{{ reservation.idService.nom }}</span>
+                </div>
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Prix</span>
+                    <span class="rsd-value rsd-price">{{ reservation.idService.prix }} TND</span>
+                </div>
+                {% if reservation.idService.type == 'hotel' %}
+                    <div class="rsd-detail-row">
+                        <span class="rsd-label">Localisation</span>
+                        <span class="rsd-value">📍 {{ reservation.idService.localisation }}</span>
+                    </div>
+                    <div class="rsd-detail-row">
+                        <span class="rsd-label">Type chambre</span>
+                        <span class="rsd-value">{{ reservation.idService.typeChambre }}</span>
+                    </div>
+                {% else %}
+                    <div class="rsd-detail-row">
+                        <span class="rsd-label">Trajet</span>
+                        <span class="rsd-value">{{ reservation.idService.villeDepart }} → {{ reservation.idService.villeArrivee }}</span>
+                    </div>
+                    <div class="rsd-detail-row">
+                        <span class="rsd-label">Date départ</span>
+                        <span class="rsd-value">{{ reservation.idService.dateDepart|date('d/m/Y') }}</span>
+                    </div>
+                {% endif %}
+                <div class="rsd-detail-row">
+                    <span class="rsd-label">Capacité</span>
+                    <span class="rsd-value">👥 {{ reservation.idService.capacite }}</span>
+                </div>
+            </div>
+
+        </div>
+
+        {# ── Actions ── #}
+        <div class="rsd-actions">
+            <a href="{{ path('myreservations_index') }}" class="btn-back">← Retour</a>
+
+           
+            <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+               class="btn-delete"
+               onclick="return confirm('Supprimer cette réservation ?')">
+                🗑 Supprimer
+            </a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

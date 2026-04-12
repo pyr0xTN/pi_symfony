@@ -249,6 +249,7 @@ public function byService(int $serviceId): Response
         'reservations' => $reservations,
     ]);
 }
+
   
     private function buildSeatMap(Services $vol): array
     {
