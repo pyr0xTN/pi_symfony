@@ -26,6 +26,10 @@ services:
         arguments:
             $apiKey: '%env(GROQ_API_KEY)%'
 
+    App\Service\SentimentService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
     App\Service\UnsplashService:
         arguments:
             $accessKey: '%env(UNSPLASH_ACCESS_KEY)%'

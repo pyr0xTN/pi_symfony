@@ -10,6 +10,7 @@ use App\Repository\LikeRepository;
 use App\Repository\PublicationRepository;
 use App\Service\AiChatService;
 use App\Service\PlacesAutocompleteService;
+use App\Service\SentimentService;
 use App\Service\UnsplashService;
 use App\Service\WeatherService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -193,5 +194,20 @@ class ApiController extends AbstractController
     {
         $photo = $unsplashService->fetchPhoto(urldecode($query));
         return $this->json($photo ?? ['error' => 'No photo found']);
+    }
+
+    #[Route('/sentiment/{id}', name: 'api_sentiment', methods: ['GET'], requirements: ['id' => '\d+'])]
+    public function sentiment(
+        int $id,
+        PublicationRepository $pubRepo,
+        SentimentService $sentimentService,
+    ): JsonResponse {
+        $post = $pubRepo->find($id);
+        if (!$post) return $this->json(['error' => 'Post not found'], 404);
+
+        $result = $sentimentService->analyze($post->getContent());
+        if (!$result) return $this->json(['error' => 'Analysis unavailable']);
+
+        return $this->json($result);
     }
 }
