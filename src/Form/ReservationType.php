@@ -7,6 +7,7 @@ use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\DateType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -43,14 +44,16 @@ class ReservationType extends AbstractType
                     ),
                 ],
             ])
-            ->add('modePaiement', TextType::class, [
-                'label'       => 'Mode de Paiement',
+            ->add('modePaiement', ChoiceType::class, [
+                'label'   => 'Mode de Paiement',
+                'choices' => [
+                    'Espèces (Cash)' => 'cash',
+                    'Carte Bancaire (Stripe)' => 'stripe',
+                    'PayPal' => 'paypal',
+                ],
+                'placeholder' => 'Choisir un mode...',
                 'constraints' => [
                     new Assert\NotBlank(message: 'Le mode de paiement est obligatoire.'),
-                    new Assert\Choice(
-                        choices: ['Carte bancaire', 'Virement', 'Espèces', 'PayPal'],
-                        message: 'Veuillez choisir un mode de paiement valide.'
-                    ),
                 ],
             ])
         ;

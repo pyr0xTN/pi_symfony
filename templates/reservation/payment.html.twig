@@ -43,9 +43,11 @@
                 {% endfor %}
             {% endfor %}
 
-            {# ── Stripe Card ── #}
-            <div class="payment-option">
-                <h4 class="payment-option-title">💳 Payer par Carte Bancaire (Stripe)</h4>
+           
+{# ── Stripe Card ── #}
+{% if modePaiement == 'stripe' or modePaiement == 'carte' %}
+<div class="payment-option">
+      <h4 class="payment-option-title">💳 Payer par Carte Bancaire (Stripe)</h4>
                 <form id="stripeForm"
                       action="{{ path('reservation_pay_stripe', { id: reservation.idReservation }) }}"
                       method="POST">
@@ -63,15 +65,15 @@
                         Payer {{ amount }} TND par Carte
                     </button>
                 </form>
-            </div>
+</div>
+{% endif %}
 
-            <div style="text-align:center; color:#aaa; font-size:13px; font-weight:600;">
-                ── ou ──
-            </div>
 
-            {# ── PayPal ── #}
-            <div class="payment-option">
-                <h4 class="payment-option-title">🅿 Payer par PayPal</h4>
+
+{# ── PayPal ── #}
+{% if modePaiement == 'paypal' %}
+<div class="payment-option">
+       <h4 class="payment-option-title">🅿 Payer par PayPal</h4>
                 <form action="{{ path('reservation_paypal_create', { id: reservation.idReservation }) }}"
                       method="POST">
                     <button type="submit" class="btn-paypal">
@@ -81,13 +83,14 @@
                         Payer {{ amount }} TND via PayPal
                     </button>
                 </form>
-            </div>
-
-            {# ── Cancel ── #}
-            <a href="{{ path('ourservices_index') }}"
+</div>
+{% endif %}
+            {# ── Cancel — deletes the pending reservation from DB ── #}
+            <a href="{{ path('reservation_paypal_cancel', { id: reservation.idReservation }) }}"
                class="btn-back"
-               style="text-align:center;">
-                ✖ Annuler
+               style="text-align:center;"
+               onclick="return confirm('Annuler la réservation ? Elle sera supprimée.');">
+                ✖ Annuler la réservation
             </a>
 
         </div>
@@ -101,12 +104,19 @@
 {{ parent() }}
 <script src="https://js.stripe.com/v3/"></script>
 <script>
-    const stripe   = Stripe('{{ stripe_pub_key }}');
-    const elements = stripe.elements();
-    const card     = elements.create('card', {
+document.addEventListener('DOMContentLoaded', function() {
+    // Only initialize Stripe if the stripe form is present in the DOM
+    var stripeFormEl = document.getElementById('stripeForm');
+    if (!stripeFormEl) {
+        return; // PayPal mode or no Stripe form rendered — nothing to do
+    }
+
+    var stripe   = Stripe('{{ stripe_pub_key }}');
+    var elements = stripe.elements();
+    var card     = elements.create('card', {
         style: {
             base: {
-                fontSize: '14px',
+                fontSize: '16px',
                 color: '#333',
                 fontFamily: '"Segoe UI", Helvetica, sans-serif',
                 '::placeholder': { color: '#aaa' }
@@ -122,45 +132,45 @@
             e.error ? e.error.message : '';
     });
 
-  document.getElementById('stripeForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const btn = this.querySelector('button[type=submit]');
-    btn.disabled    = true;
-    btn.textContent = '⏳ Traitement...';
+    stripeFormEl.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var btn = this.querySelector('button[type=submit]');
+        btn.disabled    = true;
+        btn.textContent = '⏳ Traitement...';
 
-    try {
-        const { token, error } = await stripe.createToken(card);
+        try {
+            var result = await stripe.createToken(card);
 
-        if (error) {
-            document.getElementById('card-errors').textContent = error.message;
+            if (result.error) {
+                document.getElementById('card-errors').textContent = result.error.message;
+                btn.disabled    = false;
+                btn.textContent = 'Payer {{ amount }} TND par Carte';
+                return;
+            }
+
+            // Remove any old token input
+            var existing = document.getElementById('stripeTokenInput');
+            if (existing) existing.remove();
+
+            // Append the Stripe token as a hidden field
+            var input   = document.createElement('input');
+            input.type  = 'hidden';
+            input.name  = 'stripeToken';
+            input.id    = 'stripeTokenInput';
+            input.value = result.token.id;
+            stripeFormEl.appendChild(input);
+
+            console.log('Stripe token created:', result.token.id);
+
+            // Submit the form natively to avoid re-triggering the listener
+            HTMLFormElement.prototype.submit.call(stripeFormEl);
+
+        } catch(err) {
+            document.getElementById('card-errors').textContent = 'Erreur: ' + err.message;
             btn.disabled    = false;
             btn.textContent = 'Payer {{ amount }} TND par Carte';
-            return;
         }
-
-        // Make sure any old token input is removed first
-        const existing = document.getElementById('stripeTokenInput');
-        if (existing) existing.remove();
-
-        // Create and append the hidden input
-        const input   = document.createElement('input');
-        input.type    = 'hidden';
-        input.name    = 'stripeToken';
-        input.id      = 'stripeTokenInput';
-        input.value   = token.id;
-        document.getElementById('stripeForm').appendChild(input);
-
-        console.log('Token created:', token.id);
-        console.log('Input value:', input.value);
-
-        // Use native form submit to bypass any interference
-        HTMLFormElement.prototype.submit.call(document.getElementById('stripeForm'));
-
-    } catch(err) {
-        document.getElementById('card-errors').textContent = 'Erreur: ' + err.message;
-        btn.disabled    = false;
-        btn.textContent = 'Payer {{ amount }} TND par Carte';
-    }
+    });
 });
 </script>
 {% endblock %}
