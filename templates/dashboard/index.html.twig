@@ -26,6 +26,23 @@
 
     </div>
 
+    {# ===== CHARTS SECTION ===== #}
+    <div class="charts-row">
+        <div class="chart-container-wrapper revenue-chart-card">
+            <h3 class="chart-header">Revenue Trend (Last 7 Days)</h3>
+            <div class="chart-canvas-wrapper">
+                {{ render_chart(revenueChart) }}
+            </div>
+        </div>
+
+        <div class="chart-container-wrapper type-chart-card">
+            <h3 class="chart-header">Revenue by Type</h3>
+            <div class="chart-canvas-wrapper">
+                {{ render_chart(typeChart) }}
+            </div>
+        </div>
+    </div>
+
     {# ===== SERVICES SECTION ===== #}
     <section class="dashboard-section">
 

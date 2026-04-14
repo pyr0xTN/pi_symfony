@@ -1663,3 +1663,44 @@ input[type="date"].form-input {
     background: #f0b429;
     color: #003087;
 }
+/* ================= CHARTS ================= */
+.charts-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+}
+
+.chart-container-wrapper {
+    flex: 1;
+    background-color: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.revenue-chart-card {
+    flex: 2;
+}
+
+.type-chart-card {
+    flex: 1;
+}
+
+.chart-header {
+    font-size: 16px;
+    font-weight: bold;
+    color: #183c75;
+    border-bottom: 1px solid #f0f2f5;
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+}
+
+.chart-canvas-wrapper {
+    height: 300px;
+    position: relative;
+}

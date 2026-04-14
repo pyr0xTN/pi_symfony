@@ -7,6 +7,8 @@ use App\Repository\ReservationsRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
+use Symfony\UX\Chartjs\Model\Chart;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/dashboard')]
@@ -15,6 +17,7 @@ class DashboardController extends AbstractController
     public function __construct(
         private ServicesRepository      $servicesRepo,
         private ReservationsRepository  $reservationsRepo,
+        private ChartBuilderInterface   $chartBuilder,
     ) {}
 
     
@@ -32,6 +35,71 @@ class DashboardController extends AbstractController
             $services = $this->servicesRepo->findAll();
         }
 
+        // Revenue Chart (Last 7 Days)
+        $revenueData = $this->reservationsRepo->getRevenueLast7Days();
+        
+        $revenueLabels = [];
+        $revenueValues = [];
+        
+        // Fill missing days if needed or just use results
+        foreach ($revenueData as $data) {
+            $revenueLabels[] = $data['date']->format('d M');
+            $revenueValues[] = $data['revenue'];
+        }
+
+        $revenueChart = $this->chartBuilder->createChart(Chart::TYPE_LINE);
+        $revenueChart->setData([
+            'labels' => $revenueLabels,
+            'datasets' => [
+                [
+                    'label' => 'Revenue (TND)',
+                    'backgroundColor' => 'rgba(45, 206, 137, 0.1)',
+                    'borderColor' => '#2dce89',
+                    'data' => $revenueValues,
+                    'fill' => true,
+                    'tension' => 0.4,
+                ],
+            ],
+        ]);
+        $revenueChart->setOptions([
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => ['display' => false],
+            ],
+            'scales' => [
+                'y' => [
+                    'beginAtZero' => true,
+                    'grid' => ['display' => false],
+                ],
+                'x' => [
+                    'grid' => ['display' => false],
+                ],
+            ],
+        ]);
+
+        // Service Type Chart
+        $typeData = $this->reservationsRepo->getRevenueByType();
+        $typeLabels = [];
+        $typeValues = [];
+        foreach ($typeData as $data) {
+            $typeLabels[] = ucfirst($data['type']);
+            $typeValues[] = $data['revenue'];
+        }
+
+        $typeChart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
+        $typeChart->setData([
+            'labels' => $typeLabels,
+            'datasets' => [
+                [
+                    'backgroundColor' => ['#2dce89', '#fb6340', '#11cdef', '#f5365c'],
+                    'data' => $typeValues,
+                ],
+            ],
+        ]);
+        $typeChart->setOptions([
+            'maintainAspectRatio' => false,
+        ]);
+
         return $this->render('dashboard/index.html.twig', [
             'active_page'       => 'dashboard',
             'hotel_count'       => $this->servicesRepo->count(['type' => 'hotel']),
@@ -40,6 +108,8 @@ class DashboardController extends AbstractController
             'services'          => $services,
             'reservations'      => $this->reservationsRepo->findLatest(10),
             'filter'            => $filter,
+            'revenueChart'      => $revenueChart,
+            'typeChart'         => $typeChart,
         ]);
     }
 }

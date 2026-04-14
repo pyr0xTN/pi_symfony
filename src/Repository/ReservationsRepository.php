@@ -47,5 +47,28 @@ class ReservationsRepository extends ServiceEntityRepository
             ->getQuery()
             ->getSingleColumnResult();
     }
-    
+    public function getRevenueLast7Days(): array
+    {
+        $date = new \DateTime('-7 days');
+        
+        return $this->createQueryBuilder('r')
+            ->select('r.date_reservation as date, SUM(s.prix * r.seat_nb) as revenue')
+            ->join('r.idService', 's')
+            ->where('r.date_reservation >= :date')
+            ->setParameter('date', $date)
+            ->groupBy('r.date_reservation')
+            ->orderBy('r.date_reservation', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getRevenueByType(): array
+    {
+        return $this->createQueryBuilder('r')
+            ->select('s.type, SUM(s.prix * r.seat_nb) as revenue')
+            ->join('r.idService', 's')
+            ->groupBy('s.type')
+            ->getQuery()
+            ->getResult();
+    }
 }
