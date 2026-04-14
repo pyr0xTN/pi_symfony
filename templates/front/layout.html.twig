@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+{% extends embed|default(false) ? 'empty_body.html.twig' : 'base.html.twig' %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -6,14 +6,16 @@
 {% endblock %}
 {% block body %}
 <div class="dashboard-root">
+    {% if embed|default(false) %}
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {% endif %}
     {# Sidebar removed in favor of unified utilisateurs menu #}
     {# ═══ MAIN AREA ═══ #}
     <main class="main-area">
-        {% if not embed|default(false) %}
         {# ═══ TOP NAV BAR ═══ #}
         <header class="nav-bar">
             <div class="nav-bar-brand" style="display:flex;align-items:center;gap:12px;">
-                <a href="{{ path('app_mainpage', {module: 'post'}) }}" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back to Dashboard">⬅</a>
+                <a href="{{ path('app_mainpage') }}" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back to Dashboard">⬅</a>
                 <div>
                     <span class="brand-text">Rehletna</span>
                     <span class="brand-dot">.tn</span>
@@ -35,9 +37,9 @@
             </div>
 
             <a href="{{ path('app_post_new') }}" class="primary-btn">+ New Post</a>
-            <button class="theme-toggle-nav" onclick="toggleTheme()" title="Toggle dark mode">🌙</button>
+
         </header>
-        {% endif %}
+
 
         {# ═══ CONTENT AREA ═══ #}
         <div class="content-container">
@@ -75,5 +77,7 @@
     </main>
 </div>
 
+{% if not embed|default(false) %}
 <script src="{{ asset('js/app.js') }}"></script>
+{% endif %}
 {% endblock %}

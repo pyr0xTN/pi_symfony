@@ -631,32 +631,7 @@
             border: 2px solid white;
         }
 
-        /* Theme Toggle Button */
-        .theme-toggle {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(10, 160, 159, 0.2);
-            border-radius: 999px;
-            width: 45px;
-            height: 45px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 20px;
-            margin: 0 12px;
-        }
 
-        .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.9);
-            border-color: rgba(10, 160, 159, 0.4);
-            box-shadow: 0 6px 16px rgba(10, 160, 159, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .theme-toggle:active {
-            transform: translateY(0);
-        }
 
         /* Dark Mode Styles */
         body.dark-mode {
@@ -790,14 +765,7 @@
             box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
         }
 
-        body.dark-mode .theme-toggle {
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-color: rgba(10, 160, 159, 0.3) !important;
-        }
 
-        body.dark-mode .theme-toggle:hover {
-            background: rgba(255, 255, 255, 0.15) !important;
-            border-color: rgba(10, 160, 159, 0.5) !important;
         }
 
         body.dark-mode .side-menu {
@@ -2011,7 +1979,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script>
-        $(document).ready(function() {
+        document.addEventListener('turbo:load', function() {
             initializeAirportParallax();
 
             function updateProfileCoinsValue(coins) {
@@ -2021,7 +1989,7 @@
                 }
             }
 
-            $(document).on('submit', '.birthday-gift-form', function (event) {
+            $(document).off('submit.birthday', '.birthday-gift-form').on('submit.birthday', '.birthday-gift-form', function (event) {
                 event.preventDefault();
 
                 const $form = $(this);

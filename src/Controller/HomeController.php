@@ -869,8 +869,7 @@ class HomeController extends AbstractController
                     'users' => $allUsers
                 ]);
             case 'post':
-                $request->query->set('embed', true);
-                return $this->forward('App\Controller\PostController::feed');
+                return $this->forward('App\Controller\PostController::feed', [], ['embed' => 1]);
             default:
                 return $this->render('partials/welcome.html.twig');
         }
