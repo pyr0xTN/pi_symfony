@@ -61,5 +61,17 @@ class MessagesRepository extends ServiceEntityRepository
             ->getQuery()
             ->execute();
     }
-    
+    public function countUnread(int $idConversation, int $currentUserId): int
+    {
+        return (int) $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->where('m.idConversation = :idConv')
+            ->andWhere('m.idExpediteur != :userId')
+            ->andWhere('m.lu = false')
+            ->andWhere('m.isDeleted = false')
+            ->setParameter('idConv', $idConversation)
+            ->setParameter('userId', $currentUserId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

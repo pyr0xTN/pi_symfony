@@ -12,6 +12,8 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use App\Repository\ConversationRepository;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -36,7 +38,6 @@ class MessagesController extends AbstractController
         $user = $this->getUser();
 
         $message = new Messages();
-        $message->setId($this->nextMessageId($em));
         $message->setContenu($content);
         $message->setIdConversation($conversation);
         $message->setIdExpediteur($user);
@@ -58,7 +59,7 @@ class MessagesController extends AbstractController
     /**
      * Edits an existing message.
      */
-    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['POST','PUT'])]
+    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['POST', 'PUT'])]
     public function updateOne(
         int $idMessage,
         MessagesRepository $repo,
@@ -75,6 +76,7 @@ class MessagesController extends AbstractController
         $data = json_decode($request->getContent(), true);
         if (isset($data['content'])) {
             $message->setContenu($data['content']);
+            $message->setEdited(true);
             $em->flush();
         }
 
@@ -98,69 +100,114 @@ class MessagesController extends AbstractController
 
         return new JsonResponse(['status' => 'Message deleted']);
     }
+    #[Route('/upload', name: 'api_message_upload', methods: ['POST'])]
+    public function upload(
+        Request $request,
+        EntityManagerInterface $em,
+        SluggerInterface $slugger,
+        ConversationRepository $convRepo // Si vous l'avez
+    ): JsonResponse {
+        $file = $request->files->get('file');
+        $conversationId = $request->request->get('conversationId');
 
-    /**
-     * Fetches all messages for a specific conversation.
-     */
-   /* #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
-    public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
-    {
-        /** @var User $user 
-        $user = $this->getUser();
-        $messages = $repo->findBy(
-            ['idConversation' => $conversation, 'isDeleted' => false],
-            ['dateEnvoi' => 'ASC']
-        );
-
-        $data = [];
-        foreach ($messages as $msg) {
-            $data[] = [
-                'id' => $msg->getId(),
-                'content' => $msg->getContenu(),
-                'time' => $msg->getDateEnvoi()->format('H:i'),
-                'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
-                'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
-                'lu' => $msg->isLu()
-            ];
+        if (!$file || !$conversationId) {
+            return new JsonResponse(['success' => false, 'message' => 'Données manquantes.'], 400);
         }
-        return new JsonResponse($data);
-    }*/
+
+        $mimeType = $file->getMimeType();
+        $type = TypeMessage::FICHIER; // Par défaut
+
+        if (str_starts_with($mimeType, 'image/')) {
+            $type = TypeMessage::IMAGE;
+        } elseif (str_starts_with($mimeType, 'audio/')) {
+            $type = TypeMessage::AUDIO;
+        }
+
+        $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeFilename = $slugger->slug($originalFilename);
+        $newFilename = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+
+        try {
+            $file->move(
+                $this->getParameter('kernel.project_dir') . '/public/uploads/messages',
+                $newFilename
+            );
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sauvegarde du fichier.']);
+        }
+
+        $message = new Messages();
+        $message->setTypeMessage($type);
+        $message->setUrlFichier($newFilename);
+        $message->setContenu($file->getClientOriginalName()); // On garde le nom original comme contenu
+        $message->setDateEnvoi(new \DateTime());
+        $message->setIdExpediteur($this->getUser());
+        $message->setLu(false);        // Le message n'est pas encore lu
+        $message->setIsDeleted(false);
+
+        $conversation = $em->getRepository(Conversation::class)->find($conversationId);
+        $message->setIdConversation($conversation);
+
+        $em->persist($message);
+        $em->flush();
+
+        return new JsonResponse(['success' => true]);
+    }
 
     #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
     public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
     {
         /** @var User $user */
         $user = $this->getUser();
-        // Récupère tous les messages (grâce au repo modifié au dessus)
         $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
 
         $data = [];
         foreach ($messages as $msg) {
             $data[] = [
                 'id' => $msg->getId(),
-                // LOGIQUE ICI : Si supprimé, on remplace le contenu
                 'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
                 'time' => $msg->getDateEnvoi()->format('H:i'),
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
-                //'isMine' => $msg->getIdExpediteur()->getId() === $user->getId(),
                 'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu(),
-                'isDeleted' => $msg->isDeleted() 
+                'isDeleted' => $msg->isDeleted(),
+                'edited' => $msg->isEdited(),
+                'type' => $msg->getTypeMessage() ? $msg->getTypeMessage()->value : 'TEXTE',
+                'filePath' => $msg->getUrlFichier(),
+                'reaction'  => $msg->getReaction()
             ];
         }
         return new JsonResponse($data);
     }
 
-    private function nextMessageId(EntityManagerInterface $em): int
+    #[Route('/{id}/react', name: 'message_react', methods: ['POST'])]
+    public function react(Messages $message, Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $maxId = (int) $em->createQueryBuilder()
-            ->select('COALESCE(MAX(m.id), 0)')
-            ->from(Messages::class, 'm')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $emoji = $request->toArray()['emoji'] ?? null;
 
-        $next = $maxId + 1;
+        // Si même emoji → toggle off, sinon on remplace
+        if ($message->getReaction() === $emoji) {
+            $message->setReaction(null);
+        } else {
+            $message->setReaction($emoji);
+        }
 
-        return max(1, $next);
+        $em->flush();
+
+        return $this->json([
+            'reaction' => $message->getReaction()
+        ]);
+    }
+
+    #[Route('/api/messages/mark-read/{id}', name: 'messages_mark_read', methods: ['POST'])]
+    public function markRead(int $id, MessagesRepository $repo): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'Not authenticated'], 401);
+        }
+        $repo->markAllAsRead($id, $user->getId());
+        return $this->json(['ok' => true]);
     }
 }

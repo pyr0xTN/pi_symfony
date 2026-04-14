@@ -7,6 +7,7 @@ use App\Entity\ParticipantConversation;
 use App\Entity\User;
 use App\Enum\TypeConversation;
 use App\Repository\ConversationRepository;
+use App\Repository\MessagesRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -174,7 +175,8 @@ class ConversationController extends AbstractController
     #[Route('/api/{id}', name: 'app_conversation_api', methods: ['GET'])]
     public function apiShow(
         Conversation $conversation, // Symfony will now find it via the 'id' property
-        ParticipantConversationRepository $pcRepo
+        ParticipantConversationRepository $pcRepo,
+        MessagesRepository $messagesRepo
     ): JsonResponse {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -205,7 +207,16 @@ class ConversationController extends AbstractController
                 ];
             }
         }
-
+        $data = [];
+        foreach ($conversation as $conv) {
+            $lastMsg = $messagesRepo->findLastMessage($conv->getIdConversation());
+            $unread  = $messagesRepo->countUnread($conv->getIdConversation(), $currentUser->getId());
+            $data[] = [
+                'conv'      => $conv,
+                'lastMsg'   => $lastMsg,
+                'unread'    => $unread,
+            ];
+        }
         return new JsonResponse([
             'id' => $conversation->getId(),
             'type' => $conversation->getType()->value,
