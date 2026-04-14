@@ -93,6 +93,7 @@ class ReservationController extends AbstractController
 
             // Read availability directly from the entity — never trust the client query param
             if ($service->getDisponibilite()) {
+                $service->decrementCapacite();
                 $this->em->persist($reservation);
                 $this->em->flush();
 
@@ -170,6 +171,7 @@ class ReservationController extends AbstractController
 
             // Read availability directly from the entity — never trust the client query param
             if ($service->getDisponibilite()) {
+                $service->decrementCapacite();
                 $this->em->persist($reservation);
                 $this->em->flush();
 
@@ -235,11 +237,13 @@ class ReservationController extends AbstractController
 
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete_resa_' . $id, $request->request->get('_token'))) {
+                $reservation->getIdService()->incrementCapacite();
                 $this->em->remove($reservation);
                 $this->em->flush();
                 $this->addFlash('success', 'Réservation supprimée.');
             }
         } else {
+            $reservation->getIdService()->incrementCapacite();
             $this->em->remove($reservation);
             $this->em->flush();
             $this->addFlash('success', 'Réservation supprimée.');
@@ -320,12 +324,14 @@ public function pdf(int $id): Response
 
     private function buildSeatMap(Services $vol): array
     {
-        $capacity = $vol->getCapacite();
+        // Layout must stay consistent: total seats = current free capacity + currently reserved count
+        $reservations = $vol->getReservationss();
+        $capacity     = $vol->getCapacite() + count($reservations);
  
         
         $takenSeats = array_map(
             fn(Reservations $r) => $r->getSeatNb(),
-            $this->reservationsRepo->findBy(['idService' => $vol])
+            $reservations->toArray()
         );
  
         $cols    = 6; 
@@ -405,6 +411,7 @@ public function payStripe(Request $request, int $id): Response
 
     } catch (CardException $e) {
         // Payment failed — delete the pending reservation to keep the DB clean
+        $reservation->getIdService()->incrementCapacite();
         $this->em->remove($reservation);
         $this->em->flush();
         $this->addFlash('error', 'Carte refusée : ' . $e->getMessage() . ' Veuillez réessayer.');
@@ -530,6 +537,7 @@ public function paypalCancel(Request $request, int $id): Response
     // Delete the pending reservation so the DB stays clean on cancellation
     $reservation = $this->reservationsRepo->find($id);
     if ($reservation && $reservation->getStatut() === 'En attente') {
+        $reservation->getIdService()->incrementCapacite();
         $this->em->remove($reservation);
         $this->em->flush();
     }

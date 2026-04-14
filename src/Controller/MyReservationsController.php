@@ -51,12 +51,14 @@ class MyReservationsController extends AbstractController
       
         if ($request->isMethod('POST')) {
             if ($this->isCsrfTokenValid('delete_resa_' . $id, $request->request->get('_token'))) {
+                $reservation->getIdService()->incrementCapacite();
                 $this->em->remove($reservation);
                 $this->em->flush();
                 $this->addFlash('success', 'Réservation supprimée.');
             }
         } else {
           
+            $reservation->getIdService()->incrementCapacite();
             $this->em->remove($reservation);
             $this->em->flush();
             $this->addFlash('success', 'Réservation supprimée.');

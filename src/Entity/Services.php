@@ -377,4 +377,23 @@ private ?\DateTimeInterface $date_arrive = null;
 
             return $this;
         }
+
+        public function incrementCapacite(): self
+        {
+            $this->capacite++;
+            $this->disponibilite = true;
+            return $this;
+        }
+
+        public function decrementCapacite(): self
+        {
+            if ($this->capacite > 0) {
+                $this->capacite--;
+            }
+            
+            if ($this->capacite <= 0) {
+                $this->disponibilite = false;
+            }
+            return $this;
+        }
 }

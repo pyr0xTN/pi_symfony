@@ -1,4 +1,4 @@
-{% extends 'dashboard/layout.html.twig' %}
+{% extends 'dashboard/layoutnoside.html.twig' %}
 
 {% block page_title %}Détails Réservation {% endblock %}
 
@@ -109,7 +109,7 @@
             🖨 Imprimer le Ticket
         </a>
     {% endif %}
-            <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+            <a href="{{ path('myreservation_delete', { id: reservation.idReservation }) }}"
                class="btn-delete"
                onclick="return confirm('Supprimer cette réservation ?')">
                 🗑 Supprimer
