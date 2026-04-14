@@ -59,7 +59,7 @@ class ActivitiesCheckoutController extends AbstractController
         }
 
         $activity = $this->connection->fetchAssociative(
-            'SELECT idActivite, titre, prix, placesDisponibles FROM activite WHERE idActivite = ?',
+            'SELECT idActivite, titre, prix, placesDisponibles, dateActivite FROM activite WHERE idActivite = ?',
             [$activityId]
         );
 
@@ -76,6 +76,21 @@ class ActivitiesCheckoutController extends AbstractController
                 'success' => false,
                 'message' => 'Not enough places available for this activity.',
             ], 409);
+        }
+
+        try {
+            $activityDate = new \DateTimeImmutable((string) ($activity['dateActivite'] ?? ''));
+            if ($activityDate <= new \DateTimeImmutable('now')) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'This activity has passed and can no longer be reserved.',
+                ], 409);
+            }
+        } catch (\Exception) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Invalid activity date.',
+            ], 400);
         }
 
         $unitAmount = (int) ($activity['prix'] ?? 0);
@@ -261,7 +276,7 @@ class ActivitiesCheckoutController extends AbstractController
                 }
 
                 $activity = $connection->fetchAssociative(
-                    'SELECT idActivite, placesDisponibles FROM activite WHERE idActivite = ? FOR UPDATE',
+                    'SELECT idActivite, placesDisponibles, dateActivite FROM activite WHERE idActivite = ? FOR UPDATE',
                     [$activityId]
                 );
 
@@ -272,6 +287,16 @@ class ActivitiesCheckoutController extends AbstractController
                 $availablePlaces = (int) ($activity['placesDisponibles'] ?? 0);
                 if ($availablePlaces < $quantity) {
                     throw new \RuntimeException('Not enough places available for this activity.');
+                }
+
+                try {
+                    $activityDate = new \DateTimeImmutable((string) ($activity['dateActivite'] ?? ''));
+                } catch (\Exception) {
+                    throw new \RuntimeException('Invalid activity date.');
+                }
+
+                if ($activityDate <= new \DateTimeImmutable('now')) {
+                    throw new \RuntimeException('This activity has passed and can no longer be reserved.');
                 }
 
                 $connection->executeStatement(

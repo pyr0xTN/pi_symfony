@@ -6,6 +6,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ConversationRepository;
 use App\Repository\UserRepository;
+use App\Service\WeatherService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
@@ -40,10 +41,15 @@ class HomeController extends AbstractController
 
     #[Route('/activities', name: 'app_activities', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function activities(Request $request, Connection $connection): Response
+    public function activities(Request $request, Connection $connection, WeatherService $weatherService): Response
     {
         $currentSearch = trim((string) $request->query->get('q', ''));
         $canSeeInactive = $this->isGranted('ROLE_GUIDE');
+
+        // Auto-delete activities 48 hours after their scheduled date.
+        $connection->executeStatement(
+            'DELETE FROM activite WHERE dateActivite <= DATE_SUB(NOW(), INTERVAL 2 DAY)'
+        );
 
         $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide, a.dateCreation,
                        u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
@@ -77,10 +83,14 @@ class HomeController extends AbstractController
             $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
         }
 
-        $sql .= ' ORDER BY a.dateActivite DESC, a.idActivite DESC';
+        $sql .= ' ORDER BY a.dateCreation DESC, a.idActivite DESC';
 
         $activities = $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
+        $now = new \DateTimeImmutable('now');
+        $forecastMaxDate = $now->modify('+5 days');
         $newBadgeThreshold = new \DateTimeImmutable('-1 day');
+        $weatherByLocationAndDate = [];
+        $currentWeatherByLocation = [];
 
         foreach ($activities as &$activity) {
             $firstName = trim((string) ($activity['guide_name'] ?? ''));
@@ -89,7 +99,24 @@ class HomeController extends AbstractController
             $fullName = trim($firstName . ' ' . $lastName);
 
             $isNew = false;
+            $isPassed = false;
+            $weather = null;
+            $weatherFallbackText = null;
+            $activityDate = null;
             $dateCreationRaw = $activity['dateCreation'] ?? null;
+            $dateActiviteRaw = $activity['dateActivite'] ?? null;
+            $locationRaw = trim((string) ($activity['lieu'] ?? ''));
+
+            if (is_string($dateActiviteRaw) && trim($dateActiviteRaw) !== '') {
+                try {
+                    $activityDate = new \DateTimeImmutable($dateActiviteRaw);
+                    $isPassed = $activityDate <= $now;
+                } catch (\Exception) {
+                    $isPassed = false;
+                    $activityDate = null;
+                }
+            }
+
             if (is_string($dateCreationRaw) && trim($dateCreationRaw) !== '') {
                 try {
                     $createdAt = new \DateTimeImmutable($dateCreationRaw);
@@ -102,7 +129,37 @@ class HomeController extends AbstractController
             $activity['guide_display_name'] = $fullName !== '' ? $fullName : ($username !== '' ? $username : 'Guide');
             $activity['guide_image_url'] = $this->imageToUrl($activity['guide_image'] ?? null);
             $activity['image_url'] = $this->activityImageToUrl($activity['image'] ?? null);
+
+            if ($activityDate instanceof \DateTimeImmutable && $locationRaw !== '') {
+                $weatherCacheKey = strtolower($locationRaw) . '|' . $activityDate->format('Y-m-d H:i');
+                if (!array_key_exists($weatherCacheKey, $weatherByLocationAndDate)) {
+                    $weatherByLocationAndDate[$weatherCacheKey] = $weatherService->getForecastByLocationAndDate($locationRaw, $activityDate);
+                }
+                $weather = $weatherByLocationAndDate[$weatherCacheKey];
+
+                if ($weather === null) {
+                    if ($activityDate > $forecastMaxDate) {
+                        $weatherFallbackText = 'unavailable weather ';
+                    } elseif ($activityDate > $now) {
+                        $currentWeatherKey = strtolower($locationRaw);
+                        if (!array_key_exists($currentWeatherKey, $currentWeatherByLocation)) {
+                            $currentWeatherByLocation[$currentWeatherKey] = $weatherService->getWeatherByLocation($locationRaw);
+                        }
+                        $weather = $currentWeatherByLocation[$currentWeatherKey];
+
+                        if ($weather === null) {
+                            $weatherFallbackText = 'Weather unavailable for this location';
+                        }
+                    }
+                }
+            } elseif ($activityDate instanceof \DateTimeImmutable && $activityDate > $forecastMaxDate) {
+                $weatherFallbackText = 'unavailable weather ';
+            }
+
             $activity['is_new'] = $isNew;
+            $activity['is_passed'] = $isPassed;
+            $activity['weather'] = $weather;
+            $activity['weather_fallback_text'] = $weatherFallbackText;
         }
         unset($activity);
 
@@ -489,18 +546,27 @@ class HomeController extends AbstractController
 
     #[Route('/activities/{id}/admin-delete', name: 'app_activities_admin_delete', methods: ['POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function adminDeleteActivity(int $id, Connection $connection): Response
+    public function adminDeleteActivity(int $id, Connection $connection, MailerInterface $mailer): Response
     {
-        $exists = $connection->fetchOne(
-            'SELECT idActivite FROM activite WHERE idActivite = ?',
+        $activityOwner = $connection->fetchAssociative(
+            "SELECT a.idActivite, a.titre,
+                    u.email AS guide_email,
+                    COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.name, ''), ' ', COALESCE(u.last_name, ''))), ''), u.username, 'Guide') AS guide_name
+             FROM activite a
+             LEFT JOIN `user` u ON u.id = a.idGuide
+             WHERE a.idActivite = ?",
             [$id],
             [ParameterType::INTEGER]
         );
 
-        if ($exists === false) {
+        if ($activityOwner === false) {
             $this->addFlash('error', 'Activity not found.');
             return $this->redirectToRoute('app_activities');
         }
+
+        $activityTitle = trim((string) ($activityOwner['titre'] ?? 'Activity'));
+        $guideEmail = trim((string) ($activityOwner['guide_email'] ?? ''));
+        $guideName = trim((string) ($activityOwner['guide_name'] ?? 'Guide'));
 
         try {
             $deletedRows = $connection->executeStatement(
@@ -514,6 +580,27 @@ class HomeController extends AbstractController
         }
 
         if ($deletedRows > 0) {
+            if ($guideEmail !== '') {
+                try {
+                    $email = (new Email())
+                        ->from((string) ($_ENV['EMAIL_FROM'] ?? $_SERVER['EMAIL_FROM'] ?? 'noreply@rehletna.tn'))
+                        ->to($guideEmail)
+                        ->subject('Your activity was removed by admin')
+                        ->text(sprintf(
+                            "Hello %s,\n\nYour activity \"%s\" has been deleted by an administrator.\n\nIf you think this is a mistake, please contact support.\n\nRehletna Team",
+                            $guideName,
+                            $activityTitle !== '' ? $activityTitle : 'Activity'
+                        ));
+
+                    $mailer->send($email);
+                    $this->addFlash('success', sprintf('The guide will receive a delete email on this address: %s', $guideEmail));
+                } catch (\Throwable) {
+                    $this->addFlash('warning', 'Activity deleted, but email notification could not be sent to the guide.');
+                }
+            } else {
+                $this->addFlash('warning', 'Activity deleted, but no guide email address was found.');
+            }
+
             $this->addFlash('success', 'Activity deleted successfully.');
         } else {
             $this->addFlash('error', 'Unable to delete activity.');

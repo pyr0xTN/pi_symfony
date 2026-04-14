@@ -460,6 +460,26 @@
             opacity: 0.72;
         }
 
+        .activity-card.activity-card--passed {
+            opacity: 1;
+            filter: none;
+        }
+
+        .activity-card.activity-card--passed:hover {
+            opacity: 1;
+        }
+
+        .activity-card.activity-card--passed .activity-image,
+        .activity-card.activity-card--passed .activity-body {
+            opacity: 0.42;
+            filter: grayscale(0.2);
+        }
+
+        .activity-card.activity-card--passed:hover .activity-image,
+        .activity-card.activity-card--passed:hover .activity-body {
+            opacity: 0.52;
+        }
+
         .activity-owner-badge {
             position: absolute;
             top: 12px;
@@ -498,6 +518,25 @@
             text-transform: uppercase;
             overflow: hidden;
             isolation: isolate;
+        }
+
+        .activity-passed-badge {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            box-shadow: 0 10px 20px rgba(185, 28, 28, 0.30);
         }
 
         .activity-new-badge::after {
@@ -599,6 +638,36 @@
             min-height: 56px;
         }
 
+        .activity-weather {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            align-self: flex-start;
+            border-radius: 999px;
+            padding: 5px 10px;
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            background: rgba(254, 243, 199, 0.55);
+            color: #7a4d00;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .activity-weather-icon {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+        }
+
+        .activity-weather-main {
+            font-weight: 800;
+        }
+
+        .activity-weather-temp {
+            color: #9a5d00;
+            font-weight: 800;
+        }
+
         .activity-foot {
             margin-top: auto;
             display: flex;
@@ -640,6 +709,15 @@
         .activity-view:hover {
             transform: translateY(-1px);
             box-shadow: 0 10px 20px rgba(11, 154, 157, 0.28);
+        }
+
+        .activity-view:disabled,
+        .activity-view.activity-view--disabled {
+            background: #9ca3af;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 1;
         }
 
         .activity-edit,
@@ -2660,7 +2738,7 @@
                     <div class="activities-head">
                         <div>
                             <h2>Activities</h2>
-                            <p>{{ activities|length }} activities loaded from the database.</p>
+                            <p>{{ activities|length }} activities available</p>
                         </div>
                         <div class="activities-head-actions">
                             <span class="activities-pill">{{ activities|length }} total</span>
@@ -2712,9 +2790,10 @@
                         {% set canSeeInactive = is_granted('ROLE_GUIDE') %}
                         {% for activity in activities %}
                             {% set status = activity.statut|default('')|lower %}
+                            {% set isPassed = activity.is_passed|default(false) %}
                             {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
                             {% if canSeeInactive or status == 'actif' %}
-                            <article class="activity-card {{ status == 'inactif' ? 'activity-card--inactive' : '' }}" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}" data-title="{{ activity.titre|default('')|e('html_attr') }}">
+                            <article class="activity-card {{ status == 'inactif' ? 'activity-card--inactive' : '' }} {{ isPassed ? 'activity-card--passed' : '' }}" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}" data-title="{{ activity.titre|default('')|e('html_attr') }}">
                                 {% if is_granted('ROLE_ADMIN') %}
                                     <form
                                         method="post"
@@ -2728,7 +2807,10 @@
                                 {% if isMyActivity %}
                                     <div class="activity-owner-badge">My activity</div>
                                 {% endif %}
-                                {% set showNewBadge = activity.is_new|default(false) and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_USER') and not is_granted('ROLE_GUIDE'))) %}
+                                {% if isPassed %}
+                                    <div class="activity-passed-badge">Activity passed</div>
+                                {% endif %}
+                                {% set showNewBadge = (not isPassed) and activity.is_new|default(false) and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_USER') and not is_granted('ROLE_GUIDE'))) %}
                                 {% if showNewBadge %}
                                     <div class="activity-new-badge">New</div>
                                 {% endif %}
@@ -2739,9 +2821,14 @@
                                         <span class="activity-tag">{{ activity.categorie|default('Activity') }}</span>
                                         <span class="activity-tag">{{ activity.lieu }}</span>
                                     </div>
-                                    <div class="activity-description">
-                                        {{ activity.description|length > 120 ? activity.description|slice(0, 120) ~ '...' : activity.description }}
-                                    </div>
+                                
+                                    {% if activity.weather is iterable %}
+                                        <div class="activity-weather" title="Forecast near activity date">
+                                            <img class="activity-weather-icon" src="{{ activity.weather.iconUrl|default('') }}" alt="{{ activity.weather.weatherMain|default('Weather') }}">
+                                            <span class="activity-weather-main">{{ activity.weather.weatherMain|default('Weather') }}</span>
+                                            <span class="activity-weather-temp">{{ activity.weather.formattedTemp|default('') }}</span>
+                                        </div>
+                                    {% endif %}
                                     <div class="activity-meta">
                                         {% if isMyActivity and is_granted('ROLE_GUIDE') %}
                                             <button
@@ -2755,10 +2842,12 @@
                                         {% else %}
                                             <span class="activities-badge neutral">{{ activity.placesDisponibles }} places</span>
                                         {% endif %}
-                                        <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
+                                        {% if is_granted('ROLE_GUIDE') or is_granted('ROLE_ADMIN') %}
+                                            <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
+                                        {% endif %}
                                     </div>
                                     <div class="activity-foot">
-                                        <div class="activity-price">{{ activity.prix }} coins</div>
+                                        <div class="activity-price">{{ activity.prix }} Dt</div>
                                         <div class="activity-foot-right">
                                             {% if isMyActivity %}
                                                 <button
@@ -2789,8 +2878,9 @@
                                             {% else %}
                                                 <button
                                                     type="button"
-                                                    class="activity-view js-open-activity-modal"
-                                                    onclick="window.openActivityModal(this); return false;"
+                                                    class="activity-view js-open-activity-modal {{ isPassed ? 'activity-view--disabled' : '' }}"
+                                                    onclick="{{ isPassed ? 'return false;' : 'window.openActivityModal(this); return false;' }}"
+                                                    {{ isPassed ? 'disabled' : '' }}
                                                     data-activity-id="{{ activity.idActivite }}"
                                                     data-title="{{ activity.titre|e('html_attr') }}"
                                                     data-description="{{ activity.description|e('html_attr') }}"
@@ -2804,6 +2894,7 @@
                                                     data-image="{{ activity.image_url|e('html_attr') }}"
                                                     data-guide-name="{{ activity.guide_display_name|e('html_attr') }}"
                                                     data-guide-image="{{ activity.guide_image_url|e('html_attr') }}"
+                                                    title="{{ isPassed ? 'This activity has passed and cannot be reserved.' : 'View activity details' }}"
                                                 >View</button>
                                             {% endif %}
                                         </div>
@@ -2832,8 +2923,6 @@
                 <img class="activity-modal-image js-activity-modal-image" src="" alt="Activity image">
 
                 <div class="activity-modal-info">
-                    <p class="activity-modal-desc js-activity-modal-description"></p>
-
                     <div class="activity-modal-grid">
                         <div class="activity-modal-item">
                             <span class="activity-modal-label">Location</span>
@@ -2862,6 +2951,10 @@
                         <div class="activity-modal-item">
                             <span class="activity-modal-label">Duration</span>
                             <span class="activity-modal-value js-activity-modal-duration"></span>
+                        </div>
+                        <div class="activity-modal-item">
+                            <span class="activity-modal-label">Description</span>
+                            <p class="activity-modal-desc js-activity-modal-description"></p>
                         </div>
                     </div>
 
