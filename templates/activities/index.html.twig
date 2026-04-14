@@ -479,6 +479,52 @@
             text-transform: uppercase;
         }
 
+        .activity-new-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #ffd24d 0%, #f5b301 100%);
+            color: #5a3b00;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            box-shadow: 0 10px 20px rgba(245, 179, 1, 0.35);
+            text-transform: uppercase;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .activity-new-badge::after {
+            content: '';
+            position: absolute;
+            top: -40%;
+            left: -55%;
+            width: 45%;
+            height: 180%;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.65) 45%, rgba(255, 255, 255, 0) 100%);
+            transform: rotate(18deg);
+            animation: newBadgeShine 2.6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes newBadgeShine {
+            0% {
+                left: -55%;
+            }
+            60% {
+                left: 125%;
+            }
+            100% {
+                left: 125%;
+            }
+        }
+
         .activity-admin-delete-form {
             position: absolute;
             top: 10px;
@@ -2663,7 +2709,7 @@
                     {% endif %}
 
                     <div class="activities-grid">
-                        {% set canSeeInactive = is_granted('ROLE_GUIDE') or is_granted('ROLE_ADMIN') %}
+                        {% set canSeeInactive = is_granted('ROLE_GUIDE') %}
                         {% for activity in activities %}
                             {% set status = activity.statut|default('')|lower %}
                             {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
@@ -2681,6 +2727,10 @@
                                 {% endif %}
                                 {% if isMyActivity %}
                                     <div class="activity-owner-badge">My activity</div>
+                                {% endif %}
+                                {% set showNewBadge = activity.is_new|default(false) and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_USER') and not is_granted('ROLE_GUIDE'))) %}
+                                {% if showNewBadge %}
+                                    <div class="activity-new-badge">New</div>
                                 {% endif %}
                                 <img class="activity-image" src="{{ activity.image_url }}" alt="{{ activity.titre }}">
                                 <div class="activity-body">

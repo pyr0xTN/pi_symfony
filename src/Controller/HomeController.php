@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -42,8 +43,9 @@ class HomeController extends AbstractController
     public function activities(Request $request, Connection $connection): Response
     {
         $currentSearch = trim((string) $request->query->get('q', ''));
+        $canSeeInactive = $this->isGranted('ROLE_GUIDE');
 
-        $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide,
+        $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide, a.dateCreation,
                        u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
                        p.image AS guide_image
                 FROM activite a
@@ -54,11 +56,20 @@ class HomeController extends AbstractController
         $types = [];
         $whereClauses = [];
 
-        if ($currentSearch !== '') {
+        if ($currentSearch !== '') 
+        {
             $whereClauses[] = '(a.titre LIKE ? OR a.lieu LIKE ?)';
             $params[] = '%' . $currentSearch . '%';
             $params[] = '%' . $currentSearch . '%';
             $types[] = ParameterType::STRING;
+            $types[] = ParameterType::STRING;
+        }
+
+        // Hide inactive activities for regular users.
+        // Only guides can see inactive activities.
+        if (!$canSeeInactive) {
+            $whereClauses[] = 'LOWER(TRIM(a.statut)) = ?';
+            $params[] = 'actif';
             $types[] = ParameterType::STRING;
         }
 
@@ -69,6 +80,7 @@ class HomeController extends AbstractController
         $sql .= ' ORDER BY a.dateActivite DESC, a.idActivite DESC';
 
         $activities = $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
+        $newBadgeThreshold = new \DateTimeImmutable('-1 day');
 
         foreach ($activities as &$activity) {
             $firstName = trim((string) ($activity['guide_name'] ?? ''));
@@ -76,9 +88,21 @@ class HomeController extends AbstractController
             $username = trim((string) ($activity['guide_username'] ?? ''));
             $fullName = trim($firstName . ' ' . $lastName);
 
+            $isNew = false;
+            $dateCreationRaw = $activity['dateCreation'] ?? null;
+            if (is_string($dateCreationRaw) && trim($dateCreationRaw) !== '') {
+                try {
+                    $createdAt = new \DateTimeImmutable($dateCreationRaw);
+                    $isNew = $createdAt >= $newBadgeThreshold;
+                } catch (\Exception) {
+                    $isNew = false;
+                }
+            }
+
             $activity['guide_display_name'] = $fullName !== '' ? $fullName : ($username !== '' ? $username : 'Guide');
             $activity['guide_image_url'] = $this->imageToUrl($activity['guide_image'] ?? null);
             $activity['image_url'] = $this->activityImageToUrl($activity['image'] ?? null);
+            $activity['is_new'] = $isNew;
         }
         unset($activity);
 
@@ -86,6 +110,115 @@ class HomeController extends AbstractController
             'activities' => $activities,
             'currentSearch' => $currentSearch,
         ]);
+    }
+
+    #[Route('/activities/create-checkout-session', name: 'app_activities_create_checkout_session', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function createActivitiesCheckoutSession(Request $request): JsonResponse
+    {
+        try {
+            if (!$this->isCsrfTokenValid('activities-checkout', (string) $request->request->get('_token'))) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Invalid request token.',
+                ], 400);
+            }
+
+            $activityName = trim((string) $request->request->get('activity_name', 'Activity reservation'));
+            $amount = (int) $request->request->get('amount', 0);
+            $quantity = (int) $request->request->get('quantity', 1);
+
+            if ($amount <= 0) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Invalid payment amount.',
+                ], 400);
+            }
+
+            if ($quantity < 1) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Invalid quantity.',
+                ], 400);
+            }
+
+            $secretKey = (string) (
+                $_SERVER['STRIPE_SECRET_KEY']
+                ?? $_ENV['STRIPE_SECRET_KEY']
+                ?? getenv('STRIPE_SECRET_KEY')
+                ?: ''
+            );
+            if ($secretKey === '') {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Stripe secret key is missing. Please configure STRIPE_SECRET_KEY.',
+                ], 500);
+            }
+
+            $user = $this->getUser();
+            $customerEmail = '';
+            if ($user instanceof User) {
+                if (method_exists($user, 'getEmail')) {
+                    $customerEmail = trim((string) $user->getEmail());
+                } elseif (method_exists($user, 'getUserIdentifier')) {
+                    $customerEmail = trim((string) $user->getUserIdentifier());
+                }
+            }
+
+            $successUrl = $this->generateUrl('app_activities', ['payment' => 'success'], UrlGeneratorInterface::ABSOLUTE_URL);
+            $cancelUrl = $this->generateUrl('app_activities', ['payment' => 'cancelled'], UrlGeneratorInterface::ABSOLUTE_URL);
+
+            $payload = [
+                'mode' => 'payment',
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+                'line_items[0][price_data][currency]' => 'eur',
+                'line_items[0][price_data][product_data][name]' => $activityName,
+                'line_items[0][price_data][unit_amount]' => $amount * 100,
+                'line_items[0][quantity]' => $quantity,
+            ];
+
+            if ($customerEmail !== '') {
+                $payload['customer_email'] = $customerEmail;
+            }
+
+            $context = stream_context_create([
+                'http' => [
+                    'method' => 'POST',
+                    'timeout' => 12,
+                    'header' => "Authorization: Bearer {$secretKey}\r\n"
+                        . "Content-Type: application/x-www-form-urlencoded\r\n",
+                    'content' => http_build_query($payload),
+                ],
+            ]);
+
+            $raw = @file_get_contents('https://api.stripe.com/v1/checkout/sessions', false, $context);
+            if ($raw === false) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Unable to create Stripe checkout session.',
+                ], 502);
+            }
+
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded) || empty($decoded['url'])) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Stripe returned an invalid checkout response.',
+                ], 502);
+            }
+
+            return $this->json([
+                'success' => true,
+                'checkoutUrl' => $decoded['url'],
+            ]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Stripe checkout is unavailable right now. Please retry.',
+                'debug' => $this->getParameter('kernel.environment') === 'dev' ? $e->getMessage() : null,
+            ], 502);
+        }
     }
 
     #[Route('/activities/new', name: 'app_activities_new', methods: ['POST'])]
@@ -296,15 +429,25 @@ class HomeController extends AbstractController
     }
 
     #[Route('/activities/{id}/delete', name: 'app_activities_delete', methods: ['POST'])]
-    #[IsGranted('ROLE_GUIDE')]
+    #[IsGranted('ROLE_USER')]
     public function deleteActivity(int $id, Request $request, Connection $connection): Response
     {
-        $user = $this->getUser();
-        if (!$user instanceof User || $user->getId() === null) {
+        $securityUser = $this->getUser();
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        $isGuide = $this->isGranted('ROLE_GUIDE');
+        if (!$isAdmin && !$isGuide) {
             throw $this->createAccessDeniedException();
         }
 
-        if (!$this->isCsrfTokenValid('delete_activity_' . $id, (string) $request->request->get('_token'))) {
+        $guideUserId = null;
+        if ($isGuide) {
+            if (!$securityUser instanceof User || $securityUser->getId() === null) {
+                throw $this->createAccessDeniedException();
+            }
+            $guideUserId = (int) $securityUser->getId();
+        }
+
+        if (!$isAdmin && !$this->isCsrfTokenValid('delete_activity_' . $id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid delete request.');
             return $this->redirectToRoute('app_activities');
         }
@@ -320,15 +463,55 @@ class HomeController extends AbstractController
             return $this->redirectToRoute('app_activities');
         }
 
-        if ((int) $ownerId !== (int) $user->getId()) {
+        if (!$isAdmin && (int) $ownerId !== (int) $guideUserId) {
             throw $this->createAccessDeniedException();
         }
 
-        $deletedRows = $connection->executeStatement(
-            'DELETE FROM activite WHERE idActivite = ?',
+        try {
+            $deletedRows = $connection->executeStatement(
+                'DELETE FROM activite WHERE idActivite = ?',
+                [$id],
+                [ParameterType::INTEGER]
+            );
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Unable to delete activity.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        if ($deletedRows > 0) {
+            $this->addFlash('success', 'Activity deleted successfully.');
+        } else {
+            $this->addFlash('error', 'Unable to delete activity.');
+        }
+
+        return $this->redirectToRoute('app_activities');
+    }
+
+    #[Route('/activities/{id}/admin-delete', name: 'app_activities_admin_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function adminDeleteActivity(int $id, Connection $connection): Response
+    {
+        $exists = $connection->fetchOne(
+            'SELECT idActivite FROM activite WHERE idActivite = ?',
             [$id],
             [ParameterType::INTEGER]
         );
+
+        if ($exists === false) {
+            $this->addFlash('error', 'Activity not found.');
+            return $this->redirectToRoute('app_activities');
+        }
+
+        try {
+            $deletedRows = $connection->executeStatement(
+                'DELETE FROM activite WHERE idActivite = ?',
+                [$id],
+                [ParameterType::INTEGER]
+            );
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Unable to delete activity.');
+            return $this->redirectToRoute('app_activities');
+        }
 
         if ($deletedRows > 0) {
             $this->addFlash('success', 'Activity deleted successfully.');
