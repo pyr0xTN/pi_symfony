@@ -33,9 +33,6 @@ class ConversationController extends AbstractController
         if (!$user) {
             return $this->redirectToRoute('app_login');
         }
-
-        // Custom repository method
-        // Note: Check if your User entity uses getId() or getIdUser()
         $conversations = $conversationRepository->findConversationsByUser($user->getId());
 
         return $this->render('conversation/index.html.twig', [
@@ -207,16 +204,7 @@ class ConversationController extends AbstractController
                 ];
             }
         }
-        $data = [];
-        foreach ($conversation as $conv) {
-            $lastMsg = $messagesRepo->findLastMessage($conv->getIdConversation());
-            $unread  = $messagesRepo->countUnread($conv->getIdConversation(), $currentUser->getId());
-            $data[] = [
-                'conv'      => $conv,
-                'lastMsg'   => $lastMsg,
-                'unread'    => $unread,
-            ];
-        }
+
         return new JsonResponse([
             'id' => $conversation->getId(),
             'type' => $conversation->getType()->value,

@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\ConversationRepository;
+use App\Repository\MessagesRepository;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
@@ -98,27 +99,27 @@ class HomeController extends AbstractController
                     ->subject('2FA Activated Successfully - Rehletna')
                     ->text(
                         "Hello " . (string) ($user->getFullName() ?: $user->getUsername()) . ",\n\n"
-                        . "We confirm that 2FA has been activated successfully on your Rehletna account.\n"
-                        . "Security Status: ACTIVE\n\n"
-                        . "If you did not make this change, please update your password immediately and contact support."
+                            . "We confirm that 2FA has been activated successfully on your Rehletna account.\n"
+                            . "Security Status: ACTIVE\n\n"
+                            . "If you did not make this change, please update your password immediately and contact support."
                     )
                     ->html(sprintf(
                         '<div style="font-family:Segoe UI,Arial,sans-serif;background:#f3f8ff;padding:24px;">'
-                        . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d6e6f7;border-radius:16px;overflow:hidden;box-shadow:0 10px 28px rgba(10,42,76,0.12);">'
-                        . '<div style="background:linear-gradient(135deg,#0f7ab0,#0BA4A1);padding:20px;color:#fff;">'
-                        . '<h2 style="margin:0;font-size:24px;">Two-Factor Authentication Activated</h2>'
-                        . '<p style="margin:8px 0 0;opacity:.92;">Your account security is now stronger.</p>'
-                        . '</div>'
-                        . '<div style="padding:22px;color:#1f3f5f;">'
-                        . '<p style="margin:0 0 12px;">Hello <strong>%s</strong>,</p>'
-                        . '<p style="margin:0 0 12px;line-height:1.6;">We confirm that 2FA has been activated successfully on your Rehletna account.</p>'
-                        . '<div style="margin:14px 0;padding:12px 14px;border:1px solid #c7ddf2;border-radius:10px;background:#f7fbff;">'
-                        . '<div style="font-weight:700;color:#0f4f79;">Security Status: <span style="color:#11885f;">ACTIVE</span></div>'
-                        . '</div>'
-                        . '<p style="margin:0;line-height:1.6;">If you did not make this change, please update your password immediately and contact support.</p>'
-                        . '</div>'
-                        . '</div>'
-                        . '</div>',
+                            . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d6e6f7;border-radius:16px;overflow:hidden;box-shadow:0 10px 28px rgba(10,42,76,0.12);">'
+                            . '<div style="background:linear-gradient(135deg,#0f7ab0,#0BA4A1);padding:20px;color:#fff;">'
+                            . '<h2 style="margin:0;font-size:24px;">Two-Factor Authentication Activated</h2>'
+                            . '<p style="margin:8px 0 0;opacity:.92;">Your account security is now stronger.</p>'
+                            . '</div>'
+                            . '<div style="padding:22px;color:#1f3f5f;">'
+                            . '<p style="margin:0 0 12px;">Hello <strong>%s</strong>,</p>'
+                            . '<p style="margin:0 0 12px;line-height:1.6;">We confirm that 2FA has been activated successfully on your Rehletna account.</p>'
+                            . '<div style="margin:14px 0;padding:12px 14px;border:1px solid #c7ddf2;border-radius:10px;background:#f7fbff;">'
+                            . '<div style="font-weight:700;color:#0f4f79;">Security Status: <span style="color:#11885f;">ACTIVE</span></div>'
+                            . '</div>'
+                            . '<p style="margin:0;line-height:1.6;">If you did not make this change, please update your password immediately and contact support.</p>'
+                            . '</div>'
+                            . '</div>'
+                            . '</div>',
                         htmlspecialchars((string) ($user->getFullName() ?: $user->getUsername()), ENT_QUOTES)
                     ));
 
@@ -164,28 +165,28 @@ class HomeController extends AbstractController
                 ->subject('Your Rehletna QR Code (Email + Password Hash)')
                 ->text(
                     "Hello " . $displayName . ",\n\n"
-                    . "A quick scan helps you sign in faster with less typing.\n\n"
-                    . $qrPayload . "\n\n"
-                    . "If you did not request this email, please secure your account immediately."
+                        . "A quick scan helps you sign in faster with less typing.\n\n"
+                        . $qrPayload . "\n\n"
+                        . "If you did not request this email, please secure your account immediately."
                 )
                 ->html(sprintf(
                     '<div style="font-family:Segoe UI,Arial,sans-serif;background:linear-gradient(160deg,#eef6ff,#f7fbff);padding:28px 14px;">'
-                    . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
-                    . '<div style="background:linear-gradient(135deg,#0e5f97,#1a86c8);padding:18px 22px;color:#ffffff;">'
-                    . '<div style="font-size:12px;letter-spacing:0.4px;opacity:.9;text-transform:uppercase;">Rehletna Security</div>'
-                    . '<h2 style="margin:8px 0 0;font-size:24px;line-height:1.2;">Your Login QR Code</h2>'
-                    . '</div>'
-                    . '<div style="padding:22px;color:#1f3f5f;">'
-                    . '<p style="margin:0 0 12px;font-size:15px;line-height:1.7;">Hello <strong>%s</strong>,</p>'
-                    . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#456b90;">A quick scan helps you sign in faster with less typing.</p>'
-                    . '<div style="text-align:center;margin:12px 0 8px;padding:14px;border:1px solid #dce9f6;border-radius:14px;background:#f8fbff;">'
-                    . '<img src="%s" alt="Credentials QR Code" width="260" height="260" style="max-width:100%%;border:1px solid #cfe1f3;border-radius:12px;padding:10px;background:#fff;">'
-                    . '<div style="margin-top:10px;font-size:12px;color:#54779a;">Scan with your trusted QR app</div>'
-                    . '</div>'
-                    . '<div style="margin-top:16px;padding:10px 12px;border-radius:10px;background:#fff4f4;border:1px solid #f3d2d2;color:#9b3d3d;font-size:12px;line-height:1.6;">If you did not request this email, change your password immediately.</div>'
-                    . '</div>'
-                    . '</div>'
-                    . '</div>',
+                        . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
+                        . '<div style="background:linear-gradient(135deg,#0e5f97,#1a86c8);padding:18px 22px;color:#ffffff;">'
+                        . '<div style="font-size:12px;letter-spacing:0.4px;opacity:.9;text-transform:uppercase;">Rehletna Security</div>'
+                        . '<h2 style="margin:8px 0 0;font-size:24px;line-height:1.2;">Your Login QR Code</h2>'
+                        . '</div>'
+                        . '<div style="padding:22px;color:#1f3f5f;">'
+                        . '<p style="margin:0 0 12px;font-size:15px;line-height:1.7;">Hello <strong>%s</strong>,</p>'
+                        . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#456b90;">A quick scan helps you sign in faster with less typing.</p>'
+                        . '<div style="text-align:center;margin:12px 0 8px;padding:14px;border:1px solid #dce9f6;border-radius:14px;background:#f8fbff;">'
+                        . '<img src="%s" alt="Credentials QR Code" width="260" height="260" style="max-width:100%%;border:1px solid #cfe1f3;border-radius:12px;padding:10px;background:#fff;">'
+                        . '<div style="margin-top:10px;font-size:12px;color:#54779a;">Scan with your trusted QR app</div>'
+                        . '</div>'
+                        . '<div style="margin-top:16px;padding:10px 12px;border-radius:10px;background:#fff4f4;border:1px solid #f3d2d2;color:#9b3d3d;font-size:12px;line-height:1.6;">If you did not request this email, change your password immediately.</div>'
+                        . '</div>'
+                        . '</div>'
+                        . '</div>',
                     htmlspecialchars($displayName, ENT_QUOTES),
                     htmlspecialchars($qrImageUrl, ENT_QUOTES)
                 ));
@@ -384,7 +385,7 @@ class HomeController extends AbstractController
             if (!empty($profile['image'])) {
                 try {
                     $imageData = $profile['image'];
-                    
+
                     // Handle different blob representations
                     if (is_resource($imageData)) {
                         $imageData = stream_get_contents($imageData);
@@ -393,11 +394,11 @@ class HomeController extends AbstractController
                     } else {
                         $imageData = null;
                     }
-                    
+
                     // Only encode if we have valid binary data
                     if ($imageData && strlen($imageData) > 0) {
                         $base64 = base64_encode($imageData);
-                        
+
                         // Detect MIME type from magic bytes
                         $mime = 'image/jpeg'; // default
                         if (substr($imageData, 0, 8) === "\x89PNG\r\n\x1a\n") {
@@ -407,7 +408,7 @@ class HomeController extends AbstractController
                         } elseif (substr($imageData, 0, 6) === "GIF87a" || substr($imageData, 0, 6) === "GIF89a") {
                             $mime = 'image/gif';
                         }
-                        
+
                         $profile['image_url'] = 'data:' . $mime . ';base64,' . $base64;
                     }
                 } catch (\Exception $e) {
@@ -655,11 +656,11 @@ class HomeController extends AbstractController
 
     #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo): Response
+    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo, MessagesRepository $msgRepo): Response
     {
         $view = $request->request->get('view');
         $user = $this->getUser();
-        
+
         // Load different views based on selection
         switch ($view) {
             case 'services':
@@ -678,10 +679,24 @@ class HomeController extends AbstractController
                 if (!$user instanceof User) {
                     throw $this->createAccessDeniedException();
                 }
-                $conversations = $convRepo->findConversationsByUser($user->getId());
+
+                // 1. Récupérer les conversations brutes
+                $rawConversations = $convRepo->findConversationsByUser($user->getId());
                 $allUsers = $userRepo->findAllExceptMe($user->getId());
+
+                // 2. Préparer les données pour la sidebar (Dernier msg + Compteur non lus)
+                $conversationsWithMetas = [];
+                foreach ($rawConversations as $conv) {
+                    $conversationsWithMetas[] = [
+                        'conv' => $conv,
+                        'lastMsg' => $msgRepo->findOneBy(['idConversation' => $conv], ['dateEnvoi' => 'DESC']),
+                        // Appel de la méthode pour compter les non lus reçus
+                        'unread' => $msgRepo->countUnread($conv->getId(), $user->getId())
+                    ];
+                }
+
                 return $this->render('messenger/chatView.html.twig', [
-                    'conversations' => $conversations,
+                    'conversations' => $conversationsWithMetas, // On envoie les données préparées
                     'users' => $allUsers
                 ]);
             case 'post':
@@ -1017,7 +1032,7 @@ class HomeController extends AbstractController
             [$user->getId()],
             [ParameterType::INTEGER]
         );
-        
+
         return $this->json(['unreadCount' => $unreadCount]);
     }
 
@@ -2138,24 +2153,24 @@ class HomeController extends AbstractController
         }
 
         try {
-                        $siteName = 'rehltna.tn';
-                        $safeProductName = htmlspecialchars($productName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeBuyerName = htmlspecialchars($buyerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeBuyerEmail = htmlspecialchars($buyerEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeBuyerPhone = htmlspecialchars($buyerPhone, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeBuyerAddress = htmlspecialchars($buyerAddress, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeLocationText = htmlspecialchars($locationText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-                        $safeCoordinates = htmlspecialchars($locationLat . ', ' . $locationLng, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $siteName = 'rehltna.tn';
+            $safeProductName = htmlspecialchars($productName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeBuyerName = htmlspecialchars($buyerName, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeBuyerEmail = htmlspecialchars($buyerEmail, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeBuyerPhone = htmlspecialchars($buyerPhone, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeBuyerAddress = htmlspecialchars($buyerAddress, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeLocationText = htmlspecialchars($locationText, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+            $safeCoordinates = htmlspecialchars($locationLat . ', ' . $locationLng, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
-                        $locationRows = '';
-                        if ($locationText !== '') {
-                                $locationRows .= '<tr><td style="padding:8px 0;color:#4b6078;font-weight:700;">Localisation</td><td style="padding:8px 0;color:#0e2340;">' . $safeLocationText . '</td></tr>';
-                        }
-                        if ($locationLat !== '' && $locationLng !== '') {
-                                $locationRows .= '<tr><td style="padding:8px 0;color:#4b6078;font-weight:700;">Coordinates</td><td style="padding:8px 0;color:#0e2340;">' . $safeCoordinates . '</td></tr>';
-                        }
+            $locationRows = '';
+            if ($locationText !== '') {
+                $locationRows .= '<tr><td style="padding:8px 0;color:#4b6078;font-weight:700;">Localisation</td><td style="padding:8px 0;color:#0e2340;">' . $safeLocationText . '</td></tr>';
+            }
+            if ($locationLat !== '' && $locationLng !== '') {
+                $locationRows .= '<tr><td style="padding:8px 0;color:#4b6078;font-weight:700;">Coordinates</td><td style="padding:8px 0;color:#0e2340;">' . $safeCoordinates . '</td></tr>';
+            }
 
-                        $emailHtml = '<!doctype html>
+            $emailHtml = '<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2216,16 +2231,16 @@ class HomeController extends AbstractController
                 ->subject('Order confirmed - Rehletna Shop')
                 ->text(
                     "Order has been confirmed.\n\n" .
-                    "Product: {$productName}\n" .
-                    "Quantity: {$quantity}\n" .
-                    "Total coins: {$totalCoins}\n" .
-                    "Name: {$buyerName}\n" .
-                    "Email: {$buyerEmail}\n" .
-                    "Phone: {$buyerPhone}\n" .
-                    "Address: {$buyerAddress}\n" .
-                    ($locationText !== '' ? "Map location: {$locationText}\n" : '') .
-                    (($locationLat !== '' && $locationLng !== '') ? "Coordinates: {$locationLat}, {$locationLng}\n" : '') .
-                    "\nThank you for your purchase."
+                        "Product: {$productName}\n" .
+                        "Quantity: {$quantity}\n" .
+                        "Total coins: {$totalCoins}\n" .
+                        "Name: {$buyerName}\n" .
+                        "Email: {$buyerEmail}\n" .
+                        "Phone: {$buyerPhone}\n" .
+                        "Address: {$buyerAddress}\n" .
+                        ($locationText !== '' ? "Map location: {$locationText}\n" : '') .
+                        (($locationLat !== '' && $locationLng !== '') ? "Coordinates: {$locationLat}, {$locationLng}\n" : '') .
+                        "\nThank you for your purchase."
                 )
                 ->html($emailHtml);
 

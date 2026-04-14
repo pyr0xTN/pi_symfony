@@ -199,7 +199,7 @@ class MessagesController extends AbstractController
         ]);
     }
 
-    #[Route('/api/messages/mark-read/{id}', name: 'messages_mark_read', methods: ['POST'])]
+    #[Route('/mark-read/{id}', name: 'messages_mark_read', methods: ['POST'])]
     public function markRead(int $id, MessagesRepository $repo): JsonResponse
     {
         /** @var User $user */
