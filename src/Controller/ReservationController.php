@@ -104,7 +104,8 @@ class ReservationController extends AbstractController
 
                 // Stripe / PayPal: go to payment page to confirm
                 return $this->redirectToRoute('reservation_payment', [
-                    'id' => $reservation->getIdReservation(),
+                    'id'     => $reservation->getIdReservation(),
+                    'origin' => 'back', // Track back-office origin
                 ]);
             } else {
                 $this->addFlash('danger', 'Service indisponible.');
@@ -153,7 +154,7 @@ class ReservationController extends AbstractController
 
                 if (empty($seatNb)) {
                     $this->addFlash('error', 'Veuillez sélectionner un siège.');
-                    return $this->render('reservation/newreservation.html.twig', [
+                    return $this->render('reservation/reservationfront.html.twig', [
                         'active_page' => 'reservations',
                         'form'        => $form,
                         'service'     => $service,
@@ -171,10 +172,24 @@ class ReservationController extends AbstractController
             if ($service->getDisponibilite()) {
                 $this->em->persist($reservation);
                 $this->em->flush();
-                $this->addFlash('success', 'Réservation créée avec succès !');
-                return $this->redirectToRoute('myreservations_index');
+
+                // Cash: no online payment needed — stay 'En attente', go back to my reservations
+                if ($reservation->getModePaiement() === 'cash') {
+                    $this->addFlash('success', 'Réservation créée avec succès ! Vous réglerez sur place.');
+                    return $this->redirectToRoute('myreservations_index');
+                }
+
+                // Stripe / PayPal: go to payment page to confirm
+                return $this->redirectToRoute('reservation_payment', [
+                    'id'     => $reservation->getIdReservation(),
+                    'origin' => 'front', // Track front-office origin
+                ]);
             } else {
                 $this->addFlash('danger', 'Service indisponible.');
+                return $this->redirectToRoute('reservation_newfront', [
+                    'serviceId'   => $serviceId,
+                    'serviceType' => $serviceType,
+                ]);
             }
         }
 
@@ -184,7 +199,7 @@ class ReservationController extends AbstractController
             $seats = $this->buildSeatMap($service);
         }
 
-        return $this->render('reservation/new.html.twig', [
+        return $this->render('reservation/reservationfront.html.twig', [
             'active_page' => 'reservations',
             'form'        => $form,
             'service'     => $service,
@@ -331,20 +346,22 @@ public function pdf(int $id): Response
 // ═══════════════════════════════════════
 
 #[Route('/{id}/payment', name: 'reservation_payment', methods: ['GET'])]
-// reservation_payment route
-public function payment(int $id): Response
+public function payment(Request $request, int $id): Response
 {
     $reservation = $this->reservationsRepo->find($id);
     if (!$reservation) {
         throw $this->createNotFoundException("Réservation #$id introuvable.");
     }
 
+    $origin = $request->query->get('origin', 'back');
+
     return $this->render('reservation/payment.html.twig', [
         'reservation'      => $reservation,
         'amount'           => $reservation->getIdService()->getPrix(),
         'stripe_pub_key'   => $_ENV['STRIPE_PUBLISHABLE_KEY'],
         'paypal_client_id' => $_ENV['PAYPAL_CLIENT_ID'],
-        'modePaiement'     => $reservation->getModePaiement(), // ← ADD THIS
+        'modePaiement'     => $reservation->getModePaiement(),
+        'origin'           => $origin,
     ]);
 }
 
@@ -360,13 +377,14 @@ public function payStripe(Request $request, int $id): Response
         throw $this->createNotFoundException("Réservation #$id introuvable.");
     }
 
+    $origin      = $request->query->get('origin', 'back');
     $stripeToken = $request->request->get('stripeToken');
     $amount      = $reservation->getIdService()->getPrix();
 
     // Guard: if token is missing the JS failed to generate it (bad key or JS error)
     if (empty($stripeToken)) {
         $this->addFlash('error', 'Erreur : impossible de récupérer les informations de carte. Vérifiez votre connexion et réessayez.');
-        return $this->redirectToRoute('reservation_payment', ['id' => $id]);
+        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
     }
 
     Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
@@ -383,18 +401,17 @@ public function payStripe(Request $request, int $id): Response
         $this->em->flush();
 
         $this->addFlash('success', 'Paiement par carte effectué ! Réservation confirmée.');
-        return $this->redirectToRoute('reservations_index');
+        return $this->redirectToRoute($origin === 'front' ? 'myreservations_index' : 'reservations_index');
 
     } catch (CardException $e) {
         // Payment failed — delete the pending reservation to keep the DB clean
-        $serviceId = $reservation->getIdService()->getIdService();
         $this->em->remove($reservation);
         $this->em->flush();
         $this->addFlash('error', 'Carte refusée : ' . $e->getMessage() . ' Veuillez réessayer.');
-        return $this->redirectToRoute('services_index');
+        return $this->redirectToRoute($origin === 'front' ? 'ourservices_index' : 'services_index');
     } catch (\Exception $e) {
         $this->addFlash('error', 'Erreur Stripe : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id]);
+        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
     }
 }
 
@@ -414,19 +431,20 @@ private function getPaypalClient(): PayPalHttpClient
     return new PayPalHttpClient($environment);
 }
 #[Route('/{id}/payment/paypal/create', name: 'reservation_paypal_create', methods: ['POST'])]
-public function paypalCreate(int $id): Response
+public function paypalCreate(Request $request, int $id): Response
 {
     $reservation = $this->reservationsRepo->find($id);
     if (!$reservation) {
         throw $this->createNotFoundException("Réservation #$id introuvable.");
     }
 
+    $origin = $request->query->get('origin', 'back');
     $amount = number_format($reservation->getIdService()->getPrix(), 2, '.', '');
     $client = $this->getPaypalClient();
 
-    $request = new OrdersCreateRequest();
-    $request->prefer('return=representation');
-    $request->body = [
+    $paypalRequest = new OrdersCreateRequest();
+    $paypalRequest->prefer('return=representation');
+    $paypalRequest->body = [
         'intent'         => 'CAPTURE',
         'purchase_units' => [
             [
@@ -440,19 +458,19 @@ public function paypalCreate(int $id): Response
         'application_context' => [
             'return_url' => $this->generateUrl(
                 'reservation_paypal_success',
-                ['id' => $id],
+                ['id' => $id, 'origin' => $origin],
                 \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL
             ),
             'cancel_url' => $this->generateUrl(
                 'reservation_paypal_cancel',
-                ['id' => $id],
+                ['id' => $id, 'origin' => $origin],
                 \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL
             ),
         ],
     ];
 
     try {
-        $response = $client->execute($request);
+        $response = $client->execute($paypalRequest);
         $order    = $response->result;
 
         foreach ($order->links as $link) {
@@ -465,7 +483,7 @@ public function paypalCreate(int $id): Response
 
     } catch (\Exception $e) {
         $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id]);
+        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
     }
 }
 
@@ -481,6 +499,7 @@ public function paypalSuccess(Request $request, int $id): Response
         throw $this->createNotFoundException("Réservation #$id introuvable.");
     }
 
+    $origin         = $request->query->get('origin', 'back');
     $orderId        = $request->query->get('token');
     $client         = $this->getPaypalClient();
     $captureRequest = new OrdersCaptureRequest($orderId);
@@ -494,19 +513,20 @@ public function paypalSuccess(Request $request, int $id): Response
             $this->em->flush();
 
             $this->addFlash('success', 'Paiement PayPal effectué ! Réservation confirmée.');
-            return $this->redirectToRoute('reservations_index');
+            return $this->redirectToRoute($origin === 'front' ? 'myreservations_index' : 'reservations_index');
         }
 
         throw new \Exception('Payment not completed.');
 
     } catch (\Exception $e) {
         $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id]);
+        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
     }
 }
 #[Route('/{id}/payment/paypal/cancel', name: 'reservation_paypal_cancel', methods: ['GET'])]
-public function paypalCancel(int $id): Response
+public function paypalCancel(Request $request, int $id): Response
 {
+    $origin = $request->query->get('origin', 'back');
     // Delete the pending reservation so the DB stays clean on cancellation
     $reservation = $this->reservationsRepo->find($id);
     if ($reservation && $reservation->getStatut() === 'En attente') {
@@ -514,6 +534,6 @@ public function paypalCancel(int $id): Response
         $this->em->flush();
     }
     $this->addFlash('error', 'Paiement PayPal annulé. Votre réservation a été supprimée.');
-    return $this->redirectToRoute('services_index');
+    return $this->redirectToRoute($origin === 'front' ? 'ourservices_index' : 'services_index');
 }
 }

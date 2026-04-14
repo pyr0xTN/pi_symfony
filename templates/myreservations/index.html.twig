@@ -76,6 +76,16 @@
 
 
     <!-- ##### Core Features Start ##### -->
+        <!-- ##### Core Features Start ##### -->
+    {# ── Flash Messages ── #}
+{% for type, messages in app.flashes %}
+    {% for message in messages %}
+        <div class="alert alert-{{ type == 'danger' ? 'danger' : (type == 'success' ? 'success' : 'warning') }} alert-dismissible fade show" role="alert" style="margin: 1rem 2rem;">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endfor %}
     <section class="core-features-area">
      {% if reservations is empty %}
         <p class="empty-state">Aucune réservation trouvée.</p>
