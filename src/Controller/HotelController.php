@@ -8,10 +8,13 @@ use App\Repository\ServicesRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+
 
 
 #[Route('/hotel')]
@@ -21,6 +24,9 @@ class HotelController extends AbstractController
         private EntityManagerInterface $em,
         private ServicesRepository     $servicesRepo,
         private SluggerInterface       $slugger,
+        private HttpClientInterface    $httpClient,
+        #[\Symfony\Component\DependencyInjection\Attribute\Autowire('%makcorps_api_key%')]
+        private string $makcorpsApiKey,
     ) {}
 
 
@@ -71,6 +77,54 @@ class HotelController extends AbstractController
             'active_page' => 'services',
             'form'        => $form,
         ]);
+    }
+
+    #[Route('/autofill', name: 'hotel_autofill', methods: ['GET'])]
+    public function autofill(Request $request): JsonResponse
+    {
+        $nomHotel = $request->query->get('nomHotel', '');
+
+        if (!$nomHotel) {
+            return $this->json(['error' => 'Nom de l\'hôtel requis.'], 400);
+        }
+
+        try {
+            $response = $this->httpClient->request('GET', 'https://api.makcorps.com/mapping', [
+                'query' => [
+                    'api_key' => $this->makcorpsApiKey,
+                    'name'    => $nomHotel,
+                ],
+            ]);
+
+            $results = $response->toArray();
+            
+            // MakCorps mapping can return an array of results or a wrapped { "data": [...] }
+            $items = isset($results['data']) ? $results['data'] : $results;
+
+            // Filter only HOTEL type
+            $hotel = null;
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    if (is_array($item) && ($item['type'] ?? '') === 'HOTEL') {
+                        $hotel = $item;
+                        break;
+                    }
+                }
+            }
+
+            if (!$hotel) {
+                return $this->json(['error' => 'Hôtel introuvable.'], 404);
+            }
+
+            return $this->json([
+                'nom'           => $hotel['name'] ?? '',
+                'localisation'  => $hotel['location'] ?? $hotel['details']['geo_name'] ?? '',
+                'description'   => $hotel['details']['description'] ?? $hotel['details']['name'] ?? '',
+                'nombreEtoiles' => $hotel['stars'] ?? $hotel['details']['stars'] ?? '', 
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['error' => 'Erreur API : ' . $e->getMessage()], 500);
+        }
     }
 
 

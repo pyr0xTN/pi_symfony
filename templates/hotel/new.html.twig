@@ -105,6 +105,7 @@
             {# Buttons #}
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Ajouter Hôtel</button>
+                <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
                 <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
             </div>
 
@@ -149,6 +150,52 @@
                         // Hide preview if user cancels
                         preview.src = '#';
                         preview.style.display = 'none';
+                    }
+                });
+            }
+
+            // ── Autofill Logic ──
+            const btnAutoFill = document.getElementById('btnAutoFill');
+            const nomInput    = document.getElementById('{{ form.nom.vars.id }}');
+
+            if (btnAutoFill) {
+                btnAutoFill.addEventListener('click', async function () {
+                    const nomHotel = nomInput.value.trim();
+
+                    if (!nomHotel) {
+                        alert('Veuillez saisir un nom d\'hôtel avant de lancer l\'auto-remplissage.');
+                        nomInput.focus();
+                        return;
+                    }
+
+                    btnAutoFill.textContent = '⏳ Chargement...';
+                    btnAutoFill.disabled = true;
+
+                    try {
+                        const res  = await fetch('{{ path("hotel_autofill") }}?nomHotel=' + encodeURIComponent(nomHotel));
+                        const data = await res.json();
+                        console.log('Autofill data:', data);
+
+                        if (data.error) {
+                            alert('Erreur : ' + data.error);
+                            return;
+                        }
+
+                        // Fill in the fields
+                        const localisationInput = document.getElementById('{{ form.localisation.vars.id }}');
+                        const etoilesInput      = document.getElementById('{{ form.nombreEtoiles.vars.id }}');
+                        const descriptionInput  = document.getElementById('{{ form.description.vars.id }}');
+
+                        if (localisationInput) localisationInput.value = data.localisation ?? '';
+                        if (etoilesInput)      etoilesInput.value = data.nombreEtoiles ?? '';
+                        if (descriptionInput)   descriptionInput.value = data.description ?? '';
+
+                    } catch (err) {
+                        console.error('Autofill error:', err);
+                        alert('Erreur réseau : ' + err.message);
+                    } finally {
+                        btnAutoFill.textContent = '⚡ Auto remplissage';
+                        btnAutoFill.disabled = false;
                     }
                 });
             }
