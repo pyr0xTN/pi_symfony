@@ -210,4 +210,61 @@ class MessagesController extends AbstractController
         $repo->markAllAsRead($id, $user->getId());
         return $this->json(['ok' => true]);
     }
+
+    #[Route('/send-location/{id}', name: 'api_message_send_location', methods: ['POST'])]
+    public function sendLocation(Conversation $conversation, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $content = $data['content'] ?? ''; // C'est le JSON envoyé par le JS
+
+        $message = new Messages();
+        // (Utilise ton code habituel pour l'ID, les dates, l'expéditeur, etc.)
+        $message->setContenu($content);
+        $message->setTypeMessage(TypeMessage::LOCATION);
+        $message->setIdConversation($conversation);
+        $message->setIdExpediteur($this->getUser());
+        $message->setLu(false);
+        $message->setIsDeleted(false);
+        $message->setDateEnvoi(new \DateTime());
+
+        $em->persist($message);
+        $em->flush();
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/{id}/media', name: 'api_conversation_media', methods: ['GET'])]
+    public function getConversationMedia(int $id, MessagesRepository $repo): JsonResponse
+    {
+        $messages = $repo->findBy([
+            'idConversation' => $id,
+            'isDeleted' => false,
+        ]);
+
+        $images = [];
+        $files  = [];
+
+        foreach ($messages as $m) {
+            if ($m->getTypeMessage() === TypeMessage::IMAGE) {
+                $images[] = [
+                    'id'       => $m->getId(),
+                    'url'      => '/uploads/messages/' . $m->getUrlFichier(),
+                    'name'     => $m->getUrlFichier(),
+                    'date'     => $m->getDateEnvoi()->format('d/m/Y'),
+                    'sender'   => $m->getIdExpediteur()->getFirstName(),
+                ];
+            } elseif ($m->getTypeMessage() === TypeMessage::FICHIER) {
+                $files[] = [
+                    'id'       => $m->getId(),
+                    'url'      => '/uploads/messages/' . $m->getUrlFichier(),
+                    'name'     => $m->getContenu(),
+                    'date'     => $m->getDateEnvoi()->format('d/m/Y'),
+                    'sender'   => $m->getIdExpediteur()->getFirstName(),
+                    'isPdf'    => str_ends_with(strtolower($m->getUrlFichier() ?? ''), '.pdf'),
+                ];
+            }
+        }
+
+        return $this->json(['images' => $images, 'files' => $files]);
+    }
 }

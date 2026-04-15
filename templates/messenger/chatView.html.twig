@@ -2,8 +2,8 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-																																																					         LEFT SIDEBAR
-																																																					    ══════════════════════════════════ -->
+																																																																							         LEFT SIDEBAR
+																																																																							    ══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -31,7 +31,7 @@
 				{# Le chiffre calculé #}
 				{% set hasUnread = unread > 0 %}
 
-				<div class="conv-item {{ conv.type.value|lower }} {{ hasUnread ? 'has-unread' : '' }}" onclick="loadConversation({{ conv.id }})" data-id="{{ conv.id }}">
+				<div class="conv-item {{ conv.type.value|lower }} {{ hasUnread ? 'has-unread' : '' }}" onclick="loadConversation({{ conv.id }})" data-id="{{ conv.id }}" data-type="{{ conv.type.value }}">
 
 					<div class="avatar {{ conv.type.value == 'GROUPE' ? 'group' : '' }}">
 						{{ conv.getDisplayName(app.user)|slice(0, 1)|upper }}
@@ -73,8 +73,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-																																																					         RIGHT MAIN AREA
-																																																					    ══════════════════════════════════ -->
+																		     RIGHT MAIN AREA
+																			 ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -110,8 +110,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-																																																																																																										             CHAT INTERFACE
-																																																																																																										        ══════════════════════════════════ -->
+																																																																																																																																														             CHAT INTERFACE
+																																																																																																																																														        ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -156,6 +156,12 @@
 							<a href="#" id="opt-members" onclick="openModal('members')" style="display:none;">View Members</a>
 						</div>
 					</div>
+					<button class="hdr-btn" title="Media & Files" onclick="toggleMediaPanel()">
+						<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2" width="14" height="14">
+							<rect x="3" y="3" width="18" height="18" rx="2"/>
+							<path d="M3 9h18M9 21V9"/>
+						</svg>
+					</button>
 				</div>
 			</div>
 
@@ -175,6 +181,12 @@
 						</svg>
 					</button>
 					<input type="file" id="file-input" style="display: none;" onchange="handleFileUpload(this)">
+					<button class="input-action-btn" title="Share location" onclick="openLocationPicker()">
+						<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+							<path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+						</svg>
+					</button>
 					<input type="text" id="message-input" placeholder="Type a message..." onkeypress="handleKeyPress(event)" autocomplete="off">
 					<span id="message-error" style="color: #dc3545; font-size: 11px; margin-top: 5px; display: none;">
 						Oops! You need to type something before sending.
@@ -205,8 +217,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-																																																					         OVERLAY + MODALS
-																																																					    ══════════════════════════════════ -->
+																																																																							         OVERLAY + MODALS
+																																																																							    ══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
@@ -348,9 +360,74 @@
 			</div>
 			<div class="modal-body" id="members-list-content"></div>
 		</div>
+		<!-- MODAL : LOCATION PICKER -->
+		<div class="msng-modal" id="modal-location" style="width: 560px; max-width: calc(100vw - 32px);">
+			<div class="modal-head">
+				<div class="modal-icon" style="background: #e8f5e9;">
+					<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2" style="color: #2e7d32; width:19px; height:19px;">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+					</svg>
+				</div>
+				<div class="modal-head-text">
+					<h3>Share Location</h3>
+					<p id="location-modal-subtitle">Getting your position...</p>
+				</div>
+				<button class="modal-close" onclick="closeLocationModal()">
+					<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				</button>
+			</div>
 
+			<!-- Search bar -->
+			<div class="modal-search" style="border-bottom: 1px solid var(--border);">
+				<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+				</svg>
+				<input type="text" id="location-search-input" placeholder="Search a place..." oninput="debounceSearch(this.value)">
+			</div>
+
+			<!-- Map container -->
+			<div id="location-map" style="width:100%; height:320px; background:#eee;"></div>
+
+			<!-- Selected address -->
+			<div style="padding: 12px 22px; border-top: 1px solid var(--border); background: #f8fafc; min-height: 52px;">
+				<div style="font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Selected location</div>
+				<div id="location-address" style="font-size: 13px; color: #1a2733;">—</div>
+			</div>
+
+			<div class="modal-foot">
+				<button class="btn-create-group" style="background: #2e7d32;" onclick="sendLocation()">
+					<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+					</svg>
+					Send this location
+				</button>
+			</div>
+		</div>
 	</div>
+
 	{# end overlay #}
+	<aside class="media-panel" id="media-panel" style="display:none;">
+		<div class="mp-head">
+			<span class="mp-title">Media</span>
+			<button class="mp-close" onclick="toggleMediaPanel()">×</button>
+		</div>
+		<div class="mp-tabs">
+			<button class="mp-tab active" id="tab-images" onclick="switchMediaTab('images')">
+				Images
+				<span id="img-count"></span>
+			</button>
+			<button class="mp-tab" id="tab-files" onclick="switchMediaTab('files')">
+				Files
+				<span id="file-count"></span>
+			</button>
+		</div>
+		<div class="mp-body" id="mp-body-images"></div>
+		<div class="mp-body" id="mp-body-files" style="display:none;"></div>
+		<div class="mp-count" id="mp-count-label"></div>
+	</aside>
 </div>
 {# end messenger-container #}
 
@@ -2132,10 +2209,226 @@
 		--input-font-color: #d7e8ff;
 		--input-placeholder-color: #7f99af;
 	}
+	/* Location message bubble */
+	.msg-location-card {
+		display: flex;
+		flex-direction: column;
+		border-radius: 12px;
+		overflow: hidden;
+		min-width: 240px;
+		max-width: 280px;
+		cursor: pointer;
+		text-decoration: none;
+	}
+	.msg-location-map-thumb {
+		width: 100%;
+		height: 140px;
+		object-fit: cover;
+		display: block;
+	}
+	.msg-location-info {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 10px 12px;
+		background: rgba(0, 0, 0, 0.04);
+	}
+	.message.mine .msg-location-info {
+		background: rgba(255, 255, 255, 0.1);
+	}
+	.msg-location-pin {
+		font-size: 20px;
+		flex-shrink: 0;
+	}
+	.msg-location-text {
+		font-size: 12px;
+		line-height: 1.4;
+		overflow: hidden;
+	}
+	.msg-location-text strong {
+		display: block;
+		font-size: 13px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	#location-map {
+		width: 100%;
+		height: 320px;
+		background: #f8fafc;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
+		/* TRÈS IMPORTANT : */
+		position: relative;
+		z-index: 100 !important;
+	}
+
+	/* Fix pour éviter que les contrôles (+/-) ne soient déformés par ton CSS global */
+	.leaflet-control-zoom a {
+		text-decoration: none !important;
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.media-panel {
+		width: 280px;
+		flex-shrink: 0;
+		background: #fff;
+		border-left: 1px solid var(--border);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		z-index: 1;
+	}
+	.mp-head {
+		padding: 16px 18px 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+	.mp-title {
+		font-family: var(--font-head);
+		font-size: 15px;
+		font-weight: 700;
+		color: var(--brand);
+	}
+	.mp-close {
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
+		border: 1.5px solid var(--border);
+		background: transparent;
+		cursor: pointer;
+		color: var(--muted);
+	}
+	.mp-tabs {
+		display: flex;
+		padding: 12px 18px 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.mp-tab {
+		flex: 1;
+		padding: 9px 0;
+		font-size: 13px;
+		font-weight: 600;
+		cursor: pointer;
+		border: none;
+		background: transparent;
+		color: var(--muted);
+		border-bottom: 2.5px solid transparent;
+		transition: 0.18s;
+	}
+	.mp-tab.active {
+		color: var(--teal);
+		border-bottom-color: var(--teal);
+	}
+	.mp-body {
+		flex: 1;
+		overflow-y: auto;
+		padding: 14px;
+		min-height: 0;
+	}
+	.mp-count {
+		font-size: 11px;
+		color: var(--muted);
+		padding: 8px 18px;
+		border-top: 1px solid var(--border);
+	}
+	.img-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 5px;
+	}
+	.img-thumb {
+		aspect-ratio: 1;
+		border-radius: 9px;
+		overflow: hidden;
+		cursor: pointer;
+		background: var(--hover);
+	}
+	.img-thumb img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.file-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	.file-row {
+		display: flex;
+		align-items: center;
+		gap: 11px;
+		padding: 10px 12px;
+		border: 1.5px solid var(--border);
+		border-radius: 12px;
+		background: #fafcff;
+		cursor: pointer;
+		text-decoration: none;
+		transition: 0.18s;
+	}
+	.file-row:hover {
+		border-color: var(--teal-mid);
+		background: var(--teal-light);
+	}
+	.file-icon {
+		width: 38px;
+		height: 38px;
+		border-radius: 10px;
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: 700;
+	}
+	.file-icon.pdf {
+		background: #fee2e2;
+		color: #ef4444;
+	}
+	.file-icon.doc {
+		background: #dbeafe;
+		color: #2563eb;
+	}
+	.file-name {
+		font-size: 13px;
+		font-weight: 600;
+		color: #1a2733;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.file-meta {
+		font-size: 11px;
+		color: var(--muted);
+	}
+	.file-dl {
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
+		border: 1.5px solid var(--border);
+		background: transparent;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--muted);
+		margin-left: auto;
+	}
+	.mp-empty {
+		text-align: center;
+		padding: 40px 20px;
+		color: var(--muted);
+		font-size: 13px;
+	}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+ <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 
  <script >
+ 
 	let currentConversationId = null;
 	    const selectedMembers = new Set();
 	
@@ -2174,7 +2467,6 @@
 	    function searchInConversation() {
 	
 	        const query = document.getElementById('msg-search-input').value.toLowerCase();
-	0
 	        document.querySelectorAll('.message').forEach(msg => {
 	            const text = msg.querySelector('.msg-content').textContent.toLowerCase();
 	            msg.style.opacity = text.includes(query) ? '1' : '0.3';
@@ -2247,24 +2539,26 @@
 	            document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
 	            const active = document.querySelector(`.conv-item[data-id="${id}"]`);
 	            if (active) active.classList.add('active');
-	                loadMessages(id);
-					// Marquer comme lu + vider le badge dans la sidebar
-fetch(`/api/messages/mark-read/${id}`, { method: 'POST' })
-    .then(() => {
-        const sideItem = document.querySelector(`.conv-item[data-id="${id}"]`);
-        if (sideItem) {
-            sideItem.classList.remove('has-unread');
-            const badge = sideItem.querySelector('.conv-unread-badge');
-            if (badge) badge.remove();
-            const time = sideItem.querySelector('.conv-time');
-            if (time) time.classList.remove('conv-time--unread');
-            const preview = sideItem.querySelector('.conv-preview');
-            if (preview) preview.classList.remove('conv-preview--unread');
-            const name = sideItem.querySelector('.conv-name');
-            if (name) name.style.fontWeight = '';
-        }
-    });
-	            });
+	            loadMessages(id);
+				if (document.getElementById('media-panel').style.display !== 'none') {
+                    loadMediaHistory(id);
+                }
+	            fetch(`/api/messages/mark-read/${id}`, { method: 'POST' })
+    	            .then(() => {
+    	                const sideItem = document.querySelector(`.conv-item[data-id="${id}"]`);
+    	                if (sideItem) {
+            	            sideItem.classList.remove('has-unread');
+            	            const badge = sideItem.querySelector('.conv-unread-badge');
+            	            if (badge) badge.remove();
+                            const time = sideItem.querySelector('.conv-time');
+        	                if (time) time.classList.remove('conv-time--unread');
+        	                const preview = sideItem.querySelector('.conv-preview');
+        	                if (preview) preview.classList.remove('conv-preview--unread');
+            	            const name = sideItem.querySelector('.conv-name');
+                            if (name) name.style.fontWeight = '';
+                        }
+                    });
+	        });
 	    }
 	
 	    function handleDeleteChat() {
@@ -2498,21 +2792,34 @@ function loadMessages(id) {
                                     </a>
                                 </div>`;
                             break;
+						case 'LOCATION':
+                            try {
+                            const loc = JSON.parse(m.content);
+                            displayContent = `
+                                <div class="msg-location-card" style="min-width: 220px;">
+                                    <div style="font-weight: 700; font-size: 13px; margin-bottom: 4px;">📍 Position partagée</div>
+                                    <div style="font-size: 11px; color: var(--muted); line-height: 1.4; margin-bottom: 10px;">
+                                        ${escapeHtml(loc.address)}
+                                    </div>
+                                    <a href="https://www.google.com/maps?q=${loc.lat},${loc.lng}" target="_blank" 
+                                        style="display: block; background: var(--teal); color: white; text-align: center; padding: 8px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                                        Ouvrir dans Maps
+                                    </a>
+                                </div>`;
+                            } catch (e) {
+                                displayContent = "📍 Localisation partagée";
+                          }
+                            break;
                         default:
                             displayContent = escapeHtml(m.content);
                     }
                 }
-
-                // --- 2. LE MENU OPTIONS (EDIT / DELETE) ---
-                // Remplace l'actuel : let actionBtn = '';
-// Par :
-
-let actionBtn = '';
-const pickerEmojis = ['❤️','😂','👍','😮','😢','😡'];
-const pickerHtml = `
-    <div class="msg-reaction-picker" id="react-picker-${m.id}">
-        ${pickerEmojis.map(em => `<span class="react-emoji-opt" data-emoji="${em}" onclick="applyReaction(event,${m.id},'${em}',null)">${em}</span>`).join('')}
-    </div>`;
+                let actionBtn = '';
+                const pickerEmojis = ['❤️','😂','👍','😮','😢','😡'];
+                const pickerHtml = `
+                <div class="msg-reaction-picker" id="react-picker-${m.id}">
+                    ${pickerEmojis.map(em => `<span class="react-emoji-opt" data-emoji="${em}" onclick="applyReaction(event,${m.id},'${em}',null)">${em}</span>`).join('')}
+                </div>`;
 
 const reactBtn = `
     <div style="position:relative;">
@@ -2897,5 +3204,193 @@ document.addEventListener('click', (e) => {
         wrap.classList.remove('open');
     }
 });
+
+let locationMap = null;
+let locationMarker = null;
+let selectedLatLng = null;
+let selectedAddress = '';
+let searchDebounceTimer = null;
+
+function openLocationPicker() {
+    // Affichage de la modale (ta logique existante)
+    const overlay = document.getElementById('msng-overlay');
+    document.querySelectorAll('.msng-modal').forEach(m => { m.classList.remove('active'); m.style.display = 'none'; });
+    const modal = document.getElementById('modal-location');
+    modal.style.display = 'flex';
+    overlay.style.display = 'flex';
+    
+    setTimeout(() => { 
+        overlay.classList.add('visible'); 
+        modal.classList.add('active');
+        initLeafletMap();
+		setTimeout(() => {
+            if (locationMap) {
+                locationMap.invalidateSize();
+            }
+        }, 400);
+    }, 10);
+}
+
+function initLeafletMap() {
+    const defaultPos = [36.8065, 10.1815]; // Tunis
+
+    // On évite de recréer la carte si elle existe déjà
+    if (locationMap) {
+        locationMap.remove();
+    }
+
+    // Création de la carte
+    locationMap = L.map('location-map').setView(defaultPos, 13);
+
+    // Ajout des tuiles OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(locationMap);
+
+    // Création du marqueur déplaçable
+    locationMarker = L.marker(defaultPos, { draggable: true }).addTo(locationMap);
+
+    // Événement : Clic sur la carte pour déplacer le marqueur
+    locationMap.on('click', (e) => {
+        updatePosition(e.latlng.lat, e.latlng.lng);
+    });
+
+    // Événement : Fin du glisser-déposer du marqueur
+    locationMarker.on('dragend', (e) => {
+        const pos = e.target.getLatLng();
+        updatePosition(pos.lat, pos.lng);
+    });
+
+    // Tentative de géolocalisation automatique de l'utilisateur
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            updatePosition(pos.coords.latitude, pos.coords.longitude, true);
+        }, () => {
+            updatePosition(defaultPos[0], defaultPos[1], true);
+        });
+    } else {
+        updatePosition(defaultPos[0], defaultPos[1], true);
+    }
+}
+
+function updatePosition(lat, lng, centerMap = false) {
+    selectedLatLng = { lat, lng };
+    locationMarker.setLatLng([lat, lng]);
+    if (centerMap) locationMap.setView([lat, lng], 16);
+    
+    // Récupérer l'adresse textuelle (Reverse Geocoding) via Nominatim (Gratuit)
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(res => res.json())
+        .then(data => {
+            selectedAddress = data.display_name;
+            document.getElementById('location-address').textContent = selectedAddress;
+            document.getElementById('location-modal-subtitle').textContent = 'Location selected';
+        })
+        .catch(() => {
+            document.getElementById('location-address').textContent = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        });
+}
+
+// Recherche d'adresse par texte
+function debounceSearch(val) {
+    clearTimeout(searchDebounceTimer);
+    if (val.length < 3) return;
+
+    searchDebounceTimer = setTimeout(() => {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const first = data[0];
+                    updatePosition(parseFloat(first.lat), parseFloat(first.lon), true);
+                }
+            });
+    }, 600);
+}
+
+function sendLocation() {
+    if (!selectedLatLng || !currentConversationId) return;
+
+    // On prépare le contenu sous forme de JSON string pour le stocker en BDD
+    const content = JSON.stringify({
+        lat: selectedLatLng.lat,
+        lng: selectedLatLng.lng,
+        address: selectedAddress
+    });
+
+    fetch(`/api/messages/send-location/${currentConversationId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: content })
+    })
+    .then(res => res.json())
+    .then(data => {
+        closeModal();
+        loadMessages(currentConversationId); // On rafraîchit le chat
+    })
+    .catch(err => console.error('Error sending location:', err));
+}
+
+function closeLocationModal() { closeModal(); }
+
+function toggleMediaPanel() {
+  const panel = document.getElementById('media-panel');
+  if (panel.style.display === 'none' || !panel.style.display) {
+    panel.style.display = 'flex';
+    if (currentConversationId) loadMediaHistory(currentConversationId);
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function switchMediaTab(tab) {
+  const isImages = tab === 'images';
+  document.getElementById('tab-images').classList.toggle('active', isImages);
+  document.getElementById('tab-files').classList.toggle('active', !isImages);
+  document.getElementById('mp-body-images').style.display = isImages ? 'block' : 'none';
+  document.getElementById('mp-body-files').style.display = isImages ? 'none' : 'block';
+}
+
+function loadMediaHistory(convId) {
+  fetch(`/api/messages/${convId}/media`)
+    .then(r => r.json())
+    .then(data => {
+      // --- Images ---
+      const imgBody = document.getElementById('mp-body-images');
+      document.getElementById('img-count').textContent = `(${data.images.length})`;
+      if (!data.images.length) {
+        imgBody.innerHTML = `<div class="mp-empty"><p>No images yet.</p></div>`;
+      } else {
+        imgBody.innerHTML = `<div class="img-grid">${
+          data.images.map(img => `
+            <div class="img-thumb" onclick="window.open('${img.url}')">
+              <img src="${img.url}" loading="lazy">
+              <div class="img-overlay">${img.date}</div>
+            </div>`).join('')
+        }</div>`;
+      }
+
+      // --- Files ---
+      const fileBody = document.getElementById('mp-body-files');
+      document.getElementById('file-count').textContent = `(${data.files.length})`;
+      if (!data.files.length) {
+        fileBody.innerHTML = `<div class="mp-empty"><p>No files yet.</p></div>`;
+      } else {
+        fileBody.innerHTML = `<div class="file-list">${
+          data.files.map(f => `
+            <a class="file-row" href="${f.url}" download>
+              <div class="file-icon ${f.isPdf ? 'pdf' : 'doc'}">${f.isPdf ? 'PDF' : 'DOC'}</div>
+              <div class="file-info">
+                <div class="file-name">${escapeHtml(f.name)}</div>
+                <div class="file-meta">${f.sender} · ${f.date}</div>
+              </div>
+              <div class="file-dl">⬇</div>
+            </a>`).join('')
+        }</div>`;
+      }
+      document.getElementById('mp-count-label').textContent =
+        `${data.images.length} image${data.images.length !== 1 ? 's' : ''} · ${data.files.length} file${data.files.length !== 1 ? 's' : ''}`;
+    });
+}
 </script>
  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
