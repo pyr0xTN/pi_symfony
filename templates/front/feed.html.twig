@@ -52,4 +52,11 @@
         </div>
     </div>
 {% endif %}
+
+{# ═══ PAGINATION ═══ #}
+{% if posts.getTotalItemCount > 6 %}
+<div class="pagination-wrapper">
+    {{ knp_pagination_render(posts) }}
+</div>
+{% endif %}
 {% endblock %}

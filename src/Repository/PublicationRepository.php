@@ -22,14 +22,43 @@ class PublicationRepository extends ServiceEntityRepository
      */
     public function findAllApproved(): array
     {
+        return $this->findAllApprovedQb()->getQuery()->getResult();
+    }
+
+    /**
+     * QueryBuilder variant for paginator.
+     */
+    public function findAllApprovedQb(): \Doctrine\ORM\QueryBuilder
+    {
         return $this->createQueryBuilder('p')
             ->leftJoin('p.user', 'u')->addSelect('u')
             ->leftJoin('p.likes', 'l')->addSelect('l')
             ->where('p.status = :status')
             ->setParameter('status', Publication::STATUS_APPROVED)
-            ->orderBy('p.datePublication', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->orderBy('p.datePublication', 'DESC');
+    }
+
+    /**
+     * Search in content or place.
+     * @return Publication[]
+     */
+    public function searchByKeyword(string $keyword): array
+    {
+        return $this->searchByKeywordQb($keyword)->getQuery()->getResult();
+    }
+
+    /**
+     * QueryBuilder variant for paginator.
+     */
+    public function searchByKeywordQb(string $keyword): \Doctrine\ORM\QueryBuilder
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.user', 'u')->addSelect('u')
+            ->where('p.content LIKE :kw OR p.place LIKE :kw')
+            ->andWhere('p.status = :status')
+            ->setParameter('kw', '%' . $keyword . '%')
+            ->setParameter('status', Publication::STATUS_APPROVED)
+            ->orderBy('p.datePublication', 'DESC');
     }
 
     /**
@@ -44,23 +73,6 @@ class PublicationRepository extends ServiceEntityRepository
             ->setParameter('agencyId', $agencyId)
             ->orderBy('p.status', 'ASC')
             ->addOrderBy('p.datePublication', 'DESC')
-            ->getQuery()
-            ->getResult();
-    }
-
-    /**
-     * Search in content or place.
-     * @return Publication[]
-     */
-    public function searchByKeyword(string $keyword): array
-    {
-        return $this->createQueryBuilder('p')
-            ->leftJoin('p.user', 'u')->addSelect('u')
-            ->where('p.content LIKE :kw OR p.place LIKE :kw')
-            ->andWhere('p.status = :status')
-            ->setParameter('kw', '%' . $keyword . '%')
-            ->setParameter('status', Publication::STATUS_APPROVED)
-            ->orderBy('p.datePublication', 'DESC')
             ->getQuery()
             ->getResult();
     }
