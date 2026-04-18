@@ -117,7 +117,20 @@
                     <!-- Users Cards -->
                     <div class="users-grid" id="usersGrid">
                         {% for user in users %}
-                            <article class="user-card" data-user-id="{{ user.id }}">
+                            <article class="user-card"
+                                     data-user-id="{{ user.id }}"
+                                     data-user-username="{{ user.username|default('') }}"
+                                     data-user-fullname="{{ (user.name|default('') ~ ' ' ~ user.last_name|default(''))|trim }}"
+                                     data-user-email="{{ user.email|default('') }}"
+                                     data-user-role="{{ user.role|default('USER')|upper }}"
+                                     data-user-status="{{ user.status|default('offline')|lower }}"
+                                     data-user-tier="{{ user.member_premium|default('standard') }}"
+                                     data-user-language="{{ user.language|default('English') }}"
+                                     data-user-coins="{{ user.coins|default(0) }}"
+                                     data-user-date="{{ user.date|default('N/A') }}"
+                                     data-user-blocked="{{ (user.is_blocked|default(0)) == 1 ? 'Yes' : 'No' }}"
+                                     data-user-twofactor="{{ user.two_factor_enabled|default(0) ? 'Enabled' : 'Disabled' }}"
+                                     data-user-image="{{ user.image_url|default('/images/default_avatar.png') }}">
                                 <div class="user-card-head">
                                     <img src="{{ user.image_url|default('/images/default_avatar.png') }}" alt="{{ user.username }}" class="user-avatar" />
                                     <div class="user-detail">
@@ -158,7 +171,7 @@
                                 </div>
 
                                 <div class="actions-wrap">
-                                    <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="action-btn edit-btn" title="Edit user">
+                                    <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="action-btn edit-btn" title="Edit user" data-no-loader="true" data-turbo="false" onclick="document.body.style.overflow='';">
                                         <span aria-hidden="true">✎</span>
                                     </a>
                                     <form method="post" action="{{ path('app_user_toggle_block', {'id': user.id}) }}" style="margin:0;" data-block-toggle-form="true">
@@ -179,6 +192,36 @@
                         {% else %}
                             <div class="no-data">{{ 'dashboard.table.no_users'|trans }}</div>
                         {% endfor %}
+                    </div>
+
+                    <div class="user-details-modal" id="userDetailsModal" aria-hidden="true">
+                        <div class="user-details-backdrop" data-close-user-modal="true"></div>
+                        <div class="user-details-dialog" role="dialog" aria-modal="true" aria-labelledby="userDetailsModalTitle">
+                            <div class="user-details-header">
+                                <h2 id="userDetailsModalTitle">User Information</h2>
+                                <button type="button" class="user-details-close" id="closeUserDetailsModal" aria-label="Close">×</button>
+                            </div>
+
+                            <div class="user-details-profile">
+                                <img id="userDetailsAvatar" src="/images/default_avatar.png" alt="User avatar" class="user-details-avatar" />
+                                <div>
+                                    <div id="userDetailsName" class="user-details-name">User</div>
+                                    <div id="userDetailsUsername" class="user-details-username">@username</div>
+                                </div>
+                            </div>
+
+                            <div class="user-details-grid">
+                                <div class="user-details-item"><span>Email</span><strong id="userDetailsEmail">-</strong></div>
+                                <div class="user-details-item"><span>Role</span><strong id="userDetailsRole">-</strong></div>
+                                <div class="user-details-item"><span>Status</span><strong id="userDetailsStatus">-</strong></div>
+                                <div class="user-details-item"><span>Membership</span><strong id="userDetailsTier">-</strong></div>
+                                <div class="user-details-item"><span>Language</span><strong id="userDetailsLanguage">-</strong></div>
+                                <div class="user-details-item"><span>Coins</span><strong id="userDetailsCoins">0</strong></div>
+                                <div class="user-details-item"><span>Birth Date</span><strong id="userDetailsDate">-</strong></div>
+                                <div class="user-details-item"><span>Blocked</span><strong id="userDetailsBlocked">-</strong></div>
+                                <div class="user-details-item"><span>2FA</span><strong id="userDetailsTwoFactor">-</strong></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Pagination -->
@@ -523,6 +566,153 @@
             gap: 14px;
         }
 
+        .user-details-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1450;
+            display: none;
+        }
+
+        .user-details-modal.open {
+            display: block;
+        }
+
+        .user-details-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(7, 21, 35, 0.58);
+            backdrop-filter: blur(5px);
+        }
+
+        .user-details-dialog {
+            position: relative;
+            width: min(640px, calc(100vw - 28px));
+            max-height: calc(100vh - 40px);
+            overflow: auto;
+            margin: 20px auto;
+            border-radius: 18px;
+            border: 1px solid #d3e7ee;
+            background: linear-gradient(165deg, #f8fdff 0%, #eef7fb 100%);
+            box-shadow: 0 20px 44px rgba(7, 25, 42, 0.28);
+            padding: 20px;
+        }
+
+        .user-details-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .user-details-header h2 {
+            margin: 0;
+            color: #12324f;
+            font-size: 22px;
+        }
+
+        .user-details-close {
+            border: none;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: #e8f2f8;
+            color: #1a4668;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .user-details-profile {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(12, 158, 184, 0.08);
+            border: 1px solid #d4e7f1;
+        }
+
+        .user-details-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(15, 45, 76, 0.14);
+        }
+
+        .user-details-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #173f69;
+        }
+
+        .user-details-username {
+            font-size: 13px;
+            color: #516983;
+            margin-top: 2px;
+        }
+
+        .user-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .user-details-item {
+            border: 1px solid #d6e5ef;
+            border-radius: 10px;
+            padding: 10px 12px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-details-item span {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: #6a8095;
+            font-weight: 700;
+        }
+
+        .user-details-item strong {
+            font-size: 14px;
+            color: #1e3a56;
+            overflow-wrap: anywhere;
+        }
+
+        body.dark-mode .user-details-dialog {
+            border-color: #2b3e54;
+            background: linear-gradient(165deg, #132133 0%, #101d2f 100%);
+        }
+
+        body.dark-mode .user-details-header h2,
+        body.dark-mode .user-details-name {
+            color: #cbe0f3;
+        }
+
+        body.dark-mode .user-details-username,
+        body.dark-mode .user-details-item span {
+            color: #8ea8bf;
+        }
+
+        body.dark-mode .user-details-item {
+            background: #0d1827;
+            border-color: #2b3e54;
+        }
+
+        body.dark-mode .user-details-item strong {
+            color: #cfe2f5;
+        }
+
+        body.dark-mode .user-details-profile {
+            border-color: #2b3e54;
+            background: rgba(11, 164, 161, 0.12);
+        }
+
         .user-card {
             border: 1px solid #e2ecf3;
             border-radius: 16px;
@@ -532,6 +722,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             overflow: hidden;
         }
@@ -830,6 +1021,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .user-details-grid {
+                grid-template-columns: 1fr;
+            }
+
             .users-grid {
                 grid-template-columns: 1fr;
             }
@@ -862,6 +1057,8 @@
                 const cancelBtn = document.getElementById('cancelCreateUserModal');
                 const createUserForm = document.getElementById('createUserForm');
                 const modal = document.getElementById('createUserModal');
+                const userDetailsModal = document.getElementById('userDetailsModal');
+                const closeUserDetailsModalBtn = document.getElementById('closeUserDetailsModal');
                 let sortAsc = true;
 
                 if (input) {
@@ -901,6 +1098,52 @@
 
                 const closeModal = function () {
                     releasePageLock();
+                };
+
+                const closeUserDetailsModal = function () {
+                    if (!userDetailsModal) {
+                        return;
+                    }
+
+                    userDetailsModal.classList.remove('open');
+                    userDetailsModal.setAttribute('aria-hidden', 'true');
+                    document.body.style.overflow = '';
+                };
+
+                const openUserDetailsModal = function (card) {
+                    if (!userDetailsModal) {
+                        return;
+                    }
+
+                    const avatar = document.getElementById('userDetailsAvatar');
+                    const name = document.getElementById('userDetailsName');
+                    const username = document.getElementById('userDetailsUsername');
+                    const email = document.getElementById('userDetailsEmail');
+                    const role = document.getElementById('userDetailsRole');
+                    const status = document.getElementById('userDetailsStatus');
+                    const tier = document.getElementById('userDetailsTier');
+                    const language = document.getElementById('userDetailsLanguage');
+                    const coins = document.getElementById('userDetailsCoins');
+                    const date = document.getElementById('userDetailsDate');
+                    const blocked = document.getElementById('userDetailsBlocked');
+                    const twoFactor = document.getElementById('userDetailsTwoFactor');
+
+                    if (avatar) avatar.src = card.dataset.userImage || '/images/default_avatar.png';
+                    if (name) name.textContent = card.dataset.userFullname || 'User';
+                    if (username) username.textContent = '@' + (card.dataset.userUsername || 'user');
+                    if (email) email.textContent = card.dataset.userEmail || '-';
+                    if (role) role.textContent = card.dataset.userRole || '-';
+                    if (status) status.textContent = card.dataset.userStatus || '-';
+                    if (tier) tier.textContent = card.dataset.userTier || '-';
+                    if (language) language.textContent = card.dataset.userLanguage || '-';
+                    if (coins) coins.textContent = card.dataset.userCoins || '0';
+                    if (date) date.textContent = card.dataset.userDate || '-';
+                    if (blocked) blocked.textContent = card.dataset.userBlocked || '-';
+                    if (twoFactor) twoFactor.textContent = card.dataset.userTwofactor || '-';
+
+                    userDetailsModal.classList.add('open');
+                    userDetailsModal.setAttribute('aria-hidden', 'false');
+                    document.body.style.overflow = 'hidden';
                 };
 
                 if (sortBtn && usersGrid) {
@@ -943,6 +1186,26 @@
                     createUserForm.addEventListener('submit', function () {
                         // Avoid leaving the page locked while request/navigation is happening.
                         releasePageLock();
+                    });
+                }
+
+                if (usersGrid) {
+                    usersGrid.addEventListener('click', function (event) {
+                        const target = event.target;
+                        if (!(target instanceof HTMLElement)) {
+                            return;
+                        }
+
+                        if (target.closest('.actions-wrap') || target.closest('a') || target.closest('button') || target.closest('form')) {
+                            return;
+                        }
+
+                        const card = target.closest('.user-card');
+                        if (!card) {
+                            return;
+                        }
+
+                        openUserDetailsModal(card);
                     });
                 }
 
@@ -1012,9 +1275,26 @@
                     }
                 });
 
+                if (userDetailsModal) {
+                    userDetailsModal.addEventListener('click', function (event) {
+                        const target = event.target;
+                        if (target instanceof HTMLElement && target.dataset.closeUserModal === 'true') {
+                            closeUserDetailsModal();
+                        }
+                    });
+                }
+
+                if (closeUserDetailsModalBtn) {
+                    closeUserDetailsModalBtn.addEventListener('click', closeUserDetailsModal);
+                }
+
                 document.addEventListener('keydown', function (event) {
                     if (event.key === 'Escape' && modal.classList.contains('open')) {
                         closeModal();
+                    }
+
+                    if (event.key === 'Escape' && userDetailsModal && userDetailsModal.classList.contains('open')) {
+                        closeUserDetailsModal();
                     }
                 });
             };

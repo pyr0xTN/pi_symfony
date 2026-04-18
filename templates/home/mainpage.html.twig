@@ -12,13 +12,319 @@
         .main-container {
             display: flex;
             min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
             background: var(--vision-main-background, radial-gradient(1400px 500px at 10% -20%, rgba(10, 160, 159, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(252, 186, 48, 0.20), transparent 55%), linear-gradient(180deg, #f4f9ff 0%, #eff6fb 100%));
             font-family: 'Sora', 'Segoe UI', sans-serif;
         }
 
+        .main-content-shell {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .airport-background {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.9;
+            --parallax-x: 0px;
+            --parallax-y: 0px;
+        }
+
+        .depth-background {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .depth-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(8px);
+            opacity: 0.42;
+            animation: depthFloat 16s ease-in-out infinite alternate;
+        }
+
+        .depth-orb.one {
+            width: 420px;
+            height: 420px;
+            left: -140px;
+            top: 210px;
+            background: radial-gradient(circle at 35% 35%, rgba(85, 206, 255, 0.54), rgba(85, 206, 255, 0.06) 68%, transparent 100%);
+        }
+
+        .depth-orb.two {
+            width: 500px;
+            height: 500px;
+            right: -160px;
+            top: 130px;
+            background: radial-gradient(circle at 50% 45%, rgba(134, 219, 255, 0.4), rgba(134, 219, 255, 0.07) 68%, transparent 100%);
+            animation-delay: 2.8s;
+        }
+
+        .depth-orb.three {
+            width: 360px;
+            height: 360px;
+            right: 16%;
+            bottom: -110px;
+            background: radial-gradient(circle at 45% 45%, rgba(255, 194, 111, 0.34), rgba(255, 194, 111, 0.05) 68%, transparent 100%);
+            animation-delay: 1.2s;
+        }
+
+
+        .airport-layer {
+            will-change: transform;
+            transition: transform 0.18s ease-out;
+            transform: translate3d(
+                calc(var(--parallax-x) * var(--depth, 0)),
+                calc(var(--parallax-y) * var(--depth, 0)),
+                0
+            );
+        }
+
+        .airport-skyglow {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(860px 320px at 88% 8%, rgba(106, 204, 255, 0.34), transparent 70%),
+                radial-gradient(940px 380px at 12% 12%, rgba(110, 228, 255, 0.2), transparent 74%),
+                linear-gradient(180deg, rgba(17, 41, 77, 0.06), rgba(10, 33, 66, 0.34));
+            animation: skyPulse 9s ease-in-out infinite alternate;
+        }
+
+        .airport-clouds {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(130px 34px at 14% 15%, rgba(231, 248, 255, 0.48), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(170px 40px at 32% 10%, rgba(231, 248, 255, 0.37), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(142px 38px at 57% 18%, rgba(231, 248, 255, 0.45), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(190px 42px at 80% 12%, rgba(231, 248, 255, 0.4), rgba(231, 248, 255, 0) 72%);
+            opacity: 0.72;
+            animation: cloudDrift 60s linear infinite;
+        }
+
+        .airport-terminal {
+            display: none;
+        }
+
+        .airport-apron {
+            display: none;
+        }
+
+        .airport-control-tower {
+            display: none;
+        }
+
+        .airport-control-tower::after {
+            content: none;
+        }
+
+        .airport-control-tower::before {
+            content: none;
+        }
+
+        .airport-runway {
+            display: none;
+        }
+
+        .airport-runway-lights {
+            display: none;
+        }
+
+        .airport-plane {
+            position: absolute;
+            width: 260px;
+            height: 6px;
+            left: -28%;
+            top: 24%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(145, 227, 255, 0) 0%, rgba(145, 227, 255, 0.4) 46%, rgba(224, 247, 255, 0.92) 82%, rgba(255, 255, 255, 0.98) 100%);
+            filter: drop-shadow(0 0 10px rgba(123, 217, 255, 0.64));
+        }
+
+        .airport-plane::before {
+            content: '';
+            position: absolute;
+            right: 18px;
+            top: -8px;
+            width: 36px;
+            height: 18px;
+            border-top: 2px solid rgba(214, 244, 255, 0.9);
+            border-bottom: 2px solid rgba(214, 244, 255, 0.9);
+            border-radius: 12px;
+            opacity: 0.95;
+        }
+
+        .airport-plane::after {
+            content: '';
+            position: absolute;
+            right: -12px;
+            top: -7px;
+            border-left: 14px solid rgba(247, 252, 255, 0.95);
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+
+        .airport-plane.plane-one {
+            width: 210px;
+            height: 72px;
+            background: none;
+            border-radius: 0;
+            filter: drop-shadow(0 0 12px rgba(123, 217, 255, 0.42));
+            animation: flyAcross 16s linear infinite;
+        }
+
+        .airport-plane.plane-one::before,
+        .airport-plane.plane-one::after {
+            content: none;
+        }
+
+        .airport-plane-svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 0 8px rgba(167, 232, 255, 0.45));
+        }
+
+        .airport-plane-svg .plane-body {
+            fill: rgba(237, 248, 255, 0.94);
+        }
+
+        .airport-plane-svg .plane-wing {
+            fill: rgba(201, 232, 248, 0.88);
+        }
+
+        .airport-plane-svg .plane-window {
+            fill: rgba(132, 196, 224, 0.72);
+        }
+
+        .airport-plane-svg .plane-light {
+            fill: #ff4d57;
+            filter: drop-shadow(0 0 4px rgba(255, 77, 87, 0.8));
+            animation: wingLightBlink 1.1s steps(2) infinite;
+        }
+
+        .airport-plane.plane-two {
+            top: 42%;
+            width: 170px;
+            opacity: 0.52;
+            transform: scaleX(-1);
+            animation: flyAcrossReverse 19s linear infinite;
+            animation-delay: 5s;
+        }
+
+        .airport-plane.plane-three {
+            top: 14%;
+            width: 130px;
+            opacity: 0.36;
+            animation: flyAcross 26s linear infinite;
+            animation-delay: 10s;
+        }
+
+        .airport-beacon {
+            display: none;
+        }
+
+        @keyframes flyAcross {
+            0% {
+                transform: translateX(0) translateY(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.95;
+            }
+            75% {
+                opacity: 0.94;
+            }
+            100% {
+                transform: translateX(136vw) translateY(-62px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes flyAcrossReverse {
+            0% {
+                transform: translateX(112vw) translateY(0) scaleX(-1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.58;
+            }
+            75% {
+                opacity: 0.54;
+            }
+            100% {
+                transform: translateX(-44vw) translateY(-40px) scaleX(-1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes runwayBlink {
+            0%, 100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes skyPulse {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @keyframes cloudDrift {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(5%);
+            }
+        }
+
+        @keyframes wingLightBlink {
+            0%, 42%, 100% {
+                opacity: 0.2;
+            }
+            45%, 52% {
+                opacity: 1;
+            }
+            70% {
+                opacity: 0.25;
+            }
+        }
+
+        @keyframes beaconPulse {
+            0% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes depthFloat {
+            0% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            100% {
+                transform: translate3d(0, -22px, 0) scale(1.06);
+            }
+        }
+
+
         .main-container.vision-support {
             background: var(--vision-support-background, radial-gradient(1400px 500px at 10% -20%, rgba(37, 130, 150, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(226, 169, 52, 0.2), transparent 55%), linear-gradient(180deg, #edf7fb 0%, #e6f2f8 100%));
         }
+
 
         .main-container.vision-support .top-bar {
             background: var(--vision-top-bar-background, rgba(240, 251, 255, 0.95));
@@ -221,6 +527,7 @@
             background: rgba(255, 255, 255, 0.7);
             border: 1px solid rgba(80, 149, 198, 0.16);
             transition: all 0.25s ease;
+            position: relative;
         }
 
         .profile-section:hover {
@@ -228,6 +535,31 @@
             border-color: var(--vision-profile-hover-border, rgba(86, 218, 255, 0.92));
             background: var(--vision-profile-hover-background, linear-gradient(135deg, rgba(219, 247, 255, 0.98), rgba(192, 238, 255, 0.94)));
             box-shadow: var(--vision-profile-hover-shadow, 0 0 0 1px rgba(129, 230, 255, 0.72), 0 0 16px rgba(65, 203, 255, 0.46), 0 10px 24px rgba(10, 98, 141, 0.24));
+        }
+
+        .profile-section::after {
+            content: 'Settings';
+            position: absolute;
+            right: 14px;
+            bottom: -18px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(29, 77, 124, 0.96);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            opacity: 0;
+            transform: translateY(-2px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            pointer-events: none;
+            box-shadow: 0 6px 14px rgba(7, 57, 107, 0.24);
+            white-space: nowrap;
+        }
+
+        .profile-section:hover::after {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .profile-info {
@@ -335,6 +667,77 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
         }
 
+        body.dark-mode .airport-background {
+            opacity: 0.72;
+        }
+
+        body.dark-mode .depth-orb {
+            opacity: 0.28;
+            filter: blur(12px);
+        }
+
+        body.dark-mode .depth-orb.one {
+            background: radial-gradient(circle at 35% 35%, rgba(90, 180, 255, 0.36), rgba(90, 180, 255, 0.04) 68%, transparent 100%);
+        }
+
+        body.dark-mode .depth-orb.two {
+            background: radial-gradient(circle at 50% 45%, rgba(114, 186, 255, 0.28), rgba(114, 186, 255, 0.03) 68%, transparent 100%);
+        }
+
+        body.dark-mode .depth-orb.three {
+            background: radial-gradient(circle at 45% 45%, rgba(255, 182, 97, 0.2), rgba(255, 182, 97, 0.02) 68%, transparent 100%);
+        }
+
+
+        body.dark-mode .airport-clouds {
+            opacity: 0.34;
+            filter: saturate(0.8) blur(0.4px);
+        }
+
+        body.dark-mode .airport-terminal {
+            display: none;
+        }
+
+        body.dark-mode .airport-apron {
+            display: none;
+        }
+
+        body.dark-mode .airport-runway-lights {
+            display: none;
+        }
+
+        body.dark-mode .airport-plane {
+            background: linear-gradient(90deg, rgba(145, 227, 255, 0) 0%, rgba(145, 227, 255, 0.3) 46%, rgba(204, 228, 255, 0.82) 82%, rgba(237, 246, 255, 0.9) 100%);
+            filter: drop-shadow(0 0 8px rgba(123, 217, 255, 0.4));
+        }
+
+        body.dark-mode .airport-plane.plane-one {
+            background: none;
+            filter: drop-shadow(0 0 10px rgba(120, 200, 255, 0.45));
+        }
+
+        body.dark-mode .airport-plane-svg .plane-body {
+            fill: rgba(209, 226, 244, 0.92);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-wing {
+            fill: rgba(169, 194, 219, 0.84);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-window {
+            fill: rgba(110, 157, 197, 0.72);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-light {
+            fill: #ff6c74;
+            filter: drop-shadow(0 0 5px rgba(255, 108, 116, 0.9));
+        }
+
+        body.dark-mode .airport-plane::before {
+            border-top-color: rgba(182, 215, 255, 0.72);
+            border-bottom-color: rgba(182, 215, 255, 0.72);
+        }
+
         body.dark-mode .top-bar {
             background: rgba(30, 30, 50, 0.95) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
@@ -426,8 +829,12 @@
         }
 
         body.dark-mode .welcome-section {
-            background: linear-gradient(135deg, rgba(30, 30, 50, 0.9) 0%, rgba(22, 33, 62, 0.9) 100%) !important;
-            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.4) !important;
+            background:
+                radial-gradient(320px 130px at 12% 0%, rgba(102, 194, 255, 0.14), transparent 75%),
+                radial-gradient(360px 140px at 90% 100%, rgba(255, 162, 71, 0.12), transparent 78%),
+                linear-gradient(130deg, rgba(22, 31, 59, 0.52), rgba(15, 28, 55, 0.42)) !important;
+            border-color: rgba(120, 189, 247, 0.34) !important;
+            box-shadow: 0 18px 36px rgba(1, 8, 20, 0.46), inset 0 1px 0 rgba(203, 235, 255, 0.2) !important;
         }
 
         body.dark-mode .welcome-title {
@@ -440,6 +847,7 @@
 
         body.dark-mode .feature-card {
             background: linear-gradient(155deg, rgba(30, 30, 50, 0.8), rgba(22, 33, 62, 0.8)) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
             box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
         }
 
@@ -453,6 +861,22 @@
 
         body.dark-mode .feature-text {
             color: #9cb3d4 !important;
+        }
+
+        body.dark-mode .metric-card {
+            background:
+                radial-gradient(130px 70px at 10% 0%, rgba(105, 202, 255, 0.16), transparent 78%),
+                linear-gradient(145deg, rgba(22, 36, 67, 0.5), rgba(15, 28, 54, 0.36)) !important;
+            border-color: rgba(102, 168, 224, 0.36) !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(190, 226, 255, 0.16) !important;
+        }
+
+        body.dark-mode .metric-value {
+            color: #d7e9f8;
+        }
+
+        body.dark-mode .metric-label {
+            color: #9fbdd7;
         }
 
         body.dark-mode .chat-modal {
@@ -595,12 +1019,25 @@
             padding: 28px;
             border-radius: 24px;
             background:
-                radial-gradient(300px 120px at 10% 0%, rgba(10, 160, 159, 0.18), transparent 80%),
-                radial-gradient(360px 140px at 90% 100%, rgba(252, 186, 48, 0.20), transparent 85%),
-                linear-gradient(120deg, #ffffff 0%, #f7fbff 100%);
-            border: none;
-            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.09);
+                radial-gradient(320px 130px at 10% 0%, rgba(10, 160, 159, 0.16), transparent 78%),
+                radial-gradient(380px 150px at 92% 100%, rgba(252, 186, 48, 0.15), transparent 82%),
+                linear-gradient(120deg, rgba(255, 255, 255, 0.52) 0%, rgba(246, 252, 255, 0.36) 100%);
+            border: 1px solid rgba(138, 205, 247, 0.36);
+            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+            backdrop-filter: blur(10px) saturate(120%);
+            -webkit-backdrop-filter: blur(10px) saturate(120%);
             text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.22) 62%, rgba(255, 255, 255, 0.06) 100%);
+            opacity: 0.7;
+            pointer-events: none;
         }
 
         .welcome-title {
@@ -610,12 +1047,68 @@
             margin-bottom: 8px;
             line-height: 1.06;
             letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
         }
 
         .welcome-subtitle {
             font-size: 16px;
             color: #4f657c;
             margin-bottom: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .trust-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin: 22px 0 0;
+        }
+
+        .metric-card {
+            border-radius: 16px;
+            padding: 14px 14px 12px;
+            background:
+                radial-gradient(130px 70px at 10% 0%, rgba(56, 203, 220, 0.2), transparent 78%),
+                linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(243, 250, 255, 0.32));
+            border: 1px solid rgba(132, 201, 242, 0.36);
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+            backdrop-filter: blur(9px) saturate(118%);
+            -webkit-backdrop-filter: blur(9px) saturate(118%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.26) 70%, rgba(255, 255, 255, 0.04) 100%);
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
+        .metric-value,
+        .metric-label {
+            position: relative;
+            z-index: 1;
+        }
+
+        .metric-value {
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: #143f6a;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+
+        .metric-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            color: #597189;
+            text-transform: uppercase;
         }
 
         .feature-grid {
@@ -625,25 +1118,43 @@
         }
 
         .feature-card {
-            background: linear-gradient(155deg, rgba(255, 255, 255, 0.94), rgba(248, 252, 255, 0.92));
-            border: none;
+            background:
+                radial-gradient(190px 90px at 10% 0%, rgba(20, 191, 210, 0.14), transparent 78%),
+                linear-gradient(155deg, rgba(255, 255, 255, 0.5), rgba(248, 252, 255, 0.34));
+            border: 1px solid rgba(141, 207, 245, 0.34);
             padding: 24px 20px;
             border-radius: 18px;
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
             cursor: pointer;
             text-decoration: none;
             display: block;
-            box-shadow: 0 8px 20px rgba(7, 57, 107, 0.06);
+            box-shadow: 0 10px 22px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(9px) saturate(118%);
+            -webkit-backdrop-filter: blur(9px) saturate(118%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.1) 34%, rgba(255, 255, 255, 0.2) 64%, rgba(255, 255, 255, 0.05) 100%);
+            pointer-events: none;
+            opacity: 0.72;
         }
 
         .feature-card:hover {
             transform: translateY(-6px);
-            box-shadow: 0 16px 28px rgba(7, 57, 107, 0.14);
+            box-shadow: 0 16px 30px rgba(7, 57, 107, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.74);
+            border-color: rgba(122, 200, 245, 0.5);
         }
 
         .feature-icon {
             font-size: 36px;
             margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
         }
 
         .feature-title {
@@ -651,11 +1162,15 @@
             font-weight: 700;
             color: #173f69;
             margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
         }
 
         .feature-text {
             font-size: 12px;
             color: #5c7087;
+            position: relative;
+            z-index: 1;
         }
 
         /* Chat Button */
@@ -734,6 +1249,27 @@
             margin: 0;
         }
 
+        .chat-admin-row {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .chat-admin-select {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(7, 45, 79, 0.36);
+            color: #eaf7ff;
+            border-radius: 9px;
+            padding: 7px 10px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .chat-admin-select option {
+            color: #143a5e;
+            background: #f4fbff;
+        }
+
         .chat-modal-close {
             width: 30px;
             height: 30px;
@@ -786,6 +1322,109 @@
             opacity: 0.75;
         }
 
+        .chat-message-actions {
+            margin-top: 6px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .chat-action-btn {
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background: rgba(255, 255, 255, 0.16);
+            color: #f2fbff;
+            border-radius: 7px;
+            font-size: 11px;
+            line-height: 1;
+            padding: 4px 6px;
+            cursor: pointer;
+        }
+
+        .chat-action-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .chat-message.other .chat-action-btn {
+            border-color: rgba(32, 75, 109, 0.25);
+            background: rgba(20, 62, 95, 0.06);
+            color: #27557f;
+        }
+
+        .chat-message.other .chat-action-btn:hover {
+            background: rgba(20, 62, 95, 0.12);
+        }
+
+        .chat-message-content.deleted {
+            opacity: 0.72;
+            font-style: italic;
+        }
+
+        .chat-inline-editor {
+            margin-top: 6px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .chat-inline-input {
+            flex: 1;
+            border-radius: 8px;
+            border: 1px solid rgba(18, 120, 168, 0.25);
+            padding: 7px 9px;
+            font-size: 12px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1d3f5e;
+        }
+
+        .chat-inline-input:focus {
+            border-color: rgba(18, 152, 210, 0.6);
+            box-shadow: 0 0 0 2px rgba(18, 152, 210, 0.18);
+        }
+
+        .chat-inline-btn {
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background: rgba(255, 255, 255, 0.18);
+            color: #f2fbff;
+            border-radius: 7px;
+            font-size: 11px;
+            line-height: 1;
+            padding: 6px 7px;
+            cursor: pointer;
+        }
+
+        .chat-inline-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-message.other .chat-inline-btn {
+            border-color: rgba(32, 75, 109, 0.25);
+            background: rgba(20, 62, 95, 0.08);
+            color: #27557f;
+        }
+
+        .chat-delivery {
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            display: inline-block;
+            min-width: 10px;
+            text-align: center;
+        }
+
+        .chat-delivery-sent,
+        .chat-delivery-delivered {
+            color: rgba(245, 255, 255, 0.88);
+        }
+
+        .chat-message.other .chat-delivery-sent,
+        .chat-message.other .chat-delivery-delivered {
+            color: rgba(40, 73, 102, 0.8);
+        }
+
+        .chat-delivery-seen {
+            color: #5dd6ff;
+        }
+
         .chat-empty {
             margin: auto;
             text-align: center;
@@ -799,6 +1438,26 @@
             padding: 12px;
             background: #fff;
             border-top: 1px solid rgba(15, 80, 128, 0.12);
+        }
+
+        .chat-attach-btn {
+            width: 36px;
+            min-width: 36px;
+            border: 1px solid rgba(10, 118, 160, 0.28);
+            border-radius: 10px;
+            background: #f3f9ff;
+            color: #1f78aa;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-attach-btn:hover {
+            background: #e8f4ff;
         }
 
         .chat-input {
@@ -832,6 +1491,75 @@
             color: #d94a5a;
             padding: 0 12px 8px;
             background: #fff;
+        }
+
+        .chat-selected-file {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 12px 8px;
+            background: #fff;
+            border-top: 1px dashed rgba(15, 80, 128, 0.15);
+            font-size: 12px;
+            color: #2a4460;
+        }
+
+        .chat-selected-file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-selected-file-clear {
+            width: 22px;
+            height: 22px;
+            border: 1px solid rgba(10, 118, 160, 0.26);
+            border-radius: 50%;
+            background: #eef7ff;
+            color: #1f78aa;
+            cursor: pointer;
+            line-height: 1;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-selected-file-clear:hover {
+            background: #dff1ff;
+        }
+
+        .chat-attachment-preview {
+            margin-top: 6px;
+            max-width: 180px;
+            max-height: 120px;
+            border-radius: 8px;
+            display: block;
+            object-fit: cover;
+            border: 1px solid rgba(164, 211, 240, 0.5);
+            box-shadow: 0 6px 14px rgba(10, 56, 94, 0.14);
+        }
+
+        .chat-attachment-link {
+            color: #0c6fa4;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .chat-attachment-link:hover {
+            text-decoration: underline;
+        }
+
+        .chat-attachment-name {
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.9;
+            word-break: break-word;
         }
 
         @keyframes chatPopupIn {
@@ -930,6 +1658,76 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            .airport-background {
+                opacity: 0.7;
+            }
+
+            .airport-terminal {
+                display: none;
+            }
+
+            .airport-apron {
+                display: none;
+            }
+
+            .airport-control-tower {
+                display: none;
+            }
+
+            .airport-beacon {
+                display: none;
+            }
+
+            .airport-plane {
+                width: 150px;
+                top: 20%;
+            }
+
+            .airport-plane.plane-one {
+                width: 140px;
+                height: 48px;
+            }
+
+            .airport-clouds {
+                animation-duration: 60s;
+            }
+
+            .depth-orb.one {
+                width: 280px;
+                height: 280px;
+                left: -110px;
+                top: 230px;
+            }
+
+            .depth-orb.two {
+                width: 320px;
+                height: 320px;
+                right: -120px;
+                top: 160px;
+            }
+
+            .depth-orb.three {
+                width: 240px;
+                height: 240px;
+                right: -50px;
+                bottom: -70px;
+            }
+
+            .trust-metrics {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-top: -2px;
+            }
+
+            .airport-layer {
+                transition: transform 0.12s ease-out;
+            }
+
+            .airport-background {
+                --parallax-x: 0px !important;
+                --parallax-y: 0px !important;
+            }
+
             .top-bar {
                 padding: 10px 15px;
             }
@@ -970,6 +1768,49 @@
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
     <script>
         $(document).ready(function() {
+            initializeAirportParallax();
+
+            function initializeAirportParallax() {
+                const airportBackground = document.querySelector('.airport-background');
+                if (!airportBackground) {
+                    return;
+                }
+
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (prefersReducedMotion || window.innerWidth <= 768) {
+                    airportBackground.style.setProperty('--parallax-x', '0px');
+                    airportBackground.style.setProperty('--parallax-y', '0px');
+                    return;
+                }
+
+                let targetX = 0;
+                let targetY = 0;
+                let currentX = 0;
+                let currentY = 0;
+
+                const animate = function() {
+                    currentX += (targetX - currentX) * 0.08;
+                    currentY += (targetY - currentY) * 0.08;
+
+                    airportBackground.style.setProperty('--parallax-x', currentX.toFixed(2) + 'px');
+                    airportBackground.style.setProperty('--parallax-y', currentY.toFixed(2) + 'px');
+
+                    window.requestAnimationFrame(animate);
+                };
+
+                document.addEventListener('mousemove', function (event) {
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    const deltaX = (event.clientX - centerX) / centerX;
+                    const deltaY = (event.clientY - centerY) / centerY;
+
+                    targetX = deltaX * -6;
+                    targetY = deltaY * -5;
+                });
+
+                animate();
+            }
+
             // Menu toggle
             let isMenuOpen = false;
             
@@ -1070,6 +1911,49 @@
                 if (!$module.length) {
                     return;
                 }
+
+                const $productCards = $module.find('.shop-grid .product-card');
+                const $pagination = $module.find('.shop-pagination');
+                const itemsPerPage = Math.max(1, Number($pagination.data('itemsPerPage') || 25));
+                let currentPage = 1;
+
+                function renderShopPagination() {
+                    if (!$pagination.length || !$productCards.length) {
+                        return;
+                    }
+
+                    const totalPages = Math.ceil($productCards.length / itemsPerPage);
+                    if (totalPages <= 1) {
+                        $pagination.empty().hide();
+                        $productCards.show();
+                        return;
+                    }
+
+                    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+                    $productCards.each(function (index) {
+                        const page = Math.floor(index / itemsPerPage) + 1;
+                        $(this).toggle(page === currentPage);
+                    });
+
+                    let buttonsHtml = '';
+                    for (let page = 1; page <= totalPages; page += 1) {
+                        buttonsHtml += '<button type="button" class="shop-page-btn' + (page === currentPage ? ' is-active' : '') + '" data-page="' + page + '">' + page + '</button>';
+                    }
+
+                    $pagination.html(buttonsHtml).show();
+                }
+
+                $(document).off('click.shopPagination').on('click.shopPagination', '.shop-module .shop-page-btn', function () {
+                    const nextPage = Number($(this).data('page') || 1);
+                    if (!Number.isFinite(nextPage) || nextPage < 1) {
+                        return;
+                    }
+
+                    currentPage = nextPage;
+                    renderShopPagination();
+                });
+
+                renderShopPagination();
 
                 const availableCoins = Number($module.data('availableCoins') || 0);
                 const mapboxToken = String($module.data('mapboxToken') || '');
@@ -1405,16 +2289,109 @@
             const $chatMessages = $('#chatMessages');
             const $chatInput = $('#chatInput');
             const $chatStatus = $('#chatStatus');
+            const $chatAdminRow = $('#chatAdminConversationRow');
+            const $chatAdminSelect = $('#chatAdminConversationSelect');
+            const $chatAttachBtn = $('#chatAttachBtn');
+            const $chatAttachmentInput = $('#chatAttachmentInput');
+            const $chatSelectedFile = $('#chatSelectedFile');
+            const $chatSelectedFileName = $('#chatSelectedFileName');
+            const $chatSelectedFileClear = $('#chatSelectedFileClear');
             let chatPoller = null;
             let lastMessagesSignature = '';
+            let chatIsAdmin = false;
+            let activeChatUserId = 0;
+            let pendingAttachmentFile = null;
+            const chatLabels = {
+                you: '{{ 'main.chat.you'|trans }}',
+                admin: '{{ 'main.chat.admin'|trans }}',
+                deleted: '{{ 'main.chat.deleted_text'|trans }}',
+                edited: '{{ 'main.chat.edited'|trans }}',
+                edit: '{{ 'main.chat.edit'|trans }}',
+                delete: '{{ 'main.chat.delete'|trans }}',
+                editPrompt: '{{ 'main.chat.edit_prompt'|trans }}',
+                deleteConfirm: '{{ 'main.chat.delete_confirm'|trans }}',
+                editFailed: '{{ 'main.chat.edit_failed'|trans }}',
+                deleteFailed: '{{ 'main.chat.delete_failed'|trans }}',
+                emptyAdmin: '{{ 'main.chat.empty_admin'|trans }}',
+                emptyUser: '{{ 'main.chat.empty_user'|trans }}',
+                attachmentSelected: '{{ 'main.chat.attachment_selected'|trans }}'
+            };
+
+            function clearSelectedAttachment() {
+                pendingAttachmentFile = null;
+                $chatAttachmentInput.val('');
+                $chatSelectedFile.hide();
+                $chatSelectedFileName.text('');
+            }
 
             function escapeHtml(value) {
                 return $('<div>').text(value || '').html();
             }
 
+            function deliveryBadge(state) {
+                if (!state) {
+                    return '';
+                }
+
+                if (state === 'seen') {
+                    return '<span class="chat-delivery chat-delivery-seen">✓✓</span>';
+                }
+
+                if (state === 'delivered') {
+                    return '<span class="chat-delivery chat-delivery-delivered">✓✓</span>';
+                }
+
+                return '<span class="chat-delivery chat-delivery-sent">✓</span>';
+            }
+
+            function renderAdminConversations(response) {
+                chatIsAdmin = !!(response && response.isAdmin);
+
+                if (!chatIsAdmin) {
+                    $chatAdminRow.hide();
+                    activeChatUserId = 0;
+                    return;
+                }
+
+                const conversations = Array.isArray(response.conversations) ? response.conversations : [];
+                const nextActive = Number(response.activeUserId || activeChatUserId || 0);
+                activeChatUserId = Number.isFinite(nextActive) ? nextActive : 0;
+
+                if (conversations.length === 0) {
+                    $chatAdminRow.show();
+                    $chatAdminSelect.html('<option value="">No user conversations</option>').prop('disabled', true);
+                    return;
+                }
+
+                const options = conversations.map(function (conversation) {
+                    const id = Number(conversation.userId || 0);
+                    const username = String(conversation.username || 'user');
+                    const displayName = String(conversation.userName || username);
+                    const unreadCount = Number(conversation.unreadCount || 0);
+                    const onlineDot = conversation.isOnline ? '●' : '○';
+                    const unreadPart = unreadCount > 0 ? ' [' + unreadCount + ']' : '';
+                    const selected = id === activeChatUserId ? ' selected' : '';
+
+                    return '<option value="' + id + '"' + selected + '>'
+                        + onlineDot + ' ' + escapeHtml(displayName) + ' (@' + escapeHtml(username) + ')' + unreadPart
+                        + '</option>';
+                }).join('');
+
+                $chatAdminSelect.html(options).prop('disabled', false);
+                $chatAdminRow.show();
+
+                if (!activeChatUserId) {
+                    const firstId = Number(conversations[0].userId || 0);
+                    activeChatUserId = Number.isFinite(firstId) ? firstId : 0;
+                }
+            }
+
             function renderChatMessages(messages) {
                 if (!Array.isArray(messages) || messages.length === 0) {
-                    $chatMessages.html('<div class="chat-empty">No messages yet. Start the conversation with an admin.</div>');
+                    const emptyText = chatIsAdmin
+                        ? chatLabels.emptyAdmin
+                        : chatLabels.emptyUser;
+                    $chatMessages.html('<div class="chat-empty">' + escapeHtml(emptyText) + '</div>');
                     lastMessagesSignature = 'empty';
                     return;
                 }
@@ -1427,14 +2404,50 @@
 
                 const html = messages.map(function(msg) {
                     const sideClass = msg.isMine ? 'mine' : 'other';
-                    const senderLabel = msg.isMine ? 'You' : escapeHtml(msg.senderName || 'Admin');
+                    const senderLabel = msg.isMine ? chatLabels.you : escapeHtml(msg.senderName || msg.senderUsername || chatLabels.admin);
                     const timeLabel = escapeHtml(msg.timestamp || '');
-                    const content = escapeHtml(msg.message || '');
+                    const content = msg.isDeleted ? escapeHtml(chatLabels.deleted) : escapeHtml(msg.message || '');
+                    const contentClass = msg.isDeleted ? 'chat-message-content deleted' : 'chat-message-content';
+                    const attachment = msg.attachment && typeof msg.attachment === 'object' ? msg.attachment : null;
+                    let attachmentHtml = '';
+                    if (!msg.isDeleted && attachment && attachment.url) {
+                        const fileUrl = escapeHtml(attachment.url);
+                        const fileName = escapeHtml(attachment.name || 'attachment');
+                        if ((attachment.kind || '') === 'image') {
+                            attachmentHtml = `
+                                <a class="chat-attachment-link" href="${fileUrl}" target="_blank" rel="noopener noreferrer">
+                                    <img class="chat-attachment-preview" src="${fileUrl}" alt="${fileName}" />
+                                </a>
+                                <div class="chat-attachment-name">📎 ${fileName}</div>
+                            `;
+                        } else {
+                            attachmentHtml = `
+                                <a class="chat-attachment-link" href="${fileUrl}" target="_blank" rel="noopener noreferrer">📄 ${fileName}</a>
+                            `;
+                        }
+                    }
+                    const status = msg.isMine ? deliveryBadge(msg.deliveryState || (msg.isRead ? 'seen' : 'sent')) : '';
+                    const editedTag = msg.isEdited ? ' • ' + escapeHtml(chatLabels.edited) : '';
+                    const metaTail = (status ? ' • ' + status : '') + editedTag;
+                    const canEdit = msg.isMine && !msg.isDeleted && !attachment;
+                    const actionHtml = canEdit
+                        ? `<div class="chat-message-actions">
+                               <button class="chat-action-btn chat-action-edit" data-message-id="${msg.id}" data-message-text="${escapeHtml(msg.message || '')}" title="${escapeHtml(chatLabels.edit)}">✎</button>
+                               <button class="chat-action-btn chat-action-delete" data-message-id="${msg.id}" title="${escapeHtml(chatLabels.delete)}">🗑</button>
+                           </div>
+                           <div class="chat-inline-editor" data-message-id="${msg.id}" style="display:none;">
+                               <input class="chat-inline-input" type="text" maxlength="1000" value="${escapeHtml(msg.message || '')}" />
+                               <button class="chat-inline-btn chat-action-save-edit" type="button" title="Save">✓</button>
+                               <button class="chat-inline-btn chat-action-cancel-edit" type="button" title="Cancel">✕</button>
+                           </div>`
+                        : '';
 
                     return `
                         <div class="chat-message ${sideClass}">
-                            <div>${content}</div>
-                            <div class="chat-message-meta">${senderLabel} • ${timeLabel}</div>
+                            <div class="${contentClass}">${content}</div>
+                            ${attachmentHtml}
+                            <div class="chat-message-meta">${senderLabel} • ${timeLabel}${metaTail}</div>
+                            ${actionHtml}
                         </div>
                     `;
                 }).join('');
@@ -1444,10 +2457,17 @@
             }
 
             function loadChatMessages() {
+                const queryData = {};
+                if (chatIsAdmin && activeChatUserId > 0) {
+                    queryData.userId = activeChatUserId;
+                }
+
                 $.ajax({
                     url: '{{ path('app_chat_messages') }}',
                     type: 'GET',
+                    data: queryData,
                     success: function(response) {
+                        renderAdminConversations(response || {});
                         renderChatMessages(response.messages || []);
                         refreshBadge();
                     },
@@ -1460,6 +2480,9 @@
             function openChatModal() {
                 $chatStatus.text('');
                 $chatModal.addClass('show');
+                if (!chatIsAdmin) {
+                    $chatAdminRow.hide();
+                }
                 loadChatMessages();
                 if (chatPoller) {
                     clearInterval(chatPoller);
@@ -1490,17 +2513,36 @@
 
             $('#chatSendBtn').on('click', function() {
                 const text = ($chatInput.val() || '').trim();
-                if (!text) {
+                if (!text && !pendingAttachmentFile) {
                     return;
+                }
+
+                if (chatIsAdmin && activeChatUserId <= 0) {
+                    $chatStatus.text('Choose a user conversation first.');
+                    return;
+                }
+
+                const payload = new FormData();
+                payload.append('message', text);
+                if (chatIsAdmin && activeChatUserId > 0) {
+                    payload.append('userId', String(activeChatUserId));
+                }
+
+                if (pendingAttachmentFile) {
+                    payload.append('attachment', pendingAttachmentFile);
                 }
 
                 $chatStatus.text('');
                 $.ajax({
                     url: '{{ path('app_chat_send') }}',
                     type: 'POST',
-                    data: { message: text },
+                    data: payload,
+                    processData: false,
+                    contentType: false,
                     success: function() {
                         $chatInput.val('');
+                        clearSelectedAttachment();
+                        $chatStatus.text('');
                         loadChatMessages();
                     },
                     error: function(xhr) {
@@ -1516,6 +2558,124 @@
                     event.preventDefault();
                     $('#chatSendBtn').trigger('click');
                 }
+            });
+
+            $chatAttachBtn.on('click', function () {
+                $chatAttachmentInput.trigger('click');
+            });
+
+            $chatAttachmentInput.on('change', function () {
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                pendingAttachmentFile = file;
+                if (file) {
+                    $chatStatus.text('');
+                    $chatSelectedFileName.text(chatLabels.attachmentSelected + ': ' + file.name);
+                    $chatSelectedFile.show();
+                } else {
+                    clearSelectedAttachment();
+                }
+            });
+
+            $chatSelectedFileClear.on('click', function () {
+                clearSelectedAttachment();
+            });
+
+            $(document).on('click', '.chat-action-edit', function () {
+                const messageId = Number($(this).data('messageId') || 0);
+                if (messageId <= 0) {
+                    return;
+                }
+
+                const $message = $(this).closest('.chat-message');
+                const $content = $message.find('.chat-message-content').first();
+                const $actions = $message.find('.chat-message-actions').first();
+                const $editor = $message.find('.chat-inline-editor').first();
+                const $input = $editor.find('.chat-inline-input').first();
+
+                $chatMessages.find('.chat-inline-editor').hide();
+                $chatMessages.find('.chat-message-content').show();
+                $chatMessages.find('.chat-message-actions').show();
+
+                $content.hide();
+                $actions.hide();
+                $editor.show();
+                $input.trigger('focus');
+                const rawValue = String($input.val() || '');
+                $input[0].setSelectionRange(rawValue.length, rawValue.length);
+            });
+
+            $(document).on('click', '.chat-action-cancel-edit', function () {
+                const $message = $(this).closest('.chat-message');
+                $message.find('.chat-inline-editor').hide();
+                $message.find('.chat-message-content').show();
+                $message.find('.chat-message-actions').show();
+            });
+
+            $(document).on('click', '.chat-action-save-edit', function () {
+                const $editor = $(this).closest('.chat-inline-editor');
+                const messageId = Number($editor.data('messageId') || 0);
+                const trimmed = String($editor.find('.chat-inline-input').val() || '').trim();
+
+                if (messageId <= 0 || trimmed === '') {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ path('app_chat_edit') }}',
+                    type: 'POST',
+                    data: { id: messageId, message: trimmed },
+                    success: function () {
+                        lastMessagesSignature = '';
+                        loadChatMessages();
+                    },
+                    error: function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : chatLabels.editFailed);
+                    }
+                });
+            });
+
+            $(document).on('keydown', '.chat-inline-input', function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    $(this).closest('.chat-inline-editor').find('.chat-action-save-edit').trigger('click');
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    $(this).closest('.chat-inline-editor').find('.chat-action-cancel-edit').trigger('click');
+                }
+            });
+
+            $(document).on('click', '.chat-action-delete', function () {
+                const messageId = Number($(this).data('messageId') || 0);
+                if (messageId <= 0) {
+                    return;
+                }
+
+                if (!window.confirm(chatLabels.deleteConfirm)) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ path('app_chat_delete') }}',
+                    type: 'POST',
+                    data: { id: messageId },
+                    success: function () {
+                        lastMessagesSignature = '';
+                        loadChatMessages();
+                    },
+                    error: function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : chatLabels.deleteFailed);
+                    }
+                });
+            });
+
+            $chatAdminSelect.on('change', function () {
+                const selected = Number($(this).val() || 0);
+                activeChatUserId = Number.isFinite(selected) ? selected : 0;
+                lastMessagesSignature = '';
+                loadChatMessages();
             });
             
             // Side menu actions
@@ -1605,7 +2765,31 @@
     
     <!-- Main Content -->
     <div class="main-container theme-{{ visionTheme|default('default') }}{% if visionAccessibleMode|default(false) %} vision-support{% endif %}">
-        <div style="flex: 1;">
+        <div class="depth-background" aria-hidden="true">
+            <div class="depth-orb one"></div>
+            <div class="depth-orb two"></div>
+            <div class="depth-orb three"></div>
+        </div>
+
+        <div class="airport-background" aria-hidden="true">
+            <div class="airport-skyglow airport-layer" style="--depth: 0.06;"></div>
+            <div class="airport-clouds airport-layer" style="--depth: 0.12;"></div>
+            <div class="airport-plane plane-three airport-layer" style="--depth: 0.16;"></div>
+            <div class="airport-plane plane-two airport-layer" style="--depth: 0.2;"></div>
+            <div class="airport-plane plane-one airport-layer" style="--depth: 0.26;">
+                <svg class="airport-plane-svg" viewBox="0 0 260 90" role="presentation" focusable="false" aria-hidden="true">
+                    <path class="plane-body" d="M10 48L96 44L174 24L240 34L240 56L174 66L96 46L10 42Z"></path>
+                    <path class="plane-wing" d="M96 45L142 20L166 22L128 46Z"></path>
+                    <path class="plane-wing" d="M96 45L142 70L166 68L128 44Z"></path>
+                    <path class="plane-wing" d="M52 43L70 30L88 30L74 43Z"></path>
+                    <path class="plane-wing" d="M52 47L70 60L88 60L74 47Z"></path>
+                    <circle class="plane-window" cx="195" cy="45" r="4"></circle>
+                    <circle class="plane-light" cx="162" cy="24" r="2.4"></circle>
+                </svg>
+            </div>
+        </div>
+
+        <div class="main-content-shell">
             <!-- Top Bar -->
             <div class="top-bar">
                 <div style="display: flex; align-items: center;">
@@ -1620,7 +2804,7 @@
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div class="profile-section">
+                    <a href="{{ path('app_settings') }}" class="profile-section" aria-label="Open profile settings" title="Settings" data-no-loader="true" data-turbo="false">
                         <div class="profile-info">
                             <p class="profile-name">{{ app.user.fullName|default(app.user.username) }}</p>
                             <p class="profile-role">
@@ -1640,7 +2824,7 @@
                             {% endif %}
                             <div class="online-status"></div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
             
@@ -1697,6 +2881,21 @@
                         <div class="feature-text">{{ 'main.feature.services.text'|trans }}</div>
                     </a>
                 </div>
+
+                <div class="trust-metrics" aria-label="Community Metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">12k+</div>
+                        <div class="metric-label">{{ 'main.metrics.travelers_joined'|trans }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">3.4k</div>
+                        <div class="metric-label">{{ 'main.metrics.trips_booked'|trans }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">98%</div>
+                        <div class="metric-label">{{ 'main.metrics.satisfaction'|trans }}</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1709,15 +2908,28 @@
 
     <div id="chatModal" class="chat-modal" aria-live="polite" aria-label="{{ 'main.chat.popup'|trans }}">
         <div class="chat-modal-header">
-            <p class="chat-modal-title">{{ 'main.chat.title'|trans }}</p>
+            <div style="flex: 1; min-width: 0;">
+                <p class="chat-modal-title">{{ 'main.chat.title'|trans }}</p>
+                <div id="chatAdminConversationRow" class="chat-admin-row" style="display: none;">
+                    <select id="chatAdminConversationSelect" class="chat-admin-select" aria-label="Select user conversation">
+                        <option value="">No user conversations</option>
+                    </select>
+                </div>
+            </div>
             <button id="chatCloseBtn" class="chat-modal-close" type="button" aria-label="{{ 'main.chat.close'|trans }}">×</button>
         </div>
         <div id="chatMessages" class="chat-modal-messages">
             <div class="chat-empty">{{ 'main.chat.loading'|trans }}</div>
         </div>
         <div class="chat-modal-input">
+            <button id="chatAttachBtn" class="chat-attach-btn" type="button" title="{{ 'main.chat.attach'|trans }}">+</button>
             <input id="chatInput" class="chat-input" type="text" maxlength="1000" placeholder="{{ 'main.chat.placeholder'|trans }}" />
+            <input id="chatAttachmentInput" type="file" accept="image/*,.pdf,application/pdf" style="display:none;" />
             <button id="chatSendBtn" class="chat-send-btn" type="button">{{ 'main.chat.send'|trans }}</button>
+        </div>
+        <div id="chatSelectedFile" class="chat-selected-file" style="display:none;">
+            <span id="chatSelectedFileName" class="chat-selected-file-name"></span>
+            <button id="chatSelectedFileClear" class="chat-selected-file-clear" type="button" title="Clear attachment">×</button>
         </div>
         <div id="chatStatus" class="chat-status"></div>
     </div>

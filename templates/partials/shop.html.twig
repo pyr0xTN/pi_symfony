@@ -506,6 +506,39 @@
             color: #56708a;
         }
 
+        .shop-module .shop-pagination {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .shop-module .shop-page-btn {
+            border: 1px solid rgba(12, 158, 184, 0.28);
+            background: rgba(255, 255, 255, 0.95);
+            color: #0d5e8a;
+            border-radius: 10px;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 10px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .shop-module .shop-page-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(9, 64, 112, 0.16);
+        }
+
+        .shop-module .shop-page-btn.is-active {
+            border-color: transparent;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            box-shadow: 0 10px 18px rgba(11, 154, 157, 0.28);
+        }
+
         body.dark-mode .shop-module {
             color: #d9e5f0;
         }
@@ -583,6 +616,18 @@
             color: #98acc0;
         }
 
+        body.dark-mode .shop-module .shop-page-btn {
+            border-color: rgba(74, 96, 121, 0.52);
+            background: rgba(10, 18, 29, 0.86);
+            color: #dcecfb;
+        }
+
+        body.dark-mode .shop-module .shop-page-btn.is-active {
+            border-color: transparent;
+            color: #ffffff;
+            background: linear-gradient(135deg, #0b8e8b, #1d4d7c);
+        }
+
         body.dark-mode .shop-module .field input {
             background: rgba(10, 18, 29, 0.86);
             border-color: rgba(74, 96, 121, 0.52);
@@ -641,12 +686,16 @@
         <div class="shop-grid">
             {% for product in products %}
                 {% set canAfford = availableCoins >= product.price_coins and product.quantity > 0 %}
+                {% set categoryLabel = product.category|default('') %}
+                {% if categoryLabel is empty or categoryLabel|lower == 'amazon import' %}
+                    {% set categoryLabel = 'shop.category.general'|trans %}
+                {% endif %}
                 <article class="product-card">
                     <img class="product-image" src="{{ product.image_url }}" alt="{{ product.name }}">
                     <div class="product-body">
                         <h3 class="product-name">{{ product.name }}</h3>
                         <div class="product-meta">
-                            <span class="tag">{{ product.category|default('shop.category.general'|trans) }}</span>
+                            <span class="tag">{{ categoryLabel }}</span>
                             <span class="tag">{{ 'shop.stock'|trans }}: {{ product.quantity }}</span>
                         </div>
                         <div class="product-desc">{{ product.description|default('shop.no_description'|trans) }}</div>
@@ -666,6 +715,9 @@
                 </article>
             {% endfor %}
         </div>
+        {% if products|length > 25 %}
+            <div class="shop-pagination" data-items-per-page="25" aria-label="Shop pagination"></div>
+        {% endif %}
     {% endif %}
 
     <div class="modal-overlay shop-order-modal" aria-hidden="true">

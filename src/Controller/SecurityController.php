@@ -143,6 +143,56 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    #[Route(path: '/login/qr-hash', name: 'app_login_qr_hash', methods: ['POST'])]
+    public function loginWithQrHash(
+        Request $request,
+        UserRepository $userRepository,
+        UserAuthenticatorInterface $userAuthenticator,
+        LoginFormAuthenticator $formAuthenticator
+    ): Response {
+        if ($this->getUser() instanceof User) {
+            return $this->json([
+                'success' => true,
+                'message' => 'Already logged in.',
+                'redirectUrl' => $this->generateUrl('app_mainpage'),
+            ]);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json(['success' => false, 'message' => 'Invalid payload.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $email = trim((string) ($payload['email'] ?? ''));
+        $passwordHash = trim((string) ($payload['password_hash'] ?? ''));
+
+        if ($email === '' || $passwordHash === '') {
+            return $this->json(['success' => false, 'message' => 'Missing QR credentials.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $matchedUser = $userRepository->findByEmail($email);
+        if (!$matchedUser instanceof User) {
+            return $this->json(['success' => false, 'message' => 'Email not found.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if ($matchedUser->isBlocked()) {
+            return $this->json(['success' => false, 'message' => 'You got blocked in this site from admin.'], Response::HTTP_FORBIDDEN);
+        }
+
+        $storedHash = (string) $matchedUser->getPassword();
+        if ($storedHash === '' || !hash_equals($storedHash, $passwordHash)) {
+            return $this->json(['success' => false, 'message' => 'Invalid QR code credentials.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $userAuthenticator->authenticateUser($matchedUser, $formAuthenticator, $request);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'QR verified. Logging in...',
+            'redirectUrl' => $this->generateUrl('app_mainpage'),
+        ]);
+    }
+
     private function decodeDataUrlImage(string $imageData): ?string
     {
         if ($imageData === '' || !str_starts_with($imageData, 'data:image/')) {
