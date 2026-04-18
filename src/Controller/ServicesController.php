@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
 use Symfony\UX\Chartjs\Model\Chart;
+use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/services')]
 class ServicesController extends AbstractController
@@ -16,13 +17,23 @@ class ServicesController extends AbstractController
     public function __construct(
         private ServicesRepository $servicesRepo,
         private ChartBuilderInterface $chartBuilder,
+        private PaginatorInterface $paginator,
     ) {}
 
     #[Route('', name: 'services_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
         $search   = $request->query->get('q', '');
-        $services = $search
+        $qb       = $this->servicesRepo->findAllQueryBuilder($search);
+
+        $pagination = $this->paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            8 // items per page
+        );
+
+        // For charts, we need all services (not just the paged ones)
+        $allServices = $search
             ? $this->servicesRepo->findBySearch($search)
             : $this->servicesRepo->findAll();
 
@@ -30,7 +41,7 @@ class ServicesController extends AbstractController
         $hotels = 0;
         $flights = 0;
         $available = 0;
-        foreach ($services as $s) {
+        foreach ($allServices as $s) {
             if ($s->getType() === 'hotel') $hotels++;
             else $flights++;
             
@@ -57,10 +68,10 @@ class ServicesController extends AbstractController
 
         return $this->render('services/index.html.twig', [
             'active_page' => 'services',
-            'services'    => $services,
+            'pagination'  => $pagination,
             'typeChart'   => $chart,
             'stats' => [
-                'total'     => count($services),
+                'total'     => count($allServices),
                 'hotels'    => $hotels,
                 'flights'   => $flights,
                 'available' => $available,

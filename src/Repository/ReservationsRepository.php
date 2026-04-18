@@ -71,4 +71,18 @@ class ReservationsRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findAllQueryBuilder(string $search = ''): \Doctrine\ORM\QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('r');
+
+        if ($search) {
+            $q = '%' . strtolower($search) . '%';
+            $qb->where('LOWER(r.nom) LIKE :q')
+               ->orWhere('LOWER(r.mode_paiement) LIKE :q')
+               ->setParameter('q', $q);
+        }
+
+        return $qb->orderBy('r.date_reservation', 'DESC');
+    }
 }

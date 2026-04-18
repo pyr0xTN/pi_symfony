@@ -22,14 +22,14 @@
 
     {# ── Main Column: Services Grid ── #}
     <div class="main-column">
-        {% if services is empty %}
+        {% if pagination is empty %}
             <div class="empty-state">
                 <span class="empty-icon">🔍</span>
                 <p>Aucun service disponible pour le moment.</p>
             </div>
         {% else %}
             <div class="cards-grid" style="padding: 0 0 24px 0;">
-                {% for service in services %}
+                {% for service in pagination %}
                     <div class="service-card">
 
                         {# ── IMAGE AREA ── #}
@@ -105,6 +105,11 @@
                         </div>
                     </div>
                 {% endfor %}
+            </div>
+
+            {# ── PAGINATION CONTROLS ── #}
+            <div class="pagination-wrapper">
+                {{ knp_pagination_render(pagination) }}
             </div>
         {% endif %}
     </div>

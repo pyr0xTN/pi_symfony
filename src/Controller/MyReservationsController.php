@@ -12,6 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/myreservations')]
 class MyReservationsController extends AbstractController
@@ -20,19 +21,24 @@ class MyReservationsController extends AbstractController
         private EntityManagerInterface $em,
         private ReservationsRepository $reservationsRepo,
         private ServicesRepository     $servicesRepo,
+        private PaginatorInterface     $paginator,
     ) {}
 
     #[Route('', name: 'myreservations_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
         $search       = $request->query->get('q', '');
-        $reservations = $search
-            ? $this->reservationsRepo->findBySearch($search)
-            : $this->reservationsRepo->findAll();
+        $qb           = $this->reservationsRepo->findAllQueryBuilder($search);
+
+        $pagination = $this->paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            8 // items per page
+        );
 
         return $this->render('myreservations/index.html.twig', [
             'active_page'  => 'myreservations',
-            'reservations' => $reservations,
+            'pagination'   => $pagination,
         ]);
     }
 
@@ -68,4 +74,4 @@ class MyReservationsController extends AbstractController
     }
 
 
-}
+}

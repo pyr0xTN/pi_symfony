@@ -5,7 +5,7 @@
     padding: 0;
 }
 
-body {
+.root-pane {
     font-family: "Segoe UI", "Helvetica", sans-serif;
     background-color: #f4f6f8;
     color: #333;
@@ -16,11 +16,9 @@ a {
     color: inherit;
 }
 
-/* ================= LAYOUT ================= */
 .root-pane {
     display: flex;
     min-height: 100vh;
-    background-color: #f4f6f8;
 }
 
 .content-area {
@@ -1223,10 +1221,18 @@ input[type="date"].form-input {
   
   .cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    justify-content: center;
+    gap: 30px;
     width: 100%;
-    max-width: 1200px;
+    max-width: 1400px;
+    margin: 40px auto;
+  }
+
+  @media (min-width: 1400px) {
+    .cards-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
   /* ═══════════════════════════════════════
    HOTEL DETAIL PAGE
@@ -1759,3 +1765,67 @@ input[type="date"].form-input {
     height: 300px;
     position: relative;
 }
+
+/* ── PAGINATION STYLES ── */
+.pagination-wrapper {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.pagination {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 8px;
+    background: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+.pagination li {
+    display: inline-block;
+}
+
+.pagination li a, 
+.pagination li span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    color: #183c75 !important;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    font-size: 14px;
+}
+
+.pagination li a:hover {
+    background-color: #f0fbfc;
+    color: #4ba3a1 !important;
+    border-color: #4ba3a1;
+    transform: translateY(-2px);
+}
+
+.pagination li.active span {
+    background-color: #4ba3a1 !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(75, 163, 161, 0.3);
+}
+
+.pagination li.disabled span {
+    color: #ccc !important;
+    cursor: not-allowed;
+}
+
+.pagination .current {
+    background-color: #4ba3a1 !important;
+    color: white !important;
+}
+

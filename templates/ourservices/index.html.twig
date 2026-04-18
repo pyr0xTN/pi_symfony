@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
 {% endblock %}
 {% block body %}
-<body>
     <!-- Preloader -->
     <div class="preloader d-flex align-items-center justify-content-center">
         <div class="cssload-container">
@@ -184,92 +183,95 @@
     </section>
     <!-- ##### Service Intro Area End ##### -->
 
-<div class="services-wrapper">
-  
-  {% if services is empty %}
-        <div class="empty-state">
-            <span class="empty-icon">🔍</span>
-            <p>Aucun service disponible pour le moment.</p>
-        </div>
-    {% else %}
- <div class="cards-grid">
-            {% for service in services %}
 
-                <div class="service-card">
-
-                    {# ── IMAGE AREA ── #}
-                    <div class="card-img-wrapper">
-                        {% if service.imgUrl is defined and service.imgUrl %}
-                            <img
-                                src="{{ asset(service.imgUrl) }}"
-                                alt="{{ service.nom }}"
-                                class="card-img"
-                            />
-                        {% else %}
-                            <div class="card-img-placeholder">
-                                {{ service.type == 'hotel' ? '🏨' : '✈️' }}
-                            </div>
-                        {% endif %}
-
-                        {# Type badge overlaid on image #}
-                        <span class="card-type-badge card-type-badge--{{ service.type }}">
-                            {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
-                        </span>
-
-                        {# Availability dot #}
-                        <span class="card-dispo-dot {% if service.disponibilite == '1' or service.disponibilite == true %}dispo-available{% else %}dispo-unavailable{% endif %}">
-                            {{ service.disponibilite == '1' or service.disponibilite == true ? 'Disponible' : 'Indisponible' }}
-                        </span>
-                    </div>
-
-                    {# ── CARD BODY ── #}
-                    <div class="card-body">
-
-                        {# Extra info line depending on type #}
-                        <p class="card-meta">
-                            {% if service.type == 'hotel' %}
-                                📍 {{ service.localisation }}
-                                &nbsp;·&nbsp;
-                                {% for i in 1..service.nombreEtoiles %}⭐{% endfor %}
-                            {% else %}
-                                ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
-                                &nbsp;·&nbsp;
-                                🗓 {{ service.dateDepart ? service.dateDepart|date('d/m/Y') : '' }}
-                            {% endif %}
-                        </p>
-
-                        <h3 class="card-name">{{ service.nom }}</h3>
-
-                        <p class="card-description">
-                            {{ service.description|length > 80
-                                ? service.description|slice(0, 80) ~ '…'
-                                : service.description }}
-                        </p>
-
-                        <div class="card-footer">
-                            <span class="card-price">{{ service.prix }} <small>TND</small></span>
-                            <span class="card-capacity">👥 {{ service.capacite }}</span>
-                        </div>
-
-                        <div class="card-actions">
-                            {% if service.type == 'hotel' %}
-                                <a href="{{ path('hotel_showdetails', { id: service.idService }) }}" class="btn-detail">
-                                    Voir détails →
-                                </a>
-                            {% else %}
-                                <a href="{{ path('vol_showdetails', { id: service.idService }) }}" class="btn-detail">
-                                    Voir détails →
-                                </a>
-                            {% endif %}
-                        </div>
-
+<!-- ##### Our Services Listing Start ##### -->
+<section class="our-services-area section-padding-100-0">
+    <div class="container">
+        <div class="row">
+            {% if pagination is empty %}
+                <div class="col-12 text-center">
+                    <div class="empty-state">
+                        <span class="empty-icon">🔍</span>
+                        <p>Aucun service disponible pour le moment.</p>
                     </div>
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+            {% else %}
+                {% for service in pagination %}
+                    <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-30">
+                        <div class="service-card h-100">
+                            {# ── IMAGE AREA ── #}
+                            <div class="card-img-wrapper">
+                                {% if service.imgUrl is defined and service.imgUrl %}
+                                    <img src="{{ asset(service.imgUrl) }}" alt="{{ service.nom }}" class="card-img" />
+                                {% else %}
+                                    <div class="card-img-placeholder">
+                                        {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                                    </div>
+                                {% endif %}
 
-</div>
+                                <span class="card-type-badge card-type-badge--{{ service.type }}">
+                                    {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
+                                </span>
+
+                                <span class="card-dispo-dot {% if service.disponibilite == '1' or service.disponibilite == true %}dispo-available{% else %}dispo-unavailable{% endif %}">
+                                    {{ service.disponibilite == '1' or service.disponibilite == true ? 'Disponible' : 'Indisponible' }}
+                                </span>
+                            </div>
+
+                            {# ── CARD BODY ── #}
+                            <div class="card-body d-flex flex-column">
+                                <p class="card-meta">
+                                    {% if service.type == 'hotel' %}
+                                        📍 {{ service.localisation }}
+                                        &nbsp;·&nbsp;
+                                        {% for i in 1..service.nombreEtoiles %}⭐{% endfor %}
+                                    {% else %}
+                                        ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
+                                        &nbsp;·&nbsp;
+                                        🗓 {{ service.dateDepart ? service.dateDepart|date('d/m/Y') : '' }}
+                                    {% endif %}
+                                </p>
+
+                                <h3 class="card-name">{{ service.nom }}</h3>
+
+                                <p class="card-description flex-grow-1">
+                                    {{ service.description|length > 80
+                                        ? service.description|slice(0, 80) ~ '…'
+                                        : service.description }}
+                                </p>
+
+                                <div class="card-footer px-0 pt-3">
+                                    <span class="card-price">{{ service.prix }} <small>TND</small></span>
+                                    <span class="card-capacity">👥 {{ service.capacite }}</span>
+                                </div>
+
+                                <div class="card-actions mt-3">
+                                    {% if service.type == 'hotel' %}
+                                        <a href="{{ path('hotel_showdetails', { id: service.idService }) }}" class="btn-detail w-100">
+                                            Voir détails →
+                                        </a>
+                                    {% else %}
+                                        <a href="{{ path('vol_showdetails', { id: service.idService }) }}" class="btn-detail w-100">
+                                            Voir détails →
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+
+                {# ── PAGINATION CONTROLS ── #}
+                <div class="col-12 mt-50">
+                    <div class="pagination-wrapper d-flex justify-content-center">
+                        {{ knp_pagination_render(pagination) }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+<!-- ##### Our Services Listing End ##### -->
 
     <!-- ##### Services Area Start ##### -->
     <section class="services-area">
@@ -378,7 +380,7 @@
             </div>
         </div>
     </footer>
-</body>
+
 {% endblock %}
 
 

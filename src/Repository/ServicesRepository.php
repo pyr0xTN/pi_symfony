@@ -42,4 +42,19 @@ class ServicesRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findAllQueryBuilder(string $search = ''): \Doctrine\ORM\QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('s');
+
+        if ($search) {
+            $q = '%' . strtolower($search) . '%';
+            $qb->where('LOWER(s.nom) LIKE :q')
+               ->orWhere('LOWER(s.description) LIKE :q')
+               ->orWhere('LOWER(s.localisation) LIKE :q')
+               ->setParameter('q', $q);
+        }
+
+        return $qb->orderBy('s.nom', 'ASC');
+    }
 }

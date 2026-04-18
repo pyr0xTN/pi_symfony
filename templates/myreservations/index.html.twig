@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
 {% endblock %}
 {% block body %}
-<body>
     <!-- Preloader -->
     <div class="preloader d-flex align-items-center justify-content-center">
         <div class="cssload-container">
@@ -86,72 +85,84 @@
         </div>
     {% endfor %}
 {% endfor %}
-    <section class="core-features-area">
-     {% if reservations is empty %}
-        <p class="empty-state">Aucune réservation trouvée.</p>
-    {% else %}
-        <div class="cards-grid">
-            {% for reservation in reservations %}
-                <div class="reservation-card">
-                    
-                    {# Header: Name & Status #}
-                    <div class="rc-header">
-                        <h3 class="rc-name">{{ reservation.nom }}</h3>
-                        
-                        {# Dynamic badge color based on status #}
-                        {% set badgeClass = 'badge-info' %}
-                        {% if reservation.statut|lower == 'en attente' %}
-                            {% set badgeClass = 'badge-pending' %}
-                        {% elseif reservation.statut|lower == 'confirmée' %}
-                            {% set badgeClass = 'badge-success' %}
-                        {% elseif reservation.statut|lower == 'annulée' %}
-                            {% set badgeClass = 'badge-danger' %}
-                        {% endif %}
-                        
-                        <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
-                    </div>
 
-                    {# Body: Details #}
-                    <div class="rc-body">
-                        <div class="rc-detail-item">
-                            <span class="rc-icon">📅</span>
-                            <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
-                        </div>
-                        
-                        <div class="rc-detail-item">
-                            <span class="rc-icon">💳</span>
-                            <span>{{ reservation.modePaiement }}</span>
-                        </div>
-                           <div class="rc-detail-item">
-                            <span class="rc-icon">🛎️</span>
-                            <span>{{ reservation.idService.nom }}</span>
-                        </div>
-                        
-                        {# Only show if it has a value to avoid empty spacing #}
-                        {% if reservation.siege is defined and reservation.siege %}
-                            <div class="rc-detail-item">
-                                <span class="rc-icon">💺</span>
-                                <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+    <section class="core-features-area section-padding-100-0">
+        <div class="container">
+            <div class="row">
+                {% if pagination is empty %}
+                    <div class="col-12 text-center">
+                        <p class="empty-state">Aucune réservation trouvée.</p>
+                    </div>
+                {% else %}
+                    {% for reservation in pagination %}
+                        <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-30">
+                            <div class="reservation-card h-100 p-4">
+                                
+                                {# Header: Name & Status #}
+                                <div class="rc-header">
+                                    <h3 class="rc-name">{{ reservation.nom }}</h3>
+                                    
+                                    {# Dynamic badge color based on status #}
+                                    {% set badgeClass = 'badge-info' %}
+                                    {% if reservation.statut|lower == 'en attente' %}
+                                        {% set badgeClass = 'badge-pending' %}
+                                    {% elseif reservation.statut|lower == 'confirmée' %}
+                                        {% set badgeClass = 'badge-success' %}
+                                    {% elseif reservation.statut|lower == 'annulée' %}
+                                        {% set badgeClass = 'badge-danger' %}
+                                    {% endif %}
+                                    
+                                    <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
+                                </div>
+
+                                {# Body: Details #}
+                                <div class="rc-body flex-grow-1">
+                                    <div class="rc-detail-item">
+                                        <span class="rc-icon">📅</span>
+                                        <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                                    </div>
+                                    
+                                    <div class="rc-detail-item">
+                                        <span class="rc-icon">💳</span>
+                                        <span>{{ reservation.modePaiement }}</span>
+                                    </div>
+                                    <div class="rc-detail-item">
+                                        <span class="rc-icon">🛎️</span>
+                                        <span>{{ reservation.idService.nom }}</span>
+                                    </div>
+                                    
+                                    {% if reservation.siege is defined and reservation.siege %}
+                                        <div class="rc-detail-item">
+                                            <span class="rc-icon">💺</span>
+                                            <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                {# Footer: Actions #}
+                                <div class="rc-footer mt-3 pt-3">
+                                    <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary w-100 mb-2">
+                                        Voir détails
+                                    </a>
+                                    <a href="{{ path('myreservation_delete', { id: reservation.idReservation }) }}"
+                                       class="rc-btn rc-btn-danger w-100"
+                                       onclick="return confirm('Confirmer la suppression ?')">
+                                       Supprimer
+                                    </a>
+                                </div>
                             </div>
-                        {% endif %}
-                    </div>
+                        </div>
+                    {% endfor %}
 
-                    {# Footer: Actions #}
-                    <div class="rc-footer">
-                        <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
-                            Voir détails
-                        </a>
-                        <a href="{{ path('myreservation_delete', { id: reservation.idReservation }) }}"
-                           class="rc-btn rc-btn-danger"
-                           onclick="return confirm('Confirmer la suppression ?')">
-                           Supprimer
-                        </a>
+                    {# ── PAGINATION CONTROLS ── #}
+                    <div class="col-12 mt-50">
+                        <div class="pagination-wrapper d-flex justify-content-center">
+                            {{ knp_pagination_render(pagination) }}
+                        </div>
                     </div>
-
-                </div>
-            {% endfor %}
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
     </section>
     <!-- ##### Core Features End ##### -->
    
@@ -199,7 +210,7 @@
             </div>
         </div>
     </footer>
-</body>
+
 {% endblock %}
 
 

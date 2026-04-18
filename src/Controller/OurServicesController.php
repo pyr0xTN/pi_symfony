@@ -7,6 +7,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Knp\Component\Pager\PaginatorInterface;
 
 /**
  * Public-facing services listing (hotels + vols combined).
@@ -17,6 +18,7 @@ class OurServicesController extends AbstractController
 {
     public function __construct(
         private ServicesRepository $servicesRepo,
+        private PaginatorInterface $paginator,
     ) {}
 
 
@@ -24,13 +26,17 @@ class OurServicesController extends AbstractController
     public function index(Request $request): Response
     {
         $search   = $request->query->get('q', '');
-        $services = $search
-            ? $this->servicesRepo->findBySearch($search)
-            : $this->servicesRepo->findAll();
+        $qb       = $this->servicesRepo->findAllQueryBuilder($search);
+
+        $pagination = $this->paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            8 // items per page
+        );
 
         return $this->render('ourservices/index.html.twig', [
             'active_page' => 'ourservices',
-            'services'    => $services,
+            'pagination'  => $pagination,
         ]);
     }
 

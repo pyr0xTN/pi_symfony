@@ -24,6 +24,7 @@ use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
 use Symfony\UX\Chartjs\Model\Chart;
+use Knp\Component\Pager\PaginatorInterface;
 
 
 #[Route('/reservation')]
@@ -34,6 +35,7 @@ class ReservationController extends AbstractController
         private ReservationsRepository $reservationsRepo,
         private ServicesRepository     $servicesRepo,
         private ChartBuilderInterface  $chartBuilder,
+        private PaginatorInterface     $paginator,
     ) {}
 
 
@@ -41,7 +43,16 @@ class ReservationController extends AbstractController
     public function index(Request $request): Response
     {
         $search       = $request->query->get('q', '');
-        $reservations = $search
+        $qb           = $this->reservationsRepo->findAllQueryBuilder($search);
+
+        $pagination = $this->paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            8 // items per page
+        );
+
+        // For charts, we need all reservations
+        $allReservations = $search
             ? $this->reservationsRepo->findBySearch($search)
             : $this->reservationsRepo->findAll();
 
@@ -49,7 +60,7 @@ class ReservationController extends AbstractController
         $conf  = 0;
         $pend  = 0;
         $canc  = 0;
-        foreach ($reservations as $r) {
+        foreach ($allReservations as $r) {
             $st = strtolower($r->getStatut());
             if ($st === 'confirmée' || $st === 'confirmed') $conf++;
             elseif ($st === 'en attente' || $st === 'pending') $pend++;
@@ -76,10 +87,10 @@ class ReservationController extends AbstractController
 
         return $this->render('reservation/index.html.twig', [
             'active_page'  => 'reservations',
-            'reservations' => $reservations,
+            'pagination'   => $pagination,
             'statusChart'  => $chart,
             'stats' => [
-                'total' => count($reservations),
+                'total' => count($allReservations),
                 'conf'  => $conf,
                 'pend'  => $pend,
                 'canc'  => $canc,
