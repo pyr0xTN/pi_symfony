@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Repository\ConversationRepository;
+use App\Repository\ParticipantConversationRepository;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -155,11 +156,28 @@ class MessagesController extends AbstractController
     }
 
     #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
-    public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
-    {
+    public function fetchMessages(
+        Conversation $conversation,
+        MessagesRepository $repo,
+        ParticipantConversationRepository $pcRepo
+    ): JsonResponse {
         /** @var User $user */
         $user = $this->getUser();
-        $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
+
+        // 1. Chercher le statut du participant actuel
+        $p = $pcRepo->findOneBy([
+            'idConversation' => $conversation,
+            'idUtilisateur' => $user
+        ]);
+
+        // 2. Déterminer quels messages récupérer en fonction de l'activité
+        if ($p && !$p->isEstActif() && $p->getDateSortie()) {
+            // L'utilisateur a quitté : on filtre rigoureusement par sa date de sortie
+            $messages = $repo->findMessagesBeforeDate($conversation, $p->getDateSortie());
+        } else {
+            // L'utilisateur est actif (ou c'est un message privé) : on prend tout
+            $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
+        }
 
         $data = [];
         foreach ($messages as $msg) {
@@ -174,7 +192,7 @@ class MessagesController extends AbstractController
                 'edited' => $msg->isEdited(),
                 'type' => $msg->getTypeMessage() ? $msg->getTypeMessage()->value : 'TEXTE',
                 'filePath' => $msg->getUrlFichier(),
-                'reaction'  => $msg->getReaction()
+                'reaction' => $msg->getReaction()
             ];
         }
         return new JsonResponse($data);

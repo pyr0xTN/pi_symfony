@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Messages;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Conversation;
 
 /**
  * @extends ServiceEntityRepository<Messages>
@@ -73,5 +74,32 @@ class MessagesRepository extends ServiceEntityRepository
             ->setParameter('userId', $currentUserId)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function findMessagesBeforeDate(Conversation $conversation, \DateTimeInterface $dateSortie)
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.idConversation = :conv')
+            ->andWhere('m.dateEnvoi <= :dateLimit') // On prend tout ce qui est AVANT ou ÉGAL à la sortie
+            ->setParameter('conv', $conversation)
+            ->setParameter('dateLimit', $dateSortie)
+            ->orderBy('m.dateEnvoi', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    // src/Repository/MessagesRepository.php
+
+    public function findLastMessageBeforeDate($conversation, \DateTimeInterface $dateLimit)
+    {
+        return $this->createQueryBuilder('m')
+            ->where('m.idConversation = :conv')
+            ->andWhere('m.dateEnvoi <= :limit')
+            ->setParameter('conv', $conversation)
+            ->setParameter('limit', $dateLimit)
+            ->orderBy('m.dateEnvoi', 'DESC') // On prend le plus récent...
+            ->setMaxResults(1)               // ...mais un seul
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

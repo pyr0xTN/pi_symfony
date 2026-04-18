@@ -6,6 +6,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ConversationRepository;
 use App\Repository\MessagesRepository;
+use App\Repository\ParticipantConversationRepository;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
@@ -656,7 +657,7 @@ class HomeController extends AbstractController
 
     #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo, MessagesRepository $msgRepo): Response
+    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo, MessagesRepository $msgRepo, ParticipantConversationRepository $pcRepo): Response
     {
         $view = $request->request->get('view');
         $user = $this->getUser();
@@ -684,14 +685,26 @@ class HomeController extends AbstractController
                 $rawConversations = $convRepo->findConversationsByUser($user->getId());
                 $allUsers = $userRepo->findAllExceptMe($user->getId());
 
-                // 2. Préparer les données pour la sidebar (Dernier msg + Compteur non lus)
                 $conversationsWithMetas = [];
                 foreach ($rawConversations as $conv) {
+                    // 1. Chercher le statut de l'utilisateur pour CETTE conversation
+                    $p = $pcRepo->findOneBy(['idConversation' => $conv, 'idUtilisateur' => $user]);
+
+                    // 2. Déterminer le dernier message à afficher en preview
+                    if ($p && !$p->isEstActif() && $p->getDateSortie()) {
+                        // Si l'utilisateur a quitté : on cherche le dernier message AVANT sa sortie
+                        $lastMsg = $msgRepo->findLastMessageBeforeDate($conv, $p->getDateSortie());
+                        $unread = 0;
+                    } else {
+                        // Sinon : on prend le dernier message réel
+                        $lastMsg = $msgRepo->findOneBy(['idConversation' => $conv], ['dateEnvoi' => 'DESC']);
+                         $unread = $msgRepo->countUnread($conv->getId(), $user->getId());
+                    }
+
                     $conversationsWithMetas[] = [
                         'conv' => $conv,
-                        'lastMsg' => $msgRepo->findOneBy(['idConversation' => $conv], ['dateEnvoi' => 'DESC']),
-                        // Appel de la méthode pour compter les non lus reçus
-                        'unread' => $msgRepo->countUnread($conv->getId(), $user->getId())
+                        'lastMsg' => $lastMsg,
+                        'unread' => $unread
                     ];
                 }
 

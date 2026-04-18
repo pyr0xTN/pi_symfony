@@ -172,8 +172,7 @@ class ConversationController extends AbstractController
     #[Route('/api/{id}', name: 'app_conversation_api', methods: ['GET'])]
     public function apiShow(
         Conversation $conversation, // Symfony will now find it via the 'id' property
-        ParticipantConversationRepository $pcRepo,
-        MessagesRepository $messagesRepo
+        ParticipantConversationRepository $pcRepo
     ): JsonResponse {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -186,14 +185,14 @@ class ConversationController extends AbstractController
         $participant = $pcRepo->findOneBy([
             'idConversation' => $conversation,
             'idUtilisateur' => $currentUser,
-            'estActif' => true
+            //'estActif' => true
         ]);
 
         if (!$participant) {
             return new JsonResponse(['error' => 'Unauthorized access'], 403);
         }
 
-        // Build data
+        /* Build data
         $participantsData = [];
         foreach ($conversation->getParticipants() as $p) {
             $u = $p->getIdUtilisateur();
@@ -203,6 +202,21 @@ class ConversationController extends AbstractController
                     'name' => trim(($u->getLastName() ?? '') . ' ' . ($u->getName() ?? 'User')),
                 ];
             }
+        }*/
+
+        // Build data
+        $participantsData = [];
+        foreach ($conversation->getParticipants() as $p) {
+            // Si le participant a quitté (estActif = false), on l'ignore
+            if ($p->isEstActif()) {
+                $u = $p->getIdUtilisateur();
+                if ($u) {
+                    $participantsData[] = [
+                        'id' => $u->getId(),
+                        'name' => trim(($u->getLastName() ?? '') . ' ' . ($u->getName() ?? 'User')),
+                    ];
+                }
+            }
         }
 
         return new JsonResponse([
@@ -211,6 +225,7 @@ class ConversationController extends AbstractController
             'title' => $conversation->getTitre(),
             'displayName' => $conversation->getDisplayName($currentUser),
             'participants' => $participantsData,
+            'isActive' => $participant->isEstActif()? $participant->isEstActif() : false,
         ]);
     }
     /**
@@ -296,5 +311,34 @@ class ConversationController extends AbstractController
         $next = $maxId + 1;
 
         return max(1, $next);
+    }
+
+    #[Route('/leave/{id}', name: 'app_conversation_leave', methods: ['POST'])]
+    public function leave(
+        Conversation $conversation,
+        EntityManagerInterface $em,
+        ParticipantConversationRepository $pcRepo
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // 1. Trouver le participant correspondant à l'utilisateur actuel dans cette conv
+        $participant = $pcRepo->findOneBy([
+            'idConversation' => $conversation,
+            'idUtilisateur' => $user,
+            'estActif' => true
+        ]);
+
+        if (!$participant) {
+            return new JsonResponse(['error' => 'Vous ne faites pas partie de ce groupe'], 403);
+        }
+
+        // 2. Mettre à jour le statut
+        $participant->setEstActif(false);
+        $participant->setDateSortie(new \DateTime());
+
+        $em->flush();
+
+        return new JsonResponse(['status' => 'ok']);
     }
 }
