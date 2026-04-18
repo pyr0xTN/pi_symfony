@@ -18,115 +18,134 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-with-sidebar">
 
-    {% if services is empty %}
-        <div class="empty-state">
-            <span class="empty-icon">🔍</span>
-            <p>Aucun service disponible pour le moment.</p>
-        </div>
-    {% else %}
-        <div class="cards-grid">
-            {% for service in services %}
+    {# ── Main Column: Services Grid ── #}
+    <div class="main-column">
+        {% if services is empty %}
+            <div class="empty-state">
+                <span class="empty-icon">🔍</span>
+                <p>Aucun service disponible pour le moment.</p>
+            </div>
+        {% else %}
+            <div class="cards-grid" style="padding: 0 0 24px 0;">
+                {% for service in services %}
+                    <div class="service-card">
 
-                <div class="service-card">
+                        {# ── IMAGE AREA ── #}
+                        <div class="card-img-wrapper">
+                            {% if service.imgUrl is defined and service.imgUrl %}
+                                <img
+                                    src="{{ asset(service.imgUrl) }}"
+                                    alt="{{ service.nom }}"
+                                    class="card-img"
+                                />
+                            {% else %}
+                                <div class="card-img-placeholder">
+                                    {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                                </div>
+                            {% endif %}
 
-                    {# ── IMAGE AREA ── #}
-                    <div class="card-img-wrapper">
-                        {% if service.imgUrl is defined and service.imgUrl %}
-                            <img
-                                src="{{ asset(service.imgUrl) }}"
-                                alt="{{ service.nom }}"
-                                class="card-img"
-                            />
-                        {% else %}
-                            <div class="card-img-placeholder">
-                                {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                            {# Type badge overlaid on image #}
+                            <span class="card-type-badge card-type-badge--{{ service.type }}">
+                                {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
+                            </span>
+
+                            {# Availability dot #}
+                            <span class="card-dispo-dot {% if service.disponibilite == '1' or service.disponibilite == true %}dispo-available{% else %}dispo-unavailable{% endif %}">
+                                {{ service.disponibilite == '1' or service.disponibilite == true ? 'Disponible' : 'Indisponible' }}
+                            </span>
+                        </div>
+
+                        {# ── CARD BODY ── #}
+                        <div class="card-body">
+
+                            {# Extra info line depending on type #}
+                            <p class="card-meta">
+                                {% if service.type == 'hotel' %}
+                                    📍 {{ service.localisation }}
+                                    &nbsp;·&nbsp;
+                                    {% for i in 1..service.nombreEtoiles %}⭐{% endfor %}
+                                {% else %}
+                                    ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
+                                    &nbsp;·&nbsp;
+                                    🗓 {{ service.dateDepart ? service.dateDepart|date('d/m/Y') : '' }}
+                                {% endif %}
+                            </p>
+
+                            <h3 class="card-name">{{ service.nom }}</h3>
+
+                            <p class="card-description">
+                                {{ service.description|length > 80
+                                    ? service.description|slice(0, 80) ~ '…'
+                                    : service.description }}
+                            </p>
+
+                            <div class="card-footer">
+                                <span class="card-price">{{ service.prix }} <small>TND</small></span>
+                                <span class="card-capacity">👥 {{ service.capacite }}</span>
                             </div>
-                        {% endif %}
 
-                        {# Type badge overlaid on image #}
-                        <span class="card-type-badge card-type-badge--{{ service.type }}">
-                            {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
-                        </span>
+                            <div class="card-actions">
+                                {% if service.type == 'hotel' %}
+                                    <a href="{{ path('hotel_show', { id: service.idService }) }}" class="btn-detail">
+                                        Voir détails →
+                                    </a>
+                                    <a href="{{ path('hotel_edit', { id: service.idService }) }}" class="rc-btn">edit</a>
+                                    <a href="{{ path('hotel_delete', { id: service.idService }) }}" class="rc-btn rc-btn-danger" onclick="return confirm('Confirmer la suppression ?')">Supprimer</a>
+                                {% else %}
+                                    <a href="{{ path('vol_show', { id: service.idService }) }}" class="btn-detail">
+                                        Voir détails →
+                                    </a>
+                                    <a href="{{ path('vol_edit', { id: service.idService }) }}" class="rc-btn">edit</a>
+                                    <a href="{{ path('vol_delete', { id: service.idService  }) }}" class="rc-btn rc-btn-danger" onclick="return confirm('Confirmer la suppression ?')">Supprimer</a>
+                                {% endif %}
+                            </div>
 
-                        {# Availability dot #}
-                        <span class="card-dispo-dot {% if service.disponibilite == '1' or service.disponibilite == true %}dispo-available{% else %}dispo-unavailable{% endif %}">
-                            {{ service.disponibilite == '1' or service.disponibilite == true ? 'Disponible' : 'Indisponible' }}
-                        </span>
-                    </div>
-
-                    {# ── CARD BODY ── #}
-                    <div class="card-body">
-
-                        {# Extra info line depending on type #}
-                        <p class="card-meta">
-                            {% if service.type == 'hotel' %}
-                                📍 {{ service.localisation }}
-                                &nbsp;·&nbsp;
-                                {% for i in 1..service.nombreEtoiles %}⭐{% endfor %}
-                            {% else %}
-                                ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
-                                &nbsp;·&nbsp;
-                                🗓 {{ service.dateDepart ? service.dateDepart|date('d/m/Y') : '' }}
-                            {% endif %}
-                        </p>
-
-                        <h3 class="card-name">{{ service.nom }}</h3>
-
-                        <p class="card-description">
-                            {{ service.description|length > 80
-                                ? service.description|slice(0, 80) ~ '…'
-                                : service.description }}
-                        </p>
-
-                        <div class="card-footer">
-                            <span class="card-price">{{ service.prix }} <small>TND</small></span>
-                            <span class="card-capacity">👥 {{ service.capacite }}</span>
                         </div>
-
-                        <div class="card-actions">
-                            {% if service.type == 'hotel' %}
-                                <a href="{{ path('hotel_show', { id: service.idService }) }}" class="btn-detail">
-                                    Voir détails →
-                                </a>
-                               
-                            {% else %}
-                                <a href="{{ path('vol_show', { id: service.idService }) }}" class="btn-detail">
-                                    Voir détails →
-                                </a>
-                              
-                            {% endif %}
-                             {% if service.type == 'hotel' %}
-                          <a href="{{ path('hotel_edit', { id: service.idService }) }}"
-                           class="rc-btn">
-                           edit
-                        </a>
-                        {% else %}
-                        <a href="{{ path('vol_edit', { id: service.idService }) }}"
-                           class="rc-btn">
-                           edit
-                        </a>
-                        {%endif%}
-                         {% if service.type == 'hotel' %}
-                          <a href="{{ path('hotel_delete', { id: service.idService }) }}"
-                           class="rc-btn rc-btn-danger"
-                           onclick="return confirm('Confirmer la suppression ?')">
-                           Supprimer
-                        </a>
-                        {% else %}
-                        <a href="{{ path('vol_delete', { id: service.idService  }) }}"
-                           class="rc-btn rc-btn-danger"
-                           onclick="return confirm('Confirmer la suppression ?')">
-                           Supprimer
-                        </a>
-                        {%endif%}
-                        </div>
-
                     </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Sidebar: Statistics & Chart ── #}
+    <div class="sidebar-stats">
+        
+        <div class="sidebar-chart-card">
+            <h3>📊 Service Mix</h3>
+            
+            <div style="height: 220px; position: relative;">
+                {{ render_chart(typeChart) }}
+            </div>
+
+            <div class="chart-legend" style="margin-top: 20px;">
+                <div class="chart-legend-item">
+                    <span class="legend-dot" style="background: #4ba3a1;"></span>
+                    <span>Hôtels: <strong>{{ stats.hotels }}</strong></span>
                 </div>
-
-            {% endfor %}
+                <div class="chart-legend-item">
+                    <span class="legend-dot" style="background: #183c75;"></span>
+                    <span>Vols: <strong>{{ stats.flights }}</strong></span>
+                </div>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                <div class="chart-legend-item">
+                    <span>Available: <strong>{{ stats.available }} / {{ stats.total }}</strong></span>
+                </div>
+            </div>
         </div>
-    {% endif %}
 
+        {# Quick Links / Stats #}
+        <div class="sidebar-chart-card" style="background-color: #f0fbfc; border: 1px solid #4ba3a1;">
+            <h3 style="color: #4ba3a1;">🚀 Catalog Health</h3>
+            <p style="font-size: 13px; color: #3a8a88; line-height: 1.5; margin: 0;">
+                Currently, <strong>{{ (stats.available / (stats.total > 0 ? stats.total : 1) * 100)|round }}%</strong> of your services are available for booking. 
+                Keep your inventory updated to maximize conversions!
+            </p>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}
+

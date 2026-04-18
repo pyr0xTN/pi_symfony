@@ -179,7 +179,7 @@
             <div class="company-name">✈ Rehletna</div>
             <div class="ticket-label">Confirmation de Réservation</div>
         </div>
-        <div class="ref-number">Réf : #{{ reservation.idReservation }}</div>
+        
     </div>
 
     {# ── Status stripe ── #}
@@ -260,10 +260,7 @@
                             </div>
                         {% endif %}
 
-                        <div class="detail-row">
-                            <div class="detail-label">Capacité</div>
-                            <div class="detail-value">{{ reservation.idService.capacite }} personnes</div>
-                        </div>
+                       
                     </td>
                 </tr>
             </table>

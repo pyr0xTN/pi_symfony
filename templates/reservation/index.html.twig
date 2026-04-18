@@ -18,82 +18,122 @@
 {% endblock %}
 
 {% block content %}
+<div class="page-with-sidebar">
+    
+    {# ── Main Column: Reservations Grid ── #}
+    <div class="main-column">
+        {% if reservations is empty %}
+            <p class="empty-state">Aucune réservation trouvée.</p>
+        {% else %}
+            <div class="cards-grid" style="padding: 0 0 24px 0;"> {# Remove lateral padding inside column #}
+                {% for reservation in reservations %}
+                    <div class="reservation-card">
+                        
+                        {# Header: Name & Status #}
+                        <div class="rc-header">
+                            <h3 class="rc-name">{{ reservation.nom }}</h3>
+                            
+                            {# Dynamic badge color based on status #}
+                            {% set badgeClass = 'badge-info' %}
+                            {% if reservation.statut|lower == 'en attente' %}
+                                {% set badgeClass = 'badge-pending' %}
+                            {% elseif reservation.statut|lower == 'confirmée' %}
+                                {% set badgeClass = 'badge-success' %}
+                            {% elseif reservation.statut|lower == 'annulée' %}
+                                {% set badgeClass = 'badge-danger' %}
+                            {% endif %}
+                            
+                            <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
+                        </div>
 
-   {% if reservations is empty %}
-        <p class="empty-state">Aucune réservation trouvée.</p>
-    {% else %}
-        <div class="cards-grid">
-            {% for reservation in reservations %}
-                <div class="reservation-card">
-                    
-                    {# Header: Name & Status #}
-                    <div class="rc-header">
-                        <h3 class="rc-name">{{ reservation.nom }}</h3>
-                        
-                        {# Dynamic badge color based on status #}
-                        {% set badgeClass = 'badge-info' %}
-                        {% if reservation.statut|lower == 'en attente' %}
-                            {% set badgeClass = 'badge-pending' %}
-                        {% elseif reservation.statut|lower == 'confirmée' %}
-                            {% set badgeClass = 'badge-success' %}
-                        {% elseif reservation.statut|lower == 'annulée' %}
-                            {% set badgeClass = 'badge-danger' %}
-                        {% endif %}
-                        
-                        <span class="badge {{ badgeClass }}">{{ reservation.statut }}</span>
-                    </div>
-
-                    {# Body: Details #}
-                    <div class="rc-body">
-                        <div class="rc-detail-item">
-                            <span class="rc-icon">📅</span>
-                            <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
-                        </div>
-                        
-                        <div class="rc-detail-item">
-                            <span class="rc-icon">💳</span>
-                            <span>{{ reservation.modePaiement }}</span>
-                        </div>
-                           <div class="rc-detail-item">
-                            <span class="rc-icon">🛎️</span>
-                            <span>{{reservation.idService.nom}}</span>
-                        </div>
-                        
-                        {# Only show if it has a value to avoid empty spacing #}
-                        {% if reservation.siege is defined and reservation.siege %}
+                        {# Body: Details #}
+                        <div class="rc-body">
                             <div class="rc-detail-item">
-                                <span class="rc-icon">💺</span>
-                                <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+                                <span class="rc-icon">📅</span>
+                                <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
                             </div>
-                        {% endif %}
+                            
+                            <div class="rc-detail-item">
+                                <span class="rc-icon">💳</span>
+                                <span>{{ reservation.modePaiement }}</span>
+                            </div>
+                            <div class="rc-detail-item">
+                                <span class="rc-icon">🛎️</span>
+                                <span>{{ reservation.idService.nom }}</span>
+                            </div>
+                            
+                            {% if reservation.siege is defined and reservation.siege %}
+                                <div class="rc-detail-item">
+                                    <span class="rc-icon">💺</span>
+                                    <span>Siège : <strong>{{ reservation.siege }}</strong></span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {# Footer: Actions #}
+                        <div class="rc-footer">
+                            {% if reservation.statut|lower != 'confirmée' %}
+                                <form method="POST" action="{{ path('reservation_approve', { id: reservation.idReservation }) }}" style="display:inline;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('approve_resa_' ~ reservation.idReservation) }}">
+                                    <button type="submit" class="rc-btn rc-btn-success" onclick="return confirm('Confirmer cette réservation ?')">
+                                        ✅ Approuver
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
+                               class="rc-btn rc-btn-danger"
+                               onclick="return confirm('Confirmer la suppression ?')">
+                               Supprimer
+                            </a>
+                        </div>
                     </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 
-                   {# Footer: Actions #}
-<div class="rc-footer">
-  <!--  <a href="{{ path('reservation_show', { id: reservation.idReservation }) }}" class="rc-btn rc-btn-primary">
-        Voir détails
-    </a> -->
+    {# ── Sidebar: Statistics & Chart ── #}
+    <div class="sidebar-stats">
+        
+        <div class="sidebar-chart-card">
+            <h3>📊 Status Overview</h3>
+            
+            <div style="height: 220px; position: relative;">
+                {{ render_chart(statusChart) }}
+            </div>
 
-    {% if reservation.statut|lower != 'confirmée' %}
-        <form method="POST" action="{{ path('reservation_approve', { id: reservation.idReservation }) }}" style="display:inline;">
-            <input type="hidden" name="_token" value="{{ csrf_token('approve_resa_' ~ reservation.idReservation) }}">
-            <button type="submit" class="rc-btn rc-btn-success"
-                    onclick="return confirm('Confirmer cette réservation ?')">
-                ✅ Approuver
-            </button>
-        </form>
-    {% endif %}
-
-    <a href="{{ path('reservation_delete', { id: reservation.idReservation }) }}"
-       class="rc-btn rc-btn-danger"
-       onclick="return confirm('Confirmer la suppression ?')">
-       Supprimer
-    </a>
-</div>
-
+            <div class="chart-legend" style="margin-top: 20px;">
+                <div class="chart-legend-item">
+                    <span class="legend-dot" style="background: #4ba3a1;"></span>
+                    <span>Confirmée: <strong>{{ stats.conf }}</strong></span>
                 </div>
-            {% endfor %}
+                <div class="chart-legend-item">
+                    <span class="legend-dot" style="background: #f6c750;"></span>
+                    <span>En attente: <strong>{{ stats.pend }}</strong></span>
+                </div>
+                <div class="chart-legend-item">
+                    <span class="legend-dot" style="background: #ff6b6b;"></span>
+                    <span>Annulée: <strong>{{ stats.canc }}</strong></span>
+                </div>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                <div class="chart-legend-item">
+                    <span>Total Reservations: <strong>{{ stats.total }}</strong></span>
+                </div>
+            </div>
         </div>
-    {% endif %}
 
+        {# Additional Info Card #}
+        <div class="sidebar-chart-card" style="background: linear-gradient(135deg, #183c75 0%, #0d1e3a 100%); color: white;">
+            <h3 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">💡 Quick Tip</h3>
+            <p style="font-size: 13px; opacity: 0.9; line-height: 1.6;">
+                Use the search bar above to filter reservations by service name or customer identifier. 
+                Pending reservations require manual approval to be confirmed.
+            </p>
+        </div>
+
+    </div>
+
+</div>
 {% endblock %}
+

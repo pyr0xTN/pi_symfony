@@ -22,6 +22,8 @@ use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Core\ProductionEnvironment;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
+use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
+use Symfony\UX\Chartjs\Model\Chart;
 
 
 #[Route('/reservation')]
@@ -31,6 +33,7 @@ class ReservationController extends AbstractController
         private EntityManagerInterface $em,
         private ReservationsRepository $reservationsRepo,
         private ServicesRepository     $servicesRepo,
+        private ChartBuilderInterface  $chartBuilder,
     ) {}
 
 
@@ -42,9 +45,45 @@ class ReservationController extends AbstractController
             ? $this->reservationsRepo->findBySearch($search)
             : $this->reservationsRepo->findAll();
 
+        // ── Stats Calculation ──
+        $conf  = 0;
+        $pend  = 0;
+        $canc  = 0;
+        foreach ($reservations as $r) {
+            $st = strtolower($r->getStatut());
+            if ($st === 'confirmée' || $st === 'confirmed') $conf++;
+            elseif ($st === 'en attente' || $st === 'pending') $pend++;
+            elseif ($st === 'annulée' || $st === 'cancelled') $canc++;
+        }
+
+        // ── Status Chart ──
+        $chart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
+        $chart->setData([
+            'labels' => ['Confirmée', 'En attente', 'Annulée'],
+            'datasets' => [
+                [
+                    'backgroundColor' => ['#4ba3a1', '#f6c750', '#ff6b6b'], // teal, yellow, red
+                    'data' => [$conf, $pend, $canc],
+                ],
+            ],
+        ]);
+        $chart->setOptions([
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => ['display' => false], // Custom legend in HTML
+            ],
+        ]);
+
         return $this->render('reservation/index.html.twig', [
             'active_page'  => 'reservations',
             'reservations' => $reservations,
+            'statusChart'  => $chart,
+            'stats' => [
+                'total' => count($reservations),
+                'conf'  => $conf,
+                'pend'  => $pend,
+                'canc'  => $canc,
+            ],
         ]);
     }
 
