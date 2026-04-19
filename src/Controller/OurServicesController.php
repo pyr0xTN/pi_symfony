@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Repository\ServicesRepository;
+use App\Service\AiSearchService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,14 +20,33 @@ class OurServicesController extends AbstractController
     public function __construct(
         private ServicesRepository $servicesRepo,
         private PaginatorInterface $paginator,
+        private AiSearchService $aiSearchService
     ) {}
-
 
     #[Route('', name: 'ourservices_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $search   = $request->query->get('q', '');
-        $qb       = $this->servicesRepo->findAllQueryBuilder($search);
+        $aiQuery = $request->query->get('ai_q', '');
+        $search  = $request->query->get('q', '');
+        
+        $aiFilters = null;
+        $qb = null;
+
+        if (!empty($aiQuery)) {
+            // User requested an AI Smart Search
+            $aiFilters = $this->aiSearchService->extractFilters($aiQuery);
+            
+            if ($aiFilters) {
+                // Determine query based on AI extraction
+                $qb = $this->servicesRepo->findWithAiQueryBuilder($aiFilters);
+            } else {
+                // Fallback to normal search if AI failed or API key missing
+                $qb = $this->servicesRepo->findAllQueryBuilder($aiQuery);
+            }
+        } else {
+            // Normal fallback
+            $qb = $this->servicesRepo->findAllQueryBuilder($search);
+        }
 
         $pagination = $this->paginator->paginate(
             $qb,
@@ -37,8 +57,8 @@ class OurServicesController extends AbstractController
         return $this->render('ourservices/index.html.twig', [
             'active_page' => 'ourservices',
             'pagination'  => $pagination,
+            'aiQuery'     => $aiQuery,
+            'aiFilters'   => $aiFilters,
         ]);
     }
-
-
 }

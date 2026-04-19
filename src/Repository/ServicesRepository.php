@@ -57,4 +57,41 @@ class ServicesRepository extends ServiceEntityRepository
 
         return $qb->orderBy('s.nom', 'ASC');
     }
+
+    public function findWithAiQueryBuilder(array $filters): \Doctrine\ORM\QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('s');
+
+        if (!empty($filters['type'])) {
+            $qb->andWhere('s.type = :type')
+               ->setParameter('type', strtolower($filters['type']));
+        }
+
+        if (!empty($filters['localisation'])) {
+            $qb->andWhere('LOWER(s.localisation) LIKE :loc OR LOWER(s.ville_arrivee) LIKE :loc')
+               ->setParameter('loc', '%' . strtolower($filters['localisation']) . '%');
+        }
+
+        if (!empty($filters['ville_depart'])) {
+            $qb->andWhere('LOWER(s.ville_depart) LIKE :vdepart')
+               ->setParameter('vdepart', '%' . strtolower($filters['ville_depart']) . '%');
+        }
+
+        if (!empty($filters['ville_arrivee'])) {
+            $qb->andWhere('LOWER(s.ville_arrivee) LIKE :varrivee OR LOWER(s.localisation) LIKE :varrivee')
+               ->setParameter('varrivee', '%' . strtolower($filters['ville_arrivee']) . '%');
+        }
+
+        if (!empty($filters['nombre_etoiles'])) {
+            $qb->andWhere('s.nombre_etoiles >= :etoiles')
+               ->setParameter('etoiles', (int) $filters['nombre_etoiles']);
+        }
+
+        if (!empty($filters['max_prix'])) {
+            $qb->andWhere('s.prix <= :max_prix')
+               ->setParameter('max_prix', (float) $filters['max_prix']);
+        }
+
+        return $qb->orderBy('s.nom', 'ASC');
+    }
 }
