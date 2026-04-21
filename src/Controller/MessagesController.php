@@ -16,6 +16,7 @@ use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Repository\ConversationRepository;
 use App\Repository\ParticipantConversationRepository;
 use OpenAI\Client;
+use Knp\Bundle\TimeBundle\DateTimeFormatter;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -160,7 +161,8 @@ class MessagesController extends AbstractController
     public function fetchMessages(
         Conversation $conversation,
         MessagesRepository $repo,
-        ParticipantConversationRepository $pcRepo
+        ParticipantConversationRepository $pcRepo,
+        DateTimeFormatter $dateTimeFormatter
     ): JsonResponse {
         /** @var User $user */
         $user = $this->getUser();
@@ -185,7 +187,7 @@ class MessagesController extends AbstractController
             $data[] = [
                 'id' => $msg->getId(),
                 'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
-                'time' => $msg->getDateEnvoi()->format('H:i'),
+                'time' => $dateTimeFormatter->formatDiff($msg->getDateEnvoi()), 
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
                 'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu(),

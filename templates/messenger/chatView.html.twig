@@ -2,7 +2,7 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-											══════════════════════════════════ -->
+												══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -45,7 +45,7 @@
 							</span>
 							{# Heure en Teal si hasUnread #}
 							<span class="conv-time {{ hasUnread ? 'conv-time--unread' : '' }}">
-								{{ lastMsg ? lastMsg.dateEnvoi|date('H:i') : conv.dateCreation|date('H:i') }}
+								{{ lastMsg ? lastMsg.dateEnvoi|ago : conv.dateCreation|ago }}
 							</span>
 						</div>
 						<div class="conv-row-bottom">
@@ -72,8 +72,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-											 RIGHT MAIN AREA
-											 ══════════════════════════════════ -->
+												 RIGHT MAIN AREA
+												 ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -109,8 +109,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-																				         CHAT INTERFACE																																																							        
-																						 ══════════════════════════════════ -->
+																						         CHAT INTERFACE																																																							        
+																								 ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -231,8 +231,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-						OVERLAY + MODALS
-						══════════════════════════════════ -->
+							OVERLAY + MODALS
+							══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
