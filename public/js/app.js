@@ -4,37 +4,10 @@
    ═══════════════════════════════════════════════════════════════ */
 
 // ── Dark Mode Toggle ──────────────────────────────────────────
-function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme') || 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('rehletna-theme', next);
 
-    // Update toggle button text
-    document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-        btn.textContent = next === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-    });
-    document.querySelectorAll('.theme-toggle-nav').forEach(btn => {
-        btn.textContent = next === 'dark' ? '☀️' : '🌙';
-    });
-}
 
 // Apply saved theme on load
-(function () {
-    const saved = localStorage.getItem('rehletna-theme');
-    if (saved) {
-        document.documentElement.setAttribute('data-theme', saved);
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-                btn.textContent = saved === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode';
-            });
-            document.querySelectorAll('.theme-toggle-nav').forEach(btn => {
-                btn.textContent = saved === 'dark' ? '☀️' : '🌙';
-            });
-        });
-    }
-})();
+
 
 // ── Like Toggle (AJAX) ───────────────────────────────────────
 function toggleLike(publicationId) {
@@ -340,3 +313,21 @@ function escapeHtml(text) {
         document.addEventListener('keydown', onKey);
     }
 })();
+
+// ── Weather Badges Load ──────────────────────────────────────────
+function loadWeatherBadges() {
+    document.querySelectorAll('.weather-badge').forEach(badge => {
+        if (badge.dataset.loaded || !badge.dataset.place) return;
+        badge.dataset.loaded = 'true';
+        fetch('/api/weather/' + encodeURIComponent(badge.dataset.place))
+            .then(r => r.json())
+            .then(data => {
+                if (data && !data.error) {
+                    badge.innerHTML = `${data.emoji} ${data.formattedTemp}`;
+                    badge.style.display = 'inline-flex';
+                }
+            }).catch(() => {});
+    });
+}
+document.addEventListener('DOMContentLoaded', loadWeatherBadges);
+document.addEventListener('turbo:load', loadWeatherBadges);

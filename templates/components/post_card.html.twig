@@ -8,6 +8,7 @@
             <span class="post-meta">{{ post.timeAgo }}</span>
             {% if post.hasPlace %}
                 <span class="post-place-tag">📍 {{ post.place }}</span>
+                <span class="weather-badge" data-place="{{ post.place|url_encode }}" id="weatherBadge-{{ post.id }}" style="display:none"></span>
             {% endif %}
         </div>
         <div class="post-menu">
