@@ -47,3 +47,20 @@ If not set, Symfony defaults to `http://127.0.0.1:8001`.
 - The service uses OpenCV Haar face detection + handcrafted texture embeddings.
 - Match threshold is currently `0.82` in Symfony and `/compare`.
 - Re-enroll users once after this update, since old raw image blobs are ignored.
+
+## DeepSeek image analysis (AI Guide)
+
+To let AI Guide describe the uploaded photo and suggest when to visit, set:
+
+```powershell
+$env:DEEPSEEK_API_KEY = "your_deepseek_api_key"
+```
+
+Optional settings:
+
+```powershell
+$env:DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
+$env:DEEPSEEK_VISION_MODEL = "deepseek-chat"
+```
+
+If no DeepSeek key is configured, the service falls back to local OpenCV analysis.

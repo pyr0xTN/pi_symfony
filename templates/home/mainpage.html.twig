@@ -1059,6 +1059,140 @@
             z-index: 1;
         }
 
+        .birthday-gift-banner {
+            margin-bottom: 18px;
+            padding: 18px 20px;
+            border-radius: 22px;
+            background:
+                radial-gradient(260px 120px at 10% 0%, rgba(255, 238, 188, 0.78), transparent 70%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 232, 0.84));
+            border: 1px solid rgba(252, 186, 48, 0.42);
+            box-shadow: 0 16px 30px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.84);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+            animation: birthdayGiftIntro 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .birthday-gift-banner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.16) 62%, rgba(255, 255, 255, 0.02));
+            pointer-events: none;
+        }
+
+        .birthday-gift-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-size: 2rem;
+            background: linear-gradient(135deg, rgba(252, 186, 48, 0.24), rgba(10, 160, 159, 0.18));
+            border: 1px solid rgba(252, 186, 48, 0.38);
+        }
+
+        .birthday-gift-content {
+            position: relative;
+            z-index: 1;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .birthday-gift-kicker {
+            margin: 0 0 4px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9b5d00;
+        }
+
+        .birthday-gift-title {
+            margin: 0 0 6px;
+            color: #173e63;
+            font-size: clamp(1.15rem, 2vw, 1.45rem);
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .birthday-gift-text {
+            margin: 0;
+            color: #51667a;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .birthday-gift-action {
+            position: relative;
+            z-index: 1;
+            flex: 0 0 auto;
+        }
+
+        .birthday-gift-btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 13px 18px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, #0AA09F 0%, #07396B 100%);
+            box-shadow: 0 10px 22px rgba(7, 57, 107, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .birthday-gift-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(7, 57, 107, 0.28);
+            filter: brightness(1.04);
+        }
+
+        .birthday-gift-btn.is-collected,
+        .birthday-gift-btn:disabled {
+            background: linear-gradient(135deg, #9fb5c7 0%, #6f879c 100%);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        @keyframes birthdayGiftIntro {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .birthday-gift-banner {
+                animation: none;
+            }
+        }
+
+        body.dark-mode .birthday-gift-banner {
+            background:
+                radial-gradient(260px 120px at 10% 0%, rgba(252, 186, 48, 0.18), transparent 70%),
+                linear-gradient(135deg, rgba(12, 26, 42, 0.94), rgba(16, 40, 61, 0.92));
+            border-color: rgba(252, 186, 48, 0.38);
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        body.dark-mode .birthday-gift-title,
+        body.dark-mode .birthday-gift-text {
+            color: #e7f3ff;
+        }
+
+        body.dark-mode .birthday-gift-kicker {
+            color: #ffd27e;
+        }
+
         .trust-metrics {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1770,6 +1904,54 @@
         $(document).ready(function() {
             initializeAirportParallax();
 
+            function updateProfileCoinsValue(coins) {
+                const $coinsValue = $('[data-profile-coins-value]');
+                if ($coinsValue.length) {
+                    $coinsValue.text(String(coins));
+                }
+            }
+
+            $(document).on('submit', '.birthday-gift-form', function (event) {
+                event.preventDefault();
+
+                const $form = $(this);
+                const $button = $form.find('.birthday-gift-btn');
+                const originalText = $button.text();
+
+                if ($button.prop('disabled')) {
+                    return;
+                }
+
+                $button.prop('disabled', true).text('Collecting...');
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (response) {
+                        if (response && response.success) {
+                            updateProfileCoinsValue(response.coins);
+                            $form.closest('.birthday-gift-banner').fadeOut(220, function () {
+                                $(this).remove();
+                            });
+                            return;
+                        }
+
+                        $button.prop('disabled', false).text(originalText);
+                        alert((response && response.message) ? response.message : 'Unable to collect birthday gift.');
+                    },
+                    error: function (xhr) {
+                        $button.prop('disabled', false).text(originalText);
+                        const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Unable to collect birthday gift.';
+                        alert(message);
+                    }
+                });
+            });
+
             function initializeAirportParallax() {
                 const airportBackground = document.querySelector('.airport-background');
                 if (!airportBackground) {
@@ -2271,13 +2453,18 @@
                 $.ajax({
                     url: '{{ path('app_unread_count') }}',
                     type: 'GET',
+                    dataType: 'json',
                     success: function(response) {
-                        const count = response.unreadCount;
+                        const rawCount = response && (response.unreadCount ?? response.unread_count ?? 0);
+                        const count = Number(rawCount || 0);
                         if (count > 0) {
                             $('.chat-badge').text(count > 99 ? '99+' : count).show();
                         } else {
                             $('.chat-badge').hide();
                         }
+                    },
+                    error: function() {
+                        $('.chat-badge').hide();
                     }
                 });
             }
@@ -2694,6 +2881,8 @@
                     window.location.href = '{{ path('app_guide_dashboard') }}';
                 } else if (action === 'reservations') {
                     window.location.href = '{{ path('app_reservations') }}';
+                } else if (action === 'face-id-enroll') {
+                    window.location.href = '{{ path('app_face_id_enroll_page') }}';
                 } else if (action === 'my-reservations') {
                     window.location.href = '{{ path('app_my_reservations') }}';
                 } else if (action === 'my-orders') {
@@ -2751,7 +2940,8 @@
             {% if is_granted('ROLE_GUIDE') %}
                 <button class="side-menu-btn" data-action="guide-dashboard">👤 {{ 'main.menu.guide_dashboard'|trans }}</button>
             {% endif %}
-            
+
+            <button class="side-menu-btn" data-action="face-id-enroll">🫥 Face ID Scan</button>
             <button class="side-menu-btn" data-action="my-reservations">👤 {{ 'main.menu.my_reservations'|trans }}</button>
             <button class="side-menu-btn" data-action="my-orders">🧾 {{ 'main.menu.my_orders'|trans }}</button>
             <button class="side-menu-btn" data-action="reservations">💻 {{ 'main.menu.reservations'|trans }}</button>
@@ -2833,7 +3023,6 @@
                 <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
                 <button class="nav-tab" data-view="activities">🏞 {{ 'main.tab.activities'|trans }}</button>
                 <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
-                <button class="nav-tab" data-view="ai-guide">🤖 {{ 'main.tab.ai_guide'|trans }}</button>
                 <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
                 <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
                 <button class="nav-tab" data-view="post">✉️ Posts</button>
@@ -2844,6 +3033,27 @@
             
             <!-- Content Area -->
             <div class="content-area">
+                {% if birthdayGift and birthdayGift.showBanner %}
+                    <section class="birthday-gift-banner" aria-label="Birthday gift">
+                        <div class="birthday-gift-icon" aria-hidden="true">🎁</div>
+                        <div class="birthday-gift-content">
+                            <p class="birthday-gift-kicker">Happy Birthday {{ app.user.name|default(app.user.username) }}</p>
+                            <h2 class="birthday-gift-title">You have a birthday gift waiting for you</h2>
+                            <p class="birthday-gift-text">Collect 7 coins for your birthday and enjoy the day. This gift is available now.</p>
+                        </div>
+                        <div class="birthday-gift-action">
+                            {% if birthdayGift.canCollect %}
+                                        <form method="post" action="{{ path('app_collect_birthday_gift') }}" class="birthday-gift-form">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('birthday-gift-collect') }}">
+                                    <button type="submit" class="birthday-gift-btn">Collect this gift</button>
+                                </form>
+                            {% else %}
+                                <button type="button" class="birthday-gift-btn is-collected" disabled>Collected</button>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+
                 <div class="welcome-section">
                     <h1 class="welcome-title">{{ 'main.welcome.title'|trans }}</h1>
                     <p class="welcome-subtitle">{{ 'main.welcome.subtitle'|trans }}</p>
@@ -2859,11 +3069,6 @@
                         <div class="feature-icon">🛒</div>
                         <div class="feature-title">{{ 'main.feature.shop.title'|trans }}</div>
                         <div class="feature-text">{{ 'main.feature.shop.text'|trans }}</div>
-                    </a>
-                    <a href="{{ path('app_ai_guide') }}" class="feature-card">
-                        <div class="feature-icon">🤖</div>
-                        <div class="feature-title">{{ 'main.feature.ai_guide.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.ai_guide.text'|trans }}</div>
                     </a>
                     <a href="#" class="feature-card" onclick="showChatPopup(); return false;">
                         <div class="feature-icon">💬</div>
@@ -2944,7 +3149,7 @@
             </div>
             <div class="popup-row">
                 <span class="popup-label">{{ 'main.popup.coins'|trans }}</span>
-                <span class="popup-value">{{ profile.coins|default(0) }}</span>
+                <span class="popup-value" data-profile-coins-value>{{ profile.coins|default(0) }}</span>
             </div>
             <div class="popup-row">
                 <span class="popup-label">{{ 'main.popup.rate'|trans }}</span>

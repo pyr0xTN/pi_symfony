@@ -6,6 +6,7 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ConversationRepository;
 use App\Repository\UserRepository;
+use App\BirthdayRewardBundle\Service\BirthdayRewardService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
@@ -27,6 +29,8 @@ class HomeController extends AbstractController
     private const CHAT_EDIT_MARKER = "\n[edited]";
     private const CHAT_DELETED_MARKER = '[deleted]';
     private const CHAT_ATTACHMENT_PREFIX = '[attachment]:';
+    private const CHAT_OFFLINE_AUTO_REPLY = 'We got your message. We will reply as soon as possible.';
+    private const CHAT_OFFLINE_AUTO_REPLY_SENDER = 'rehltna.tn';
 
     #[Route('/', name: 'app_home')]
     #[Route('/home', name: 'app_home_home')]
@@ -209,7 +213,7 @@ class HomeController extends AbstractController
 
     #[Route('/panel/face-id/capture', name: 'app_panel_capture_face_id', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function captureFaceId(Request $request, Connection $connection): JsonResponse
+    public function captureFaceId(Request $request, Connection $connection, HttpClientInterface $httpClient, SessionInterface $session): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User || $user->getId() === null) {
@@ -221,7 +225,12 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Invalid payload'], Response::HTTP_BAD_REQUEST);
         }
 
+        $step = (int) ($payload['step'] ?? 1);
         $imageDataUrl = (string) ($payload['imageData'] ?? '');
+        $firstImageData = (string) ($payload['firstImageData'] ?? '');
+        $firstEmbeddingKey = 'face_id_capture_first_embedding';
+        $validationSkippedKey = 'face_id_capture_validation_skipped';
+
         if ($imageDataUrl === '' || !str_starts_with($imageDataUrl, 'data:image/')) {
             return $this->json(['success' => false, 'error' => 'Missing face image'], Response::HTTP_BAD_REQUEST);
         }
@@ -237,16 +246,181 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Image decode failed'], Response::HTTP_BAD_REQUEST);
         }
 
-        $connection->executeStatement(
-            'UPDATE `user` SET face_data = ? WHERE id = ?',
-            [$binaryImage, (int) $user->getId()],
-            [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
-        );
+        $faceApiUrl = trim((string) ($_ENV['FACE_ID_API_URL'] ?? $_SERVER['FACE_ID_API_URL'] ?? getenv('FACE_ID_API_URL') ?: ''));
+        if ($faceApiUrl === '') {
+            $faceApiUrl = 'http://127.0.0.1:8001';
+        }
+
+        $validationSkipped = false;
+
+        // Validate first capture
+        try {
+            $extractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
+                'json' => ['image_data' => $imageDataUrl],
+                'headers' => ['Accept' => 'application/json'],
+                'timeout' => 10.0,
+            ]);
+
+            $status = $extractResponse->getStatusCode();
+            if ($status === 400) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'No clear face detected. Keep eyes and mouth visible, then retry.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if ($status >= 400) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'Face service failed to validate this image.',
+                ], Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            $extractPayload = $extractResponse->toArray(false);
+            if (!isset($extractPayload['embedding']) || !is_array($extractPayload['embedding']) || $extractPayload['embedding'] === []) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'Face validation failed. Please retry in better lighting.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $currentEmbedding = $extractPayload['embedding'];
+        } catch (\Throwable $exception) {
+            $validationSkipped = true;
+            $currentEmbedding = null;
+        }
+
+        // Step 1: Return first capture as success and prompt for second
+        if ($step === 1) {
+            $session->set($validationSkippedKey, $validationSkipped);
+            $session->set($firstEmbeddingKey, $currentEmbedding);
+
+            return $this->json([
+                'success' => true,
+                'step' => 1,
+                'message' => 'First face captured. Now take a second photo to confirm.',
+                'nextStep' => 2,
+                'validationSkipped' => $validationSkipped,
+            ]);
+        }
+
+        // Step 2: Compare with first capture
+        if ($step === 2) {
+            $stepOneValidationSkipped = (bool) $session->get($validationSkippedKey, false);
+            $firstEmbedding = $session->get($firstEmbeddingKey);
+
+            if ($stepOneValidationSkipped) {
+                $session->remove($firstEmbeddingKey);
+                $session->remove($validationSkippedKey);
+
+                $connection->executeStatement(
+                    'UPDATE `user` SET face_data = ? WHERE id = ?',
+                    [$binaryImage, (int) $user->getId()],
+                    [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
+                );
+
+                return $this->json([
+                    'success' => true,
+                    'step' => 2,
+                    'message' => 'Face data saved successfully. Validation was limited, but your second photo was stored.',
+                    'similarity' => null,
+                    'validationSkipped' => true,
+                ]);
+            }
+
+            if (!is_array($firstEmbedding) || $firstEmbedding === []) {
+                if ($firstImageData === '' || !str_starts_with($firstImageData, 'data:image/')) {
+                    return $this->json([
+                        'success' => false,
+                        'error' => 'Missing first scan. Start over and capture again.',
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+
+                try {
+                    $firstExtractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
+                        'json' => ['image_data' => $firstImageData],
+                        'headers' => ['Accept' => 'application/json'],
+                        'timeout' => 15.0,
+                    ]);
+
+                    $firstStatus = $firstExtractResponse->getStatusCode();
+                    if ($firstStatus >= 400) {
+                        throw new \RuntimeException('First image extraction failed');
+                    }
+
+                    $firstExtractPayload = $firstExtractResponse->toArray(false);
+                    if (!isset($firstExtractPayload['embedding']) || !is_array($firstExtractPayload['embedding']) || $firstExtractPayload['embedding'] === []) {
+                        throw new \RuntimeException('First image embedding extraction failed');
+                    }
+
+                    $firstEmbedding = $firstExtractPayload['embedding'];
+                    $session->set($firstEmbeddingKey, $firstEmbedding);
+                } catch (\Throwable $exception) {
+                    return $this->json([
+                        'success' => false,
+                        'error' => 'Could not validate first photo for comparison. Start over and try again.',
+                    ], Response::HTTP_SERVICE_UNAVAILABLE);
+                }
+            }
+
+            // Compare embeddings
+            if (!$validationSkipped && $currentEmbedding && $firstEmbedding) {
+                try {
+                    $compareResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/compare', [
+                        'json' => [
+                            'probe_embedding' => $currentEmbedding,
+                            'stored_embedding' => $firstEmbedding,
+                        ],
+                        'headers' => ['Accept' => 'application/json'],
+                        'timeout' => 10.0,
+                    ]);
+
+                    if ($compareResponse->getStatusCode() >= 400) {
+                        throw new \RuntimeException('Comparison failed');
+                    }
+
+                    $comparePayload = $compareResponse->toArray(false);
+                    $similarity = (float) ($comparePayload['similarity'] ?? 0.0);
+
+                    if ($similarity < 0.92) {
+                        return $this->json([
+                            'success' => false,
+                            'error' => 'Photos do not match. They must be the same face. Please start over.',
+                            'similarity' => $similarity,
+                        ], Response::HTTP_BAD_REQUEST);
+                    }
+                } catch (\Throwable $exception) {
+                    return $this->json([
+                        'success' => false,
+                        'error' => 'Face comparison service is unavailable. Please try again later.',
+                    ], Response::HTTP_SERVICE_UNAVAILABLE);
+                }
+            }
+
+            // Comparison passed (or validation skipped); use second image as the one to save
+            $session->remove($firstEmbeddingKey);
+            $session->remove($validationSkippedKey);
+
+            $connection->executeStatement(
+                'UPDATE `user` SET face_data = ? WHERE id = ?',
+                [$binaryImage, (int) $user->getId()],
+                [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
+            );
+
+            return $this->json([
+                'success' => true,
+                'step' => 2,
+                'message' => $validationSkipped
+                    ? 'Face data saved. Validation was skipped because Python face service is offline.'
+                    : 'Face data saved successfully. Both photos matched!',
+                'validationSkipped' => $validationSkipped,
+            ]);
+        }
 
         return $this->json([
-            'success' => true,
-            'message' => 'Face data captured successfully.',
-        ]);
+            'success' => false,
+            'error' => 'Invalid step parameter.',
+        ], Response::HTTP_BAD_REQUEST);
     }
 
     #[Route('/panel/profile-summary', name: 'app_panel_profile_summary', methods: ['GET'])]
@@ -327,12 +501,13 @@ class HomeController extends AbstractController
 
     #[Route('/mainpage', name: 'app_mainpage')]
     #[IsGranted('ROLE_USER')]
-    public function mainpage(Request $request, Connection $connection): Response
+    public function mainpage(Request $request, Connection $connection, BirthdayRewardService $birthdayRewardService): Response
     {
         $user = $this->getUser();
         $profile = null;
         $visionAccessibleMode = (bool) $request->getSession()->get('vision_accessible_mode', false);
         $visionTheme = (string) $request->getSession()->get('vision_theme', 'default');
+        $birthdayGift = null;
 
         if ($user instanceof User) {
             $defaults = [
@@ -385,6 +560,7 @@ class HomeController extends AbstractController
             }
 
             $profile = $profile ? array_merge($defaults, $profile) : $defaults;
+            $birthdayGift = $birthdayRewardService->buildBirthdayGiftState($user, $request->getSession(), $connection);
 
             // Handle BLOB image conversion to base64
             if (!empty($profile['image'])) {
@@ -427,6 +603,7 @@ class HomeController extends AbstractController
             'profile' => $profile,
             'visionAccessibleMode' => $visionAccessibleMode,
             'visionTheme' => $visionTheme,
+            'birthdayGift' => $birthdayGift,
         ]);
     }
 
@@ -775,6 +952,56 @@ class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/birthday-gift/collect', name: 'app_collect_birthday_gift', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function collectBirthdayGift(Request $request, Connection $connection, BirthdayRewardService $birthdayRewardService): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            return $this->redirectToRoute('app_login');
+        }
+
+        if (!$this->isCsrfTokenValid('birthday-gift-collect', (string) $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Invalid birthday gift request.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'Invalid birthday gift request.');
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        $result = $birthdayRewardService->collectBirthdayGift($user, $request->getSession(), $connection);
+        if (!$result['success']) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json([
+                    'success' => false,
+                    'message' => (string) ($result['message'] ?? 'Birthday gift is not available.'),
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', (string) ($result['message'] ?? 'Birthday gift is not available.'));
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'message' => (string) $result['message'],
+                'awarded' => (int) $result['awarded'],
+                'coins' => (int) $result['coins'],
+                'showBanner' => false,
+            ]);
+        }
+
+        $this->addFlash('success', sprintf('Happy birthday! You received %d coins.', (int) $result['awarded']));
+
+        return $this->redirectToRoute('app_mainpage');
+    }
+
     private function fetchOrCreateProfileRow(Connection $connection, int $userId): ?array
     {
         $row = $connection->executeQuery(
@@ -1014,17 +1241,21 @@ class HomeController extends AbstractController
     public function unreadCount(Connection $connection): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['unreadCount' => 0]);
+        if (!$user instanceof User || $user->getId() === null) {
+            return $this->json(['unreadCount' => 0, 'unread_count' => 0]);
         }
 
-        $unreadCount = (int) $connection->fetchOne(
-            'SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0',
-            [$user->getId()],
-            [ParameterType::INTEGER]
-        );
+        try {
+            $unreadCount = (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0',
+                [(int) $user->getId()],
+                [ParameterType::INTEGER]
+            );
+        } catch (\Throwable $exception) {
+            $unreadCount = 0;
+        }
         
-        return $this->json(['unreadCount' => $unreadCount]);
+        return $this->json(['unreadCount' => $unreadCount, 'unread_count' => $unreadCount]);
     }
 
     #[Route('/chat/messages', name: 'app_chat_messages', methods: ['GET'])]
@@ -1149,6 +1380,10 @@ class HomeController extends AbstractController
             $parsedPayload = $this->parseChatMessagePayload($rawMessage);
             $isDeleted = $parsedPayload['isDeleted'];
             $isEdited = $parsedPayload['isEdited'];
+
+            if (!$isDeleted && $parsedPayload['text'] === self::CHAT_OFFLINE_AUTO_REPLY) {
+                $senderName = self::CHAT_OFFLINE_AUTO_REPLY_SENDER;
+            }
 
             $isMine = $senderId === $userId;
             $deliveryState = null;
@@ -1301,6 +1536,13 @@ class HomeController extends AbstractController
                 [$adminIds, '', 'online'],
                 [ArrayParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING]
             );
+
+            if ($onlineAdminCount === 0) {
+                $botAdminId = $this->resolveSupportAdminId($connection, $senderId);
+                if ($botAdminId !== null) {
+                    $this->sendOfflineAutoReply($connection, $botAdminId, $senderId, $conversationId, $now);
+                }
+            }
 
             return $this->json([
                 'success' => true,
@@ -2851,6 +3093,27 @@ class HomeController extends AbstractController
         }
 
         return (int) $adminIds[0];
+    }
+
+    private function sendOfflineAutoReply(
+        Connection $connection,
+        int $adminId,
+        int $userId,
+        string $conversationId,
+        string $timestamp
+    ): void {
+        $connection->executeStatement(
+            'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+             VALUES (?, ?, ?, ?, 0, ?)',
+            [$adminId, $userId, self::CHAT_OFFLINE_AUTO_REPLY, $timestamp, $conversationId],
+            [
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ]
+        );
     }
 
     private function fetchAdminSupportConversations(Connection $connection, int $adminId): array

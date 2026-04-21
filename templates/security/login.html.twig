@@ -561,6 +561,19 @@
             color: white;
             border: none;
         }
+
+        #faceIdLoginBtn {
+            color: #ffffff;
+            border: 1px solid rgba(10, 160, 159, 0.34);
+            background: linear-gradient(135deg, #0ca7a4 0%, #0a6888 100%);
+            box-shadow: 0 8px 18px rgba(6, 92, 127, 0.24);
+        }
+
+        #faceIdLoginBtn:hover {
+            color: #ffffff;
+            border-color: rgba(252, 186, 48, 0.62);
+            background: linear-gradient(135deg, #0a9997 0%, #095b79 100%);
+        }
         
         .qr-btn:hover {
             color: white;
@@ -1802,7 +1815,8 @@
 
             if (faceIdLoginBtn) {
                 faceIdLoginBtn.addEventListener('click', () => {
-                    openFaceScanner();
+                    showPageLoader('Opening Face ID scanner...');
+                    window.location.assign('{{ path('app_login_face_id_page') }}');
                 });
             }
 
