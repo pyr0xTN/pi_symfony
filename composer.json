@@ -10,6 +10,9 @@
         "doctrine/doctrine-bundle": "^2.18",
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.6",
+        "knplabs/knp-time-bundle": "^2.5",
+        "nyholm/psr7": "^1.8",
+        "openai-php/client": "^0.19.1",
         "phpdocumentor/reflection-docblock": "^5.6.7",
         "phpstan/phpdoc-parser": "^2.3",
         "symfony/asset": "6.4.*",
@@ -103,5 +106,11 @@
         "symfony/maker-bundle": "^1.0",
         "symfony/stopwatch": "6.4.*",
         "symfony/web-profiler-bundle": "6.4.*"
+    },
+    "repositories": {
+        "packagist": {
+            "type": "composer",
+            "url": "https://repo.packagist.org"
+        }
     }
 }

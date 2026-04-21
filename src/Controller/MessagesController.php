@@ -15,6 +15,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use App\Repository\ConversationRepository;
 use App\Repository\ParticipantConversationRepository;
+use OpenAI\Client;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -284,5 +285,41 @@ class MessagesController extends AbstractController
         }
 
         return $this->json(['images' => $images, 'files' => $files]);
+    }
+
+    #[Route('/suggest/{id}', name: 'app_message_suggest', methods: ['GET'])]
+    public function suggestReplies(
+        Conversation $conversation,
+        MessagesRepository $msgRepo,
+        Client $client
+    ): JsonResponse {
+        // 1. On récupère les 5 derniers messages pour que l'IA comprenne de quoi on parle
+        $history = $msgRepo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'DESC'], 5);
+        $history = array_reverse($history);
+
+        $chatContext = "";
+        foreach ($history as $m) {
+            $author = $m->getIdExpediteur() === $this->getUser() ? "Moi" : "L'autre";
+            $chatContext .= "$author : " . $m->getContenu() . "\n";
+        }
+        try {
+            $prompt = "Tu es un assistant de chat. Voici les derniers messages :\n$chatContext\nPropose 3 réponses courtes et naturelles (3 mots max) séparées par des points-virgules. Réponds UNIQUEMENT les 3 suggestions.";
+
+            $result = $client->chat()->create([
+                'model' => 'llama-3.1-8b-instant', // <--- NOUVEAU NOM DU MODÈLE ICI
+                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'max_tokens' => 40
+            ]);
+
+            $suggestionsText = $result->choices[0]->message->content;
+            // Nettoyage final (enlève les guillemets ou points inutiles)
+            $cleanSuggestions = array_map(function ($s) {
+                return trim(str_replace(['"', '.', '1', '2', '3'], '', $s));
+            }, $suggestionsText ? explode(';', $suggestionsText) : []);
+
+            return new JsonResponse(['suggestions' => array_slice($cleanSuggestions, 0, 3)]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['debug_error' => $e->getMessage(), 'suggestions' => []]);
+        }
     }
 }

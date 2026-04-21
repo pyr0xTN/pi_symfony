@@ -2,7 +2,7 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-						══════════════════════════════════ -->
+											══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -72,8 +72,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-						 RIGHT MAIN AREA
-						 ══════════════════════════════════ -->
+											 RIGHT MAIN AREA
+											 ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -109,8 +109,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-										         CHAT INTERFACE																																																							        
-												 ══════════════════════════════════ -->
+																				         CHAT INTERFACE																																																							        
+																						 ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -171,7 +171,10 @@
 					<span>Today</span>
 				</div>
 			</div>
-
+			<!-- Barre de suggestions d'IA -->
+			<div
+				id="ai-suggestions-bar" style="display:none; gap:8px; padding:10px 18px; overflow-x:auto; background:white; border-top:1px solid var(--border);"><!-- Les bulles seront injectées ici par JS -->
+			</div>
 			<!-- INPUT AREA (fixed height, no shrink) -->
 			<div class="chat-input-area" id="chat-input-block">
 				<div class="chat-input-wrap">
@@ -228,8 +231,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-	OVERLAY + MODALS
-	══════════════════════════════════ -->
+						OVERLAY + MODALS
+						══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
@@ -2501,6 +2504,28 @@
 		background: rgba(255, 255, 255, 0.4);
 		transform: rotate(90deg);
 	}
+
+	.suggestion-pill {
+		background: var(--teal-light);
+		color: var(--teal);
+		border: 1px solid var(--teal-mid);
+		padding: 6px 15px;
+		border-radius: 20px;
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		transition: 0.2s;
+		outline: none;
+	}
+	.suggestion-pill:hover {
+		background: var(--teal);
+		color: white;
+		transform: translateY(-2px);
+	}
+	#ai-suggestions-bar::-webkit-scrollbar {
+		display: none;
+	}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2632,6 +2657,7 @@
                 noticeBlock.style.display = 'flex';
                 if(leaveBtn) leaveBtn.style.display = 'none'; // On ne peut pas quitter deux fois
             }
+			loadAISuggestions(id); 
 	            loadMessages(id);
 				if (document.getElementById('media-panel').style.display !== 'none') {
                     loadMediaHistory(id);
@@ -3596,6 +3622,38 @@ function handleLeaveGroup() {
                 if (sideItem) sideItem.remove();*/
             }
         });
+}
+
+function loadAISuggestions(convId) {
+    const bar = document.getElementById('ai-suggestions-bar');
+    if (!bar) return;
+
+    fetch(`/api/messages/suggest/${convId}`)
+        .then(res => res.json())
+        .then(data => {
+            bar.innerHTML = ''; // On vide
+            if (data.suggestions && data.suggestions.length > 0) {
+                data.suggestions.forEach(text => {
+                    const btn = document.createElement('button');
+                    btn.className = 'suggestion-pill';
+                    btn.textContent = text;
+                    btn.onclick = () => {
+                        document.getElementById('message-input').value = text;
+                        sendMessage(); // Envoi auto
+                        bar.style.display = 'none';
+                    };
+                    bar.appendChild(btn);
+                });
+                bar.style.display = 'flex';
+            }
+        });
+}
+
+function sendQuickMsg(text) {
+    const input = document.getElementById('message-input');
+    input.value = text;
+    sendMessage(); // Appelle ta fonction d'envoi existante
+    document.getElementById('ai-suggestions-bar').style.display = 'none';
 }
 </script>
  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
