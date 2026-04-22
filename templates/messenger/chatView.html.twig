@@ -2,7 +2,7 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-												══════════════════════════════════ -->
+																	══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -72,8 +72,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-												 RIGHT MAIN AREA
-												 ══════════════════════════════════ -->
+																	 RIGHT MAIN AREA
+																	 ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -109,8 +109,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-																						         CHAT INTERFACE																																																							        
-																								 ══════════════════════════════════ -->
+																																         CHAT INTERFACE																																																							        
+																																		 ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -214,6 +214,14 @@
 						</div>
 					</div>
 				</div>
+				<!-- Bouton Micro -->
+				<button class="input-action-btn" id="voice-record-btn" title="Record voice message" onclick="toggleVoiceRecording()">
+					<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2" id="mic-icon">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+					</svg>
+					<!-- Indicateur d'enregistrement (caché par défaut) -->
+					<span id="recording-dot" style="display:none; width:10px; height:10px; background:red; border-radius:50%; position:absolute; top:5px; right:5px; animation: pulse 1s infinite;"></span>
+				</button>
 				<button class="send-btn" onclick="sendMessage()" title="Send">
 					<svg fill="none" viewbox="0 0 24 24" stroke="currentColor" stroke-width="2">
 						<path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
@@ -231,8 +239,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-							OVERLAY + MODALS
-							══════════════════════════════════ -->
+												OVERLAY + MODALS
+												══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
@@ -2526,6 +2534,67 @@
 	#ai-suggestions-bar::-webkit-scrollbar {
 		display: none;
 	}
+
+	@keyframes pulse {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.5);
+			opacity: 0.5;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
+	.is-recording {
+		color: red !important;
+		background: rgba(255, 0, 0, 0.1) !important;
+	}
+
+	.msg-voice-wrapper {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		min-width: 250px;
+		padding: 5px 0;
+	}
+
+	.voice-play-btn {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		border: none;
+		background: var(--teal);
+		color: white;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.voice-waveform {
+		flex: 1;
+		height: 30px;
+	}
+
+	.voice-duration {
+		font-size: 11px;
+		color: var(--muted);
+		min-width: 30px;
+	}
+
+	/* Couleurs adaptées si c'est MON message */
+	.message.mine .voice-play-btn {
+		background: white;
+		color: var(--brand);
+	}
+	.message.mine .voice-duration {
+		color: rgba(255, 255, 255, 0.8);
+	}
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -2929,6 +2998,20 @@ function loadMessages(id) {
                                 displayContent = "📍 Localisation partagée";
                           }
                             break;
+						case 'AUDIO':
+                            const audioUrl = `/uploads/messages/${m.filePath}`;
+                                displayContent = `
+                                    <div class="msg-voice-wrapper">
+                                        <button class="voice-play-btn" onclick="playVoice(this, '${audioUrl}', ${m.id})">
+                                            <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>
+                                        </button>
+                                        <div id="waveform-${m.id}" class="voice-waveform"></div>
+                                        <span class="voice-duration" id="duration-${m.id}">...</span>
+                                    </div>`;
+    
+                                // On initialise l'onde après un court délai pour que le HTML soit rendu
+                                setTimeout(() => initWaveform(m.id, audioUrl), 50);
+                                break;
                         default:
                             displayContent = escapeHtml(m.content);
                     }
@@ -3655,5 +3738,121 @@ function sendQuickMsg(text) {
     sendMessage(); // Appelle ta fonction d'envoi existante
     document.getElementById('ai-suggestions-bar').style.display = 'none';
 }
+
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+function toggleVoiceRecording() {
+    if (!isRecording) {
+        startRecording();
+    } else {
+        stopRecording();
+    }
+}
+
+function startRecording() {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+            
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                sendVoiceMessage(audioBlob);
+                // Arrêter le micro
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+            
+            // Mise à jour UI
+            document.getElementById('voice-record-btn').classList.add('is-recording');
+            document.getElementById('recording-dot').style.display = 'block';
+            document.getElementById('message-input').placeholder = "Recording voice...";
+        })
+        .catch(err => alert("Veuillez autoriser le micro."));
+}
+
+function stopRecording() {
+    if (mediaRecorder) {
+        mediaRecorder.stop();
+        isRecording = false;
+        
+        // Mise à jour UI
+        document.getElementById('voice-record-btn').classList.remove('is-recording');
+        document.getElementById('recording-dot').style.display = 'none';
+        document.getElementById('message-input').placeholder = "Type a message...";
+    }
+}
+
+function sendVoiceMessage(blob) {
+    if (!currentConversationId) return;
+
+    const formData = new FormData();
+    // On transforme le Blob en fichier pour Symfony
+    const file = new File([blob], "voice_message.webm", { type: 'audio/webm' });
+    
+    formData.append('file', file);
+    formData.append('conversationId', currentConversationId);
+
+    fetch('/api/messages/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            loadMessages(currentConversationId);
+        }
+    })
+    .catch(err => console.error("Erreur envoi vocal :", err));
+}
+
+const wavesurfers = {}; // Pour stocker les instances
+
+function initWaveform(id, url) {
+    if (wavesurfers[id]) return; // Éviter les doublons
+
+    const ws = WaveSurfer.create({
+        container: `#waveform-${id}`,
+        waveColor: '#A0AEC0',
+        progressColor: '#1eb2a6',
+        cursorWidth: 0,
+        height: 30,
+        barWidth: 2,
+        barGap: 3,
+        barRadius: 3,
+        url: url,
+    });
+
+    ws.on('ready', () => {
+        const duration = ws.getDuration();
+        document.getElementById(`duration-${id}`).textContent = formatTime(duration);
+    });
+
+    wavesurfers[id] = ws;
+}
+
+function playVoice(btn, url, id) {
+    const ws = wavesurfers[id];
+    if (ws) {
+        ws.playPause();
+        const isPlaying = ws.isPlaying();
+        btn.innerHTML = isPlaying 
+            ? '<svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' 
+            : '<svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M8 5v14l11-7z"/></svg>';
+    }
+}
+
+function formatTime(s) {
+    const mins = Math.floor(s / 60);
+    const secs = Math.floor(s % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}
 </script>
  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
+ <script src="https://unpkg.com/wavesurfer.js@7"></script>

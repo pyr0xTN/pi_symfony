@@ -122,7 +122,7 @@ class MessagesController extends AbstractController
 
         if (str_starts_with($mimeType, 'image/')) {
             $type = TypeMessage::IMAGE;
-        } elseif (str_starts_with($mimeType, 'audio/')) {
+        } elseif (str_starts_with($mimeType, 'audio/') || $file->guessExtension() === 'webm') {
             $type = TypeMessage::AUDIO;
         }
 
