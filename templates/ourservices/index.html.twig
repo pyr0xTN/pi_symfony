@@ -91,7 +91,7 @@
                                 <span class="badge badge-pill" style="background-color: #f1c40f; color: #333; padding: 8px 15px; font-size: 0.9rem;">⭐ {{ aiFilters.nombre_etoiles }} Stars+</span>
                             {% endif %}
                             {% if aiFilters.max_prix %}
-                                <span class="badge badge-pill" style="background-color: #27ae60; color: white; padding: 8px 15px; font-size: 0.9rem;">💰 Max {{ aiFilters.max_prix }} TND</span>
+                                <span class="badge badge-pill" style="background-color: #27ae60; color: white; padding: 8px 15px; font-size: 0.9rem;">💰 Max {{ aiFilters.max_prix | format_currency | raw }}</span>
                             {% endif %}
                             {% if aiFilters.ville_depart %}
                                 <span class="badge badge-pill" style="background-color: #1f2b5b; color: white; padding: 8px 15px; font-size: 0.9rem;">🛫 {{ aiFilters.ville_depart|capitalize }}</span>
@@ -215,7 +215,7 @@
                                 </p>
 
                                 <div class="card-footer px-0 pt-3">
-                                    <span class="card-price">{{ service.prix }} <small>TND</small></span>
+                                    <span class="card-price">{{ service.prix | format_currency | raw }}</span>
                                     <span class="card-capacity">👥 {{ service.capacite }}</span>
                                 </div>
 

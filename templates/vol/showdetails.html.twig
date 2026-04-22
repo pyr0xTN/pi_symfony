@@ -92,8 +92,8 @@
                 <p class="detail-location">✈️ {{ vol.villeDepart }} → {{ vol.villeArrivee }}</p>
             </div>
             <div class="detail-price-box">
-                <span class="detail-price">{{ vol.prix }}</span>
-                <span class="detail-price-label">TND / personne</span>
+                <span class="detail-price">{{ vol.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ personne</span>
             </div>
         </div>
 

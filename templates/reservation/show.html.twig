@@ -70,7 +70,7 @@
                 </div>
                 <div class="rsd-detail-row">
                     <span class="rsd-label">Prix</span>
-                    <span class="rsd-value rsd-price">{{ reservation.idService.prix }} TND</span>
+                    <span class="rsd-value rsd-price">{{ reservation.idService.prix | format_currency | raw }}</span>
                 </div>
                 {% if reservation.idService.type == 'hotel' %}
                     <div class="rsd-detail-row">

@@ -97,8 +97,8 @@
                 </p>
             </div>
             <div class="detail-price-box">
-                <span class="detail-price">{{ hotel.prix }}</span>
-                <span class="detail-price-label">TND / nuit</span>
+                <span class="detail-price">{{ hotel.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ nuit</span>
             </div>
         </div>
 

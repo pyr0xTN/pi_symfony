@@ -82,7 +82,7 @@
                             </p>
 
                             <div class="card-footer">
-                                <span class="card-price">{{ service.prix }} <small>TND</small></span>
+                                <span class="card-price">{{ service.prix | format_currency | raw }}</span>
                                 <span class="card-capacity">👥 {{ service.capacite }}</span>
                             </div>
 
