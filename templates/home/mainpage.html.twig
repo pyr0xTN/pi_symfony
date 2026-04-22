@@ -3352,8 +3352,9 @@
                 <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
                 <button class="nav-tab" data-view="activities">🏞 {{ 'main.tab.activities'|trans }}</button>
                 <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
-                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
-                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+<button class="nav-tab" type="button" onclick="window.location.href='{{ path('app_offer_index') }}'">
+    🔖 {{ 'main.tab.offers'|trans }}
+</button>                  <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
                 <button class="nav-tab" data-view="post">✉️ Posts</button>
                 {% if is_granted('ROLE_ADMIN') %}
                     <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
