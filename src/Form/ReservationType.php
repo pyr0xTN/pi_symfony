@@ -2,12 +2,10 @@
 
 namespace App\Form;
 
-use App\Entity\Reservations;
+use App\Entity\Reservation;
 use Symfony\Component\Form\AbstractType;
-use Symfony\Component\Form\Extension\Core\Type\DateType;
-use Symfony\Component\Form\Extension\Core\Type\HiddenType;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -17,64 +15,41 @@ class ReservationType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('nom', TextType::class, [
-                'label'       => 'Nom du Client',
-                'attr'        => ['readonly' => true],
+            ->add('numberOfPersons', IntegerType::class, [
+                'label' => 'Number of Persons',
+                'attr' => [
+                    'class' => 'form-control app-input',
+                    'min' => 1,
+                    'max' => $options['max_capacity'],
+                    'placeholder' => '1',
+                ],
                 'constraints' => [
-                    new Assert\NotBlank(message: 'Le nom du client est obligatoire.'),
-                    new Assert\Length(
-                        min: 2,
-                        max: 50,
-                        minMessage: 'Le nom doit contenir au moins {{ limit }} caractères.',
-                        maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'
+                    new Assert\NotBlank(message: 'Please enter the number of persons.'),
+                    new Assert\Range(
+                        min: 1,
+                        max: $options['max_capacity'],
+                        notInRangeMessage: 'Must be between 1 and {{ max }} persons.',
                     ),
                 ],
             ])
-            ->add('dateReservation', DateType::class, [
-                'label'       => 'Date de Réservation',
-                'widget'      => 'single_text',
-                'invalid_message' => 'La date est invalide.',
-                'attr'        => ['readonly' => true],
-                'empty_data'     => null,
-                'constraints' => [
-                    new Assert\NotNull(message: 'La date de réservation est obligatoire.'),
-                    new Assert\NotBlank(message: 'La date de réservation est obligatoire.'),
-                ],
-            ])
-            ->add('modePaiement', ChoiceType::class, [
-                'label'   => 'Mode de Paiement',
-                'choices' => [
-                    'Espèces (Cash)' => 'cash',
-                    'Carte Bancaire (Stripe)' => 'stripe',
-                    'PayPal' => 'paypal',
-                ],
-                'placeholder' => 'Choisir un mode...',
-                'constraints' => [
-                    new Assert\NotBlank(message: 'Le mode de paiement est obligatoire.'),
-                ],
-            ])
-        ;
-
-        if ($options['service_type'] === 'vol') {
-            $builder->add('siege', HiddenType::class, [
-                'mapped'      => false,   
-                'required'    => true,
-                'constraints' => [
-                    new Assert\NotBlank(message: 'Veuillez sélectionner un siège.'),
-                    new Assert\NotNull(message: 'Veuillez sélectionner un siège.'),
+            ->add('specialRequest', TextareaType::class, [
+                'label' => 'Special Requests',
+                'required' => false,
+                'attr' => [
+                    'class' => 'form-control app-input',
+                    'rows' => 3,
+                    'placeholder' => 'Dietary requirements, accessibility needs, room preferences...',
                 ],
             ]);
-        }
-    
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
-            'data_class'   => Reservations::class,
-            'service_type' => 'hotel',   
+            'data_class' => Reservation::class,
+            'max_capacity' => 100,
         ]);
 
-        $resolver->setAllowedValues('service_type', ['hotel', 'vol']);
+        $resolver->setAllowedTypes('max_capacity', 'int');
     }
 }

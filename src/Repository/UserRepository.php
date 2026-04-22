@@ -19,8 +19,6 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         parent::__construct($registry, User::class);
     }
 
-    // src/Repository/UserRepository.php
-
     public function findAllExceptMe(int $id): array
     {
         return $this->createQueryBuilder('u')
@@ -29,6 +27,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->getQuery()
             ->getResult();
     }
+
 
     /**
      * Used to upgrade (rehash) the user's password automatically over time.
@@ -67,6 +66,15 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
             ->groupBy('u.id')
             ->orderBy('purchaseCount', 'DESC')
             ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+    public function findByRole(string $role): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.role = :role')
+            ->setParameter('role', $role)
+            ->orderBy('u.name', 'ASC')
             ->getQuery()
             ->getResult();
     }
