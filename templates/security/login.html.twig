@@ -176,6 +176,24 @@
             cursor: not-allowed;
         }
 
+        .google-login-btn {
+            border: 1px solid rgba(15, 89, 145, 0.18);
+            border-radius: 11px;
+            background: #ffffff;
+            color: #234565;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 18px rgba(7, 57, 107, 0.1);
+        }
+
+        .google-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(7, 57, 107, 0.14);
+            border-color: rgba(15, 89, 145, 0.28);
+            color: #1e3d5a;
+        }
+
         .validation-message {
             min-height: 18px;
             margin-top: 6px;
@@ -1010,6 +1028,10 @@
                         <button type="button" class="btn biometric-btn w-100 mb-4">
                             <i class="fas fa-fingerprint me-2"></i>Login with Fingerprint
                         </button>
+
+                        <a href="{{ path('app_login_google') }}" class="btn google-login-btn w-100 mb-4" data-no-loader="true">
+                            <i class="fab fa-google me-2"></i>Login with Gmail
+                        </a>
                         
                         <div class="divider mb-4">
                             <span>OR</span>

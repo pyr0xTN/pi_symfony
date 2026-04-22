@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Http\Authentication\UserAuthenticatorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -58,6 +59,155 @@ class SecurityController extends AbstractController
     public function register(): Response
     {
         return $this->redirectToRoute('app_login', ['view' => 'signup']);
+    }
+
+    #[Route(path: '/login/google', name: 'app_login_google', methods: ['GET'])]
+    public function loginWithGoogle(Request $request): Response
+    {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        $clientId = trim((string) ($_ENV['GOOGLE_OAUTH_CLIENT_ID'] ?? $_SERVER['GOOGLE_OAUTH_CLIENT_ID'] ?? getenv('GOOGLE_OAUTH_CLIENT_ID') ?: ''));
+        if ($clientId === '') {
+            $this->addFlash('error', 'Google login is not configured yet. Ask admin to set GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $state = bin2hex(random_bytes(16));
+        $request->getSession()->set('google_oauth_state', $state);
+
+        $redirectUri = $this->generateUrl('connect_google_check', [], UrlGeneratorInterface::ABSOLUTE_URL);
+        $query = http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'openid email profile',
+            'state' => $state,
+            'prompt' => 'select_account',
+        ]);
+
+        return $this->redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
+    }
+
+    #[Route(path: '/connect/google/check', name: 'connect_google_check', methods: ['GET'])]
+    public function loginWithGoogleCallback(
+        Request $request,
+        HttpClientInterface $httpClient,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager,
+        UserPasswordHasherInterface $passwordHasher,
+        UserAuthenticatorInterface $userAuthenticator,
+        LoginFormAuthenticator $formAuthenticator
+    ): Response {
+        if ($this->getUser()) {
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        $expectedState = (string) $request->getSession()->get('google_oauth_state', '');
+        $actualState = (string) $request->query->get('state', '');
+        $request->getSession()->remove('google_oauth_state');
+
+        if ($expectedState === '' || $actualState === '' || !hash_equals($expectedState, $actualState)) {
+            $this->addFlash('error', 'Google login was rejected (invalid state). Please try again.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $authCode = trim((string) $request->query->get('code', ''));
+        if ($authCode === '') {
+            $this->addFlash('error', 'Google login was canceled or failed.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $clientId = trim((string) ($_ENV['GOOGLE_OAUTH_CLIENT_ID'] ?? $_SERVER['GOOGLE_OAUTH_CLIENT_ID'] ?? getenv('GOOGLE_OAUTH_CLIENT_ID') ?: ''));
+        $clientSecret = trim((string) ($_ENV['GOOGLE_OAUTH_CLIENT_SECRET'] ?? $_SERVER['GOOGLE_OAUTH_CLIENT_SECRET'] ?? getenv('GOOGLE_OAUTH_CLIENT_SECRET') ?: ''));
+        $redirectUri = $this->generateUrl('connect_google_check', [], UrlGeneratorInterface::ABSOLUTE_URL);
+
+        if ($clientId === '' || $clientSecret === '') {
+            $this->addFlash('error', 'Google login credentials are missing on server.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        try {
+            $tokenResponse = $httpClient->request('POST', 'https://oauth2.googleapis.com/token', [
+                'body' => [
+                    'code' => $authCode,
+                    'client_id' => $clientId,
+                    'client_secret' => $clientSecret,
+                    'redirect_uri' => $redirectUri,
+                    'grant_type' => 'authorization_code',
+                ],
+                'timeout' => 12,
+            ]);
+
+            $tokenData = $tokenResponse->toArray(false);
+            $accessToken = trim((string) ($tokenData['access_token'] ?? ''));
+            if ($accessToken === '') {
+                throw new \RuntimeException('Missing Google access token');
+            }
+
+            $userinfoResponse = $httpClient->request('GET', 'https://www.googleapis.com/oauth2/v3/userinfo', [
+                'headers' => [
+                    'Authorization' => 'Bearer ' . $accessToken,
+                ],
+                'timeout' => 12,
+            ]);
+
+            $googleUser = $userinfoResponse->toArray(false);
+        } catch (\Throwable $exception) {
+            $this->addFlash('error', 'Google login failed. Please try again.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $email = mb_strtolower(trim((string) ($googleUser['email'] ?? '')));
+        $emailVerified = (bool) ($googleUser['email_verified'] ?? false);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !$emailVerified) {
+            $this->addFlash('error', 'Google account email is not verified or invalid.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        $user = $userRepository->findByEmail($email);
+        if (!$user instanceof User) {
+            $givenName = trim((string) ($googleUser['given_name'] ?? ''));
+            $familyName = trim((string) ($googleUser['family_name'] ?? ''));
+            $fullName = trim((string) ($googleUser['name'] ?? ''));
+
+            if ($givenName === '' && $fullName !== '') {
+                $parts = preg_split('/\s+/', $fullName, 2) ?: [];
+                $givenName = trim((string) ($parts[0] ?? 'Google'));
+                $familyName = trim((string) ($parts[1] ?? 'User'));
+            }
+
+            if ($givenName === '') {
+                $givenName = 'Google';
+            }
+            if ($familyName === '') {
+                $familyName = 'User';
+            }
+
+            $emailLocalPart = strstr($email, '@', true);
+            $baseUsername = $this->buildGoogleUsernameBase($emailLocalPart ?: 'google_user');
+            $uniqueUsername = $this->buildUniqueUsername($userRepository, $baseUsername);
+
+            $user = new User();
+            $user->setEmail($email);
+            $user->setName(mb_substr($givenName, 0, 25));
+            $user->setLastName(mb_substr($familyName, 0, 25));
+            $user->setUsername($uniqueUsername);
+            $user->setRole('USER');
+            $randomPassword = bin2hex(random_bytes(16));
+            $user->setPassword($passwordHasher->hashPassword($user, $randomPassword));
+
+            $entityManager->persist($user);
+            $entityManager->flush();
+        }
+
+        if ($user->isBlocked()) {
+            $this->addFlash('error', 'You got blocked in this site from admin.');
+            return $this->redirectToRoute('app_login');
+        }
+
+        return $userAuthenticator->authenticateUser($user, $formAuthenticator, $request);
     }
 
     #[Route(path: '/forgot-password', name: 'app_forgot_password', methods: ['GET', 'POST'])]
@@ -666,6 +816,34 @@ class SecurityController extends AbstractController
         }
 
         return $decoded;
+    }
+
+    private function buildGoogleUsernameBase(string $seed): string
+    {
+        $normalized = strtolower(trim($seed));
+        $normalized = preg_replace('/[^a-z0-9._-]/', '_', $normalized) ?? 'google_user';
+        $normalized = trim($normalized, '._-');
+        if ($normalized === '') {
+            $normalized = 'google_user';
+        }
+
+        return mb_substr($normalized, 0, 18);
+    }
+
+    private function buildUniqueUsername(UserRepository $userRepository, string $base): string
+    {
+        $candidate = $base;
+        $suffix = 1;
+
+        while ($userRepository->findOneBy(['username' => $candidate]) instanceof User) {
+            $candidate = mb_substr($base, 0, 18) . '_' . $suffix;
+            if (mb_strlen($candidate) > 25) {
+                $candidate = mb_substr($candidate, 0, 25);
+            }
+            $suffix++;
+        }
+
+        return $candidate;
     }
 
     private function computeFaceSimilarity(string $firstImageBinary, string $secondImageBinary): ?float

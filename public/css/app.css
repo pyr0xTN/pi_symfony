@@ -1019,12 +1019,24 @@ img { max-width: 100%; height: auto; }
     color: white;
 }
 .chat-panel-title { font-weight: 700; font-size: 14px; }
+.chat-panel-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-call-btn,
 .chat-close-btn {
     background: rgba(255,255,255,0.2); border: none;
     color: white; width: 28px; height: 28px;
     border-radius: var(--radius-full);
     cursor: pointer; font-size: 14px;
     display: flex; align-items: center; justify-content: center;
+}
+
+.chat-call-btn:hover,
+.chat-close-btn:hover {
+    background: rgba(255,255,255,0.3);
 }
 
 .chat-messages {

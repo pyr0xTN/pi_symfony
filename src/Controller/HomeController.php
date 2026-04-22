@@ -29,6 +29,7 @@ class HomeController extends AbstractController
     private const CHAT_EDIT_MARKER = "\n[edited]";
     private const CHAT_DELETED_MARKER = '[deleted]';
     private const CHAT_ATTACHMENT_PREFIX = '[attachment]:';
+    private const CHAT_CALL_PREFIX = '[call]:';
     private const CHAT_OFFLINE_AUTO_REPLY = 'We got your message. We will reply as soon as possible.';
     private const CHAT_OFFLINE_AUTO_REPLY_SENDER = 'rehltna.tn';
 
@@ -1271,6 +1272,7 @@ class HomeController extends AbstractController
         $isAdmin = in_array('ROLE_ADMIN', $user->getRoles(), true);
         $activeUserId = null;
         $conversations = [];
+        $admins = [];
         $rows = [];
 
         if ($isAdmin) {
@@ -1325,6 +1327,7 @@ class HomeController extends AbstractController
                 );
             }
         } else {
+            $admins = $this->fetchSupportAdmins($connection, $userId);
             $adminId = $this->resolveSupportAdminId($connection, $userId);
             if ($adminId !== null) {
                 $conversationId = $this->conversationIdForUser($userId);
@@ -1410,6 +1413,7 @@ class HomeController extends AbstractController
                 'isEdited' => $isEdited,
                 'isDeleted' => $isDeleted,
                 'attachment' => $parsedPayload['attachment'],
+                'callSignal' => $parsedPayload['callSignal'],
             ];
         }, $rows);
 
@@ -1418,6 +1422,7 @@ class HomeController extends AbstractController
             'isAdmin' => $isAdmin,
             'activeUserId' => $activeUserId,
             'conversations' => $conversations,
+            'admins' => $admins,
         ]);
     }
 
@@ -1478,6 +1483,8 @@ class HomeController extends AbstractController
             }
         }
 
+        $isCallSignal = $attachment === null && str_starts_with($messagePayload, self::CHAT_CALL_PREFIX);
+
         if ($isAdmin) {
             $targetUserId = (int) $request->request->get('userId', 0);
             if ($targetUserId <= 0) {
@@ -1508,6 +1515,39 @@ class HomeController extends AbstractController
 
             if (empty($adminIds)) {
                 return $this->json(['success' => false, 'error' => 'No admin available'], 404);
+            }
+
+            if ($isCallSignal) {
+                $targetAdminId = (int) $request->request->get('adminId', 0);
+                if ($targetAdminId <= 0 || !in_array($targetAdminId, $adminIds, true)) {
+                    return $this->json(['success' => false, 'error' => 'Choose a valid admin first.'], 400);
+                }
+
+                $conversationId = $this->conversationIdForUser($senderId);
+                $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+                $connection->executeStatement(
+                    'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+                     VALUES (?, ?, ?, ?, 0, ?)',
+                    [$senderId, $targetAdminId, $messagePayload, $now, $conversationId],
+                    [
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                    ]
+                );
+
+                $receiverStatus = $connection->fetchOne(
+                    'SELECT status FROM `user` WHERE id = ? LIMIT 1',
+                    [$targetAdminId],
+                    [ParameterType::INTEGER]
+                );
+
+                return $this->json([
+                    'success' => true,
+                    'deliveryState' => $this->isUserOnlineStatus($receiverStatus) ? 'delivered' : 'sent',
+                ]);
             }
 
             $conversationId = $this->conversationIdForUser($senderId);
@@ -3163,6 +3203,33 @@ class HomeController extends AbstractController
         }, $rows);
     }
 
+    private function fetchSupportAdmins(Connection $connection, int $currentUserId): array
+    {
+        $rows = $connection->executeQuery(
+            'SELECT id, username, name, last_name, status
+             FROM `user`
+             WHERE UPPER(role) IN (?)
+               AND id <> ?
+             ORDER BY CASE WHEN LOWER(COALESCE(status, ?)) = ? THEN 0 ELSE 1 END, id ASC',
+            [['ADMIN', 'ROLE_ADMIN'], $currentUserId, '', 'online'],
+            [ArrayParameterType::STRING, ParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING]
+        )->fetchAllAssociative();
+
+        return array_map(function (array $row): array {
+            $fullName = trim((string) (($row['name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
+            if ($fullName === '') {
+                $fullName = (string) ($row['username'] ?? 'Admin');
+            }
+
+            return [
+                'id' => (int) ($row['id'] ?? 0),
+                'username' => (string) ($row['username'] ?? ''),
+                'name' => $fullName,
+                'isOnline' => $this->isUserOnlineStatus($row['status'] ?? null),
+            ];
+        }, $rows);
+    }
+
     private function isUserOnlineStatus(mixed $status): bool
     {
         if (!is_string($status)) {
@@ -3208,6 +3275,7 @@ class HomeController extends AbstractController
         $isDeleted = $rawMessage === self::CHAT_DELETED_MARKER;
         $isEdited = false;
         $attachment = null;
+        $callSignal = null;
         $text = $rawMessage;
 
         if (!$isDeleted && str_starts_with($rawMessage, self::CHAT_ATTACHMENT_PREFIX)) {
@@ -3225,6 +3293,19 @@ class HomeController extends AbstractController
             }
         }
 
+        if (!$isDeleted && $attachment === null && str_starts_with($rawMessage, self::CHAT_CALL_PREFIX)) {
+            $encoded = substr($rawMessage, strlen(self::CHAT_CALL_PREFIX));
+            $decoded = json_decode($encoded, true);
+            if (is_array($decoded)) {
+                $callSignal = [
+                    'type' => (string) ($decoded['type'] ?? ''),
+                    'room' => (string) ($decoded['room'] ?? ''),
+                    'fromName' => (string) ($decoded['fromName'] ?? ''),
+                ];
+                $text = '';
+            }
+        }
+
         if (!$isDeleted && $attachment === null && str_ends_with($text, self::CHAT_EDIT_MARKER)) {
             $isEdited = true;
             $text = substr($text, 0, -strlen(self::CHAT_EDIT_MARKER));
@@ -3235,6 +3316,7 @@ class HomeController extends AbstractController
             'isEdited' => $isEdited,
             'isDeleted' => $isDeleted,
             'attachment' => $attachment,
+            'callSignal' => $callSignal,
         ];
     }
 

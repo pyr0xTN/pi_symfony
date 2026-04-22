@@ -1416,6 +1416,71 @@
             line-height: 1;
         }
 
+        .chat-modal-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-modal-call {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .chat-modal-call:hover,
+        .chat-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-user-call-picker {
+            width: 100%;
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .chat-user-call-picker select {
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(7, 45, 79, 0.36);
+            color: #eaf7ff;
+            border-radius: 9px;
+            padding: 6px 8px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .chat-user-call-picker select option {
+            color: #143a5e;
+            background: #f4fbff;
+        }
+
+        .chat-user-call-btn {
+            border: none;
+            border-radius: 9px;
+            padding: 6px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .chat-user-call-btn.start {
+            background: rgba(18, 201, 124, 0.86);
+        }
+
+        .chat-user-call-btn.cancel {
+            background: rgba(255, 255, 255, 0.26);
+        }
+
         .chat-modal-messages {
             flex: 1;
             overflow-y: auto;
@@ -1683,6 +1748,51 @@
             display: inline-flex;
             gap: 5px;
             align-items: center;
+        }
+
+        .chat-call-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .chat-message.other .chat-call-card {
+            background: rgba(12, 108, 154, 0.1);
+            border-color: rgba(13, 96, 139, 0.2);
+        }
+
+        .chat-call-title {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .chat-call-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chat-call-action-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chat-call-action-btn.join {
+            background: #0db582;
+            color: #fff;
+        }
+
+        .chat-call-action-btn.decline {
+            background: #f4d9dd;
+            color: #943747;
         }
 
         .chat-attachment-link:hover {
@@ -2478,6 +2588,11 @@
             const $chatStatus = $('#chatStatus');
             const $chatAdminRow = $('#chatAdminConversationRow');
             const $chatAdminSelect = $('#chatAdminConversationSelect');
+            const $chatCallBtn = $('#chatCallBtn');
+            const $chatUserCallPicker = $('#chatUserCallPicker');
+            const $chatUserCallAdminSelect = $('#chatUserCallAdminSelect');
+            const $chatUserCallStartBtn = $('#chatUserCallStartBtn');
+            const $chatUserCallCancelBtn = $('#chatUserCallCancelBtn');
             const $chatAttachBtn = $('#chatAttachBtn');
             const $chatAttachmentInput = $('#chatAttachmentInput');
             const $chatSelectedFile = $('#chatSelectedFile');
@@ -2487,6 +2602,7 @@
             let lastMessagesSignature = '';
             let chatIsAdmin = false;
             let activeChatUserId = 0;
+            let chatSupportAdmins = [];
             let pendingAttachmentFile = null;
             const chatLabels = {
                 you: '{{ 'main.chat.you'|trans }}',
@@ -2503,6 +2619,78 @@
                 emptyUser: '{{ 'main.chat.empty_user'|trans }}',
                 attachmentSelected: '{{ 'main.chat.attachment_selected'|trans }}'
             };
+            const chatCurrentUserId = Number('{{ app.user.id|default(0) }}') || 0;
+            const chatCallerName = '{{ app.user.fullName|default(app.user.username)|e('js') }}';
+            const chatCallBase = 'rehletna-support';
+            const chatCallPrefix = '[call]:';
+
+            function buildSupportCallRoom() {
+                if (chatIsAdmin) {
+                    if (activeChatUserId <= 0) {
+                        return '';
+                    }
+
+                    return chatCallBase + '-u' + String(activeChatUserId);
+                }
+
+                return chatCurrentUserId > 0
+                    ? chatCallBase + '-u' + String(chatCurrentUserId)
+                    : chatCallBase;
+            }
+
+            function sendCallSignal(signal, options) {
+                const payload = new FormData();
+                payload.append('message', chatCallPrefix + JSON.stringify(signal));
+
+                if (options && options.userId) {
+                    payload.append('userId', String(options.userId));
+                }
+
+                if (options && options.adminId) {
+                    payload.append('adminId', String(options.adminId));
+                }
+
+                return $.ajax({
+                    url: '{{ path('app_chat_send') }}',
+                    type: 'POST',
+                    data: payload,
+                    processData: false,
+                    contentType: false
+                });
+            }
+
+            function openSupportCall() {
+                $chatStatus.text('');
+
+                if (chatIsAdmin) {
+                    const room = buildSupportCallRoom();
+                    if (!room || activeChatUserId <= 0) {
+                        $chatStatus.text('Choose a user conversation first.');
+                        return;
+                    }
+
+                    sendCallSignal(
+                        { type: 'invite', room: room, fromName: chatCallerName },
+                        { userId: activeChatUserId }
+                    ).done(function () {
+                        $chatStatus.text('Call invitation sent to user.');
+                        loadChatMessages();
+                    }).fail(function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : 'Unable to send call invitation.');
+                    });
+
+                    return;
+                }
+
+                if (!Array.isArray(chatSupportAdmins) || chatSupportAdmins.length === 0) {
+                    $chatStatus.text('No admin available to call right now.');
+                    return;
+                }
+
+                $chatUserCallPicker.show();
+                $chatUserCallAdminSelect.trigger('focus');
+            }
 
             function clearSelectedAttachment() {
                 pendingAttachmentFile = null;
@@ -2540,6 +2728,8 @@
                     return;
                 }
 
+                $chatUserCallPicker.hide();
+
                 const conversations = Array.isArray(response.conversations) ? response.conversations : [];
                 const nextActive = Number(response.activeUserId || activeChatUserId || 0);
                 activeChatUserId = Number.isFinite(nextActive) ? nextActive : 0;
@@ -2573,6 +2763,32 @@
                 }
             }
 
+            function renderUserCallAdmins(response) {
+                if (chatIsAdmin) {
+                    $chatUserCallPicker.hide();
+                    chatSupportAdmins = [];
+                    return;
+                }
+
+                const admins = Array.isArray(response.admins) ? response.admins : [];
+                chatSupportAdmins = admins;
+                if (admins.length === 0) {
+                    $chatUserCallPicker.hide();
+                    $chatUserCallAdminSelect.html('<option value="">No admin available</option>');
+                    return;
+                }
+
+                const options = admins.map(function (admin) {
+                    const id = Number(admin.id || 0);
+                    const username = String(admin.username || 'admin');
+                    const name = String(admin.name || username);
+                    const dot = admin.isOnline ? '●' : '○';
+                    return '<option value="' + id + '">' + dot + ' ' + escapeHtml(name) + ' (@' + escapeHtml(username) + ')</option>';
+                }).join('');
+
+                $chatUserCallAdminSelect.html(options);
+            }
+
             function renderChatMessages(messages) {
                 if (!Array.isArray(messages) || messages.length === 0) {
                     const emptyText = chatIsAdmin
@@ -2593,10 +2809,12 @@
                     const sideClass = msg.isMine ? 'mine' : 'other';
                     const senderLabel = msg.isMine ? chatLabels.you : escapeHtml(msg.senderName || msg.senderUsername || chatLabels.admin);
                     const timeLabel = escapeHtml(msg.timestamp || '');
+                    const callSignal = msg.callSignal && typeof msg.callSignal === 'object' ? msg.callSignal : null;
                     const content = msg.isDeleted ? escapeHtml(chatLabels.deleted) : escapeHtml(msg.message || '');
                     const contentClass = msg.isDeleted ? 'chat-message-content deleted' : 'chat-message-content';
                     const attachment = msg.attachment && typeof msg.attachment === 'object' ? msg.attachment : null;
                     let attachmentHtml = '';
+                    let callHtml = '';
                     if (!msg.isDeleted && attachment && attachment.url) {
                         const fileUrl = escapeHtml(attachment.url);
                         const fileName = escapeHtml(attachment.name || 'attachment');
@@ -2613,10 +2831,48 @@
                             `;
                         }
                     }
+
+                    if (!msg.isDeleted && !attachment && callSignal && callSignal.type) {
+                        const room = escapeHtml(callSignal.room || '');
+                        if (callSignal.type === 'invite') {
+                            if (msg.isMine) {
+                                callHtml = `
+                                    <div class="chat-call-card">
+                                        <div class="chat-call-title">Call invitation sent.</div>
+                                        <div class="chat-call-actions">
+                                            <button class="chat-call-action-btn join chat-call-join" data-room="${room}">Join</button>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                callHtml = `
+                                    <div class="chat-call-card">
+                                        <div class="chat-call-title">Incoming call from ${senderLabel}</div>
+                                        <div class="chat-call-actions">
+                                            <button class="chat-call-action-btn join chat-call-join" data-room="${room}" data-sender-id="${msg.senderId}">Join</button>
+                                            <button class="chat-call-action-btn decline chat-call-decline" data-room="${room}" data-sender-id="${msg.senderId}">Decline</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        } else if (callSignal.type === 'accept') {
+                            callHtml = `
+                                <div class="chat-call-card">
+                                    <div class="chat-call-title">Call accepted.</div>
+                                    <div class="chat-call-actions">
+                                        <button class="chat-call-action-btn join chat-call-join" data-room="${room}">Join</button>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (callSignal.type === 'decline') {
+                            callHtml = '<div class="chat-call-card"><div class="chat-call-title">Call declined.</div></div>';
+                        }
+                    }
+
                     const status = msg.isMine ? deliveryBadge(msg.deliveryState || (msg.isRead ? 'seen' : 'sent')) : '';
                     const editedTag = msg.isEdited ? ' • ' + escapeHtml(chatLabels.edited) : '';
                     const metaTail = (status ? ' • ' + status : '') + editedTag;
-                    const canEdit = msg.isMine && !msg.isDeleted && !attachment;
+                    const canEdit = msg.isMine && !msg.isDeleted && !attachment && !callSignal;
                     const actionHtml = canEdit
                         ? `<div class="chat-message-actions">
                                <button class="chat-action-btn chat-action-edit" data-message-id="${msg.id}" data-message-text="${escapeHtml(msg.message || '')}" title="${escapeHtml(chatLabels.edit)}">✎</button>
@@ -2631,7 +2887,7 @@
 
                     return `
                         <div class="chat-message ${sideClass}">
-                            <div class="${contentClass}">${content}</div>
+                            ${callHtml || `<div class="${contentClass}">${content}</div>`}
                             ${attachmentHtml}
                             <div class="chat-message-meta">${senderLabel} • ${timeLabel}${metaTail}</div>
                             ${actionHtml}
@@ -2655,6 +2911,7 @@
                     data: queryData,
                     success: function(response) {
                         renderAdminConversations(response || {});
+                        renderUserCallAdmins(response || {});
                         renderChatMessages(response.messages || []);
                         refreshBadge();
                     },
@@ -2691,6 +2948,73 @@
             window.showChatPopup = openChatModal;
 
             $('#chatCloseBtn').on('click', closeChatModal);
+            $chatCallBtn.on('click', openSupportCall);
+
+            $chatUserCallStartBtn.on('click', function () {
+                const adminId = Number($chatUserCallAdminSelect.val() || 0);
+                if (adminId <= 0) {
+                    $chatStatus.text('Choose an admin first.');
+                    return;
+                }
+
+                const room = buildSupportCallRoom();
+                sendCallSignal(
+                    { type: 'invite', room: room, fromName: chatCallerName },
+                    { adminId: adminId }
+                ).done(function () {
+                    $chatUserCallPicker.hide();
+                    $chatStatus.text('Call invitation sent to selected admin.');
+                    loadChatMessages();
+                }).fail(function (xhr) {
+                    const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                    $chatStatus.text(payload && payload.error ? payload.error : 'Unable to send call invitation.');
+                });
+            });
+
+            $chatUserCallCancelBtn.on('click', function () {
+                $chatUserCallPicker.hide();
+            });
+
+            $(document).on('click', '.chat-call-join', function () {
+                const room = String($(this).data('room') || '').trim();
+                const senderId = Number($(this).data('senderId') || 0);
+                if (!room) {
+                    return;
+                }
+
+                const meetingUrl = 'https://meet.jit.si/' + encodeURIComponent(room);
+
+                if (senderId <= 0) {
+                    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+                    return;
+                }
+
+                const options = chatIsAdmin ? { userId: senderId } : { adminId: senderId };
+
+                sendCallSignal(
+                    { type: 'accept', room: room, fromName: chatCallerName },
+                    options
+                ).always(function () {
+                    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+                    loadChatMessages();
+                });
+            });
+
+            $(document).on('click', '.chat-call-decline', function () {
+                const room = String($(this).data('room') || '').trim();
+                const senderId = Number($(this).data('senderId') || 0);
+                if (!room || senderId <= 0) {
+                    return;
+                }
+
+                const options = chatIsAdmin ? { userId: senderId } : { adminId: senderId };
+                sendCallSignal(
+                    { type: 'decline', room: room, fromName: chatCallerName },
+                    options
+                ).always(function () {
+                    loadChatMessages();
+                });
+            });
 
             $(document).on('keydown', function(event) {
                 if (event.key === 'Escape') {
@@ -3120,8 +3444,18 @@
                         <option value="">No user conversations</option>
                     </select>
                 </div>
+                <div id="chatUserCallPicker" class="chat-user-call-picker" style="display:none;">
+                    <select id="chatUserCallAdminSelect" aria-label="Choose admin to call">
+                        <option value="">Choose admin</option>
+                    </select>
+                    <button id="chatUserCallStartBtn" type="button" class="chat-user-call-btn start">Call</button>
+                    <button id="chatUserCallCancelBtn" type="button" class="chat-user-call-btn cancel">Cancel</button>
+                </div>
             </div>
-            <button id="chatCloseBtn" class="chat-modal-close" type="button" aria-label="{{ 'main.chat.close'|trans }}">×</button>
+            <div class="chat-modal-actions">
+                <button id="chatCallBtn" class="chat-modal-call" type="button" title="Call Admin/User" aria-label="Call Admin/User">📞</button>
+                <button id="chatCloseBtn" class="chat-modal-close" type="button" aria-label="{{ 'main.chat.close'|trans }}">×</button>
+            </div>
         </div>
         <div id="chatMessages" class="chat-modal-messages">
             <div class="chat-empty">{{ 'main.chat.loading'|trans }}</div>

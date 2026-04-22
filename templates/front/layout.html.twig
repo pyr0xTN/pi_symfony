@@ -53,10 +53,13 @@
         <button class="fab chat-fab-btn" onclick="toggleChatPanel()">✦ Ask Rihla</button>
 
         {# ═══ AI CHAT PANEL ═══ #}
-        <div id="chatPanel" class="chat-panel" style="display:none;">
+        <div id="chatPanel" class="chat-panel" data-call-room="rehletna-admin-support" style="display:none;">
             <div class="chat-panel-header">
                 <span class="chat-panel-title">Rihla — Travel Assistant</span>
-                <button class="chat-close-btn" onclick="toggleChatPanel()">✕</button>
+                <div class="chat-panel-tools">
+                    <button class="chat-call-btn" onclick="startSupportCall()" title="Call Admin" aria-label="Call Admin">📞</button>
+                    <button class="chat-close-btn" onclick="toggleChatPanel()" title="Close chat" aria-label="Close chat">✕</button>
+                </div>
             </div>
             <div id="chatMessages" class="chat-messages">
                 <div class="chat-msg assistant">
