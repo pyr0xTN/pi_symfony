@@ -27,7 +27,7 @@
             {# ── MAIN TEXTAREA ── #}
             <textarea name="content" class="cpd-textarea" rows="5" 
                       placeholder="Share your travel experience..." 
-                      required>{{ post ? post.content : '' }}</textarea>
+                      required minlength="3" maxlength="2000">{{ post ? post.content : '' }}</textarea>
 
             {# ── IMAGE PREVIEW ── #}
             <div id="imagePreviewBox" class="cpd-image-zone" style="{{ post and post.hasImage ? '' : 'display:none' }}">

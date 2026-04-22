@@ -1,13 +1,116 @@
 /* ═══════════════════════════════════════════════════════════════
    Rehletna — Main JavaScript
-   Handles: Likes, Comments, Search, Dark Mode, Chat, Menus
+   Handles: Likes, Comments, Search, Toast, Validation, Chat, Menus
    ═══════════════════════════════════════════════════════════════ */
 
-// ── Dark Mode Toggle ──────────────────────────────────────────
+// ── Toast Notification System ─────────────────────────────────
+function showToast(message, type = 'error') {
+    // Remove existing toast if any
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
 
+    const toast = document.createElement('div');
+    toast.className = `toast-notification toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${type === 'error' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️'}</span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">✕</button>
+    `;
+    document.body.appendChild(toast);
 
-// Apply saved theme on load
+    // Trigger animation
+    requestAnimationFrame(() => toast.classList.add('toast-visible'));
 
+    // Auto-dismiss after 4 seconds
+    setTimeout(() => {
+        toast.classList.remove('toast-visible');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// ── Custom Form Validation ────────────────────────────────────
+function initFormValidation() {
+    document.querySelectorAll('form').forEach(form => {
+        // Skip search forms
+        if (form.classList.contains('search-form')) return;
+        if (form.dataset.validated) return; // prevent double-binding
+        form.dataset.validated = 'true';
+
+        form.setAttribute('novalidate', '');
+
+        // Use capture phase to run BEFORE Turbo's submit handler
+        form.addEventListener('submit', function(e) {
+            const fields = form.querySelectorAll('[required], [minlength], [maxlength], [pattern]');
+            let hasError = false;
+
+            fields.forEach(field => {
+                field.classList.remove('field-error');
+            });
+
+            for (const field of fields) {
+                const label = field.closest('.cpd-field-row')?.querySelector('.cpd-field-icon')?.textContent?.trim()
+                    || field.getAttribute('placeholder')
+                    || field.getAttribute('name')
+                    || 'This field';
+
+                // Required check
+                if (field.hasAttribute('required') && !field.value.trim()) {
+                    field.classList.add('field-error');
+                    if (!hasError) {
+                        showToast(`${label} cannot be empty. Please fill it in.`);
+                        field.focus();
+                        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    hasError = true;
+                    break;
+                }
+
+                // Min length check
+                const minLen = field.getAttribute('minlength');
+                if (minLen && field.value.trim().length < parseInt(minLen)) {
+                    field.classList.add('field-error');
+                    if (!hasError) {
+                        showToast(`${label} must be at least ${minLen} characters long.`);
+                        field.focus();
+                    }
+                    hasError = true;
+                    break;
+                }
+
+                // Max length check
+                const maxLen = field.getAttribute('maxlength');
+                if (maxLen && field.value.trim().length > parseInt(maxLen)) {
+                    field.classList.add('field-error');
+                    if (!hasError) {
+                        showToast(`${label} cannot exceed ${maxLen} characters.`);
+                        field.focus();
+                    }
+                    hasError = true;
+                    break;
+                }
+
+                // Pattern check
+                const pattern = field.getAttribute('pattern');
+                if (pattern && field.value.trim() && !new RegExp(pattern).test(field.value.trim())) {
+                    field.classList.add('field-error');
+                    if (!hasError) {
+                        showToast(`${label} format is invalid. Please check your input.`);
+                        field.focus();
+                    }
+                    hasError = true;
+                    break;
+                }
+            }
+
+            if (hasError) {
+                e.preventDefault();
+                e.stopImmediatePropagation(); // Kill Turbo's fetch cycle
+            }
+        }, true); // true = capture phase, runs before Turbo
+    });
+}
+document.addEventListener('DOMContentLoaded', initFormValidation);
+document.addEventListener('turbo:load', initFormValidation);
 
 // ── Like Toggle (AJAX) ───────────────────────────────────────
 function toggleLike(publicationId) {
@@ -331,3 +434,21 @@ function loadWeatherBadges() {
 }
 document.addEventListener('DOMContentLoaded', loadWeatherBadges);
 document.addEventListener('turbo:load', loadWeatherBadges);
+
+// ── Mood/Sentiment Badges Load ───────────────────────────────────
+function loadMoodBadges() {
+    document.querySelectorAll('.mood-badge').forEach(badge => {
+        if (badge.dataset.loaded || !badge.dataset.postId) return;
+        badge.dataset.loaded = 'true';
+        fetch('/api/sentiment/' + badge.dataset.postId)
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.mood && data.emoji) {
+                    badge.textContent = `${data.emoji} ${data.mood}`;
+                    badge.style.display = 'inline-flex';
+                }
+            }).catch(() => {});
+    });
+}
+document.addEventListener('DOMContentLoaded', loadMoodBadges);
+document.addEventListener('turbo:load', loadMoodBadges);
