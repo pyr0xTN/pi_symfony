@@ -126,7 +126,8 @@
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Ajouter le Vol</button>
                 {# Auto-fill from external flight API — handled via a separate route or JS fetch #}
-    <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
+                <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
+                <a href="javascript:void(0);" data-turbo="false" class="btn-submit" id="btnGenDesc">✨ Générer Description IA</a>
                 <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
             </div>
 
@@ -138,13 +139,17 @@
 {% block javascripts %}
     {{ parent() }}
  <script>
- document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('turbo:load', initVolForm);
+    document.addEventListener('DOMContentLoaded', initVolForm);
+
+    function initVolForm() {
 
     // ── Photo preview ──
     const photoInput = document.getElementById('{{ form.photo.vars.id }}');
     const preview    = document.getElementById('imgPreview');
 
-    if (photoInput) {
+    if (photoInput && !photoInput.dataset.bound) {
+        photoInput.dataset.bound = 'true';
         photoInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
@@ -163,12 +168,66 @@
         });
     }
 
+    // ── AI Description Logic ──
+    const btnGenDesc = document.getElementById('btnGenDesc');
+    const descInput  = document.getElementById('{{ form.description.vars.id }}');
+    const nomInput   = document.getElementById('{{ form.nom.vars.id }}');
+
+    if (btnGenDesc && descInput && nomInput && !btnGenDesc.dataset.bound) {
+        btnGenDesc.dataset.bound = 'true';
+        btnGenDesc.addEventListener('click', async function (e) {
+            e.preventDefault();
+            const nomVol = nomInput.value.trim();
+
+            if (!nomVol) {
+                alert('Veuillez d\'abord saisir le nom du vol avant de générer la description.');
+                nomInput.focus();
+                return;
+            }
+
+            btnGenDesc.disabled = true;
+            btnGenDesc.textContent = '⏳ Génération...';
+
+            try {
+                const res = await fetch('{{ path("api_gemini_generate") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: nomVol,
+                        type: 'vol'
+                    })
+                });
+
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert('Erreur IA : ' + data.error);
+                } else if (data.description) {
+                    descInput.value = data.description;
+                    descInput.classList.add('flash-highlight');
+                    setTimeout(() => descInput.classList.remove('flash-highlight'), 1000);
+                }
+            } catch (err) {
+                console.error('Erreur génération IA:', err);
+                alert('Erreur réseau lors de la génération avec l\'IA.');
+            } finally {
+                btnGenDesc.disabled = false;
+                btnGenDesc.textContent = '✨ Générer par IA';
+            }
+        });
+    }
+
     // ── Autofill ──
     const btnAutoFill   = document.getElementById('btnAutoFill');
     const numeroVolInput = document.getElementById('{{ form.numeroVol.vars.id }}');
 
-    btnAutoFill.addEventListener('click', async function () {
-        const numeroVol = numeroVolInput.value.trim();
+    if (btnAutoFill && !btnAutoFill.dataset.bound) {
+        btnAutoFill.dataset.bound = 'true';
+        btnAutoFill.addEventListener('click', async function () {
+            const numeroVol = numeroVolInput ? numeroVolInput.value.trim() : '';
 
         if (!numeroVol) {
             alert('Veuillez saisir un numéro de vol avant de lancer l\'auto-remplissage.');
@@ -214,7 +273,8 @@ if (data.dateArrivee) {
             btnAutoFill.textContent = '⚡ Auto remplissage';
             btnAutoFill.disabled = false;
         }
-    });
-});
+        });
+    }
+ }
  </script>
 {% endblock %}
