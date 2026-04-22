@@ -85,4 +85,17 @@ class ReservationsRepository extends ServiceEntityRepository
 
         return $qb->orderBy('r.date_reservation', 'DESC');
     }
+
+    public function findActiveByNom(string $nom): array
+    {
+        return $this->createQueryBuilder('r')
+            ->join('r.idService', 's')
+            ->addSelect('s')
+            ->where('LOWER(r.nom) = :nom')
+            ->andWhere('LOWER(r.statut) != :cancelled')
+            ->setParameter('nom', strtolower($nom))
+            ->setParameter('cancelled', 'annulée')
+            ->getQuery()
+            ->getResult();
+    }
 }

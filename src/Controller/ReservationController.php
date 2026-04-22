@@ -25,6 +25,7 @@ use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
 use Symfony\UX\Chartjs\Model\Chart;
 use Knp\Component\Pager\PaginatorInterface;
+use App\Service\ReservationConflictService;
 
 
 #[Route('/reservation')]
@@ -36,6 +37,7 @@ class ReservationController extends AbstractController
         private ServicesRepository     $servicesRepo,
         private ChartBuilderInterface  $chartBuilder,
         private PaginatorInterface     $paginator,
+        private ReservationConflictService $conflictService,
     ) {}
 
 
@@ -126,14 +128,14 @@ class ReservationController extends AbstractController
                 $seatNb = $form->get('siege')->getData();
 
                 if (empty($seatNb)) {
-                    $this->addFlash('error', 'Veuillez sélectionner un siège.');
                     return $this->render('reservation/new.html.twig', [
-                        'active_page' => 'reservations',
-                        'form'        => $form,
-                        'service'     => $service,
-                        'serviceType' => $serviceType,
-                        'seats'       => $this->buildSeatMap($service),
-                    ]);
+                        'active_page'   => 'reservations',
+                        'form'          => $form,
+                        'service'       => $service,
+                        'serviceType'   => $serviceType,
+                        'seats'         => $this->buildSeatMap($service),
+                        'custom_errors' => ['Veuillez sélectionner un siège.'],
+                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
                 }
 
                 $reservation->setSeatNb((int) $seatNb);
@@ -143,6 +145,23 @@ class ReservationController extends AbstractController
 
             // Read availability directly from the entity — never trust the client query param
             if ($service->getDisponibilite()) {
+                $conflicts = $this->conflictService->checkConflicts(
+                    $reservation->getNom(),
+                    $service,
+                    $reservation->getDateReservation()
+                );
+
+                if (!empty($conflicts)) {
+                    return $this->render('reservation/new.html.twig', [
+                        'active_page'   => 'reservations',
+                        'form'          => $form,
+                        'service'       => $service,
+                        'serviceType'   => $serviceType,
+                        'seats'         => $serviceType === 'vol' ? $this->buildSeatMap($service) : [],
+                        'custom_errors' => $conflicts,
+                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
+                }
+
                 $service->decrementCapacite();
                 $this->em->persist($reservation);
                 $this->em->flush();
@@ -204,14 +223,14 @@ class ReservationController extends AbstractController
                 $seatNb = $form->get('siege')->getData();
 
                 if (empty($seatNb)) {
-                    $this->addFlash('error', 'Veuillez sélectionner un siège.');
                     return $this->render('reservation/reservationfront.html.twig', [
-                        'active_page' => 'reservations',
-                        'form'        => $form,
-                        'service'     => $service,
-                        'serviceType' => $serviceType,
-                        'seats'       => $this->buildSeatMap($service),
-                    ]);
+                        'active_page'   => 'reservations',
+                        'form'          => $form,
+                        'service'       => $service,
+                        'serviceType'   => $serviceType,
+                        'seats'         => $this->buildSeatMap($service),
+                        'custom_errors' => ['Veuillez sélectionner un siège.'],
+                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
                 }
 
                 $reservation->setSeatNb((int) $seatNb);
@@ -221,6 +240,23 @@ class ReservationController extends AbstractController
 
             // Read availability directly from the entity — never trust the client query param
             if ($service->getDisponibilite()) {
+                $conflicts = $this->conflictService->checkConflicts(
+                    $reservation->getNom(),
+                    $service,
+                    $reservation->getDateReservation()
+                );
+
+                if (!empty($conflicts)) {
+                    return $this->render('reservation/reservationfront.html.twig', [
+                        'active_page'   => 'reservations',
+                        'form'          => $form,
+                        'service'       => $service,
+                        'serviceType'   => $serviceType,
+                        'seats'         => $serviceType === 'vol' ? $this->buildSeatMap($service) : [],
+                        'custom_errors' => $conflicts,
+                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
+                }
+
                 $service->decrementCapacite();
                 $this->em->persist($reservation);
                 $this->em->flush();

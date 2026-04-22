@@ -11,6 +11,17 @@
 
         <h2 class="form-title">📅 Nouvelle Réservation</h2>
 
+        {% if custom_errors is defined and custom_errors|length > 0 %}
+            <div class="alert alert-danger" style="margin-bottom: 20px;">
+                <strong>Oups ! Une erreur s'est produite :</strong>
+                <ul style="margin-top: 10px; margin-bottom: 0; padding-left: 20px;">
+                {% for msg in custom_errors %}
+                    <li>{{ msg }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
         {{ form_start(form, { attr: { novalidate: 'novalidate', id: 'reservationForm' } }) }}
 
             <div class="form-grid form-grid-1col">
