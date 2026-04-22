@@ -8,6 +8,12 @@ framework:
 
     #esi: true
     #fragments: true
+    http_client:
+        scoped_clients:
+            mercure.hub.default.client:
+                base_uri: '%env(MERCURE_URL)%'
+                verify_peer: false
+                verify_host: false
 
 when@test:
     framework:

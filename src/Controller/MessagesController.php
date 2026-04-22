@@ -17,6 +17,8 @@ use App\Repository\ConversationRepository;
 use App\Repository\ParticipantConversationRepository;
 use OpenAI\Client;
 use Knp\Bundle\TimeBundle\DateTimeFormatter;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -28,7 +30,8 @@ class MessagesController extends AbstractController
     public function insertOne(
         Conversation $conversation,
         Request $request,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        HubInterface $hub
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         $content = $data['content'] ?? '';
@@ -51,6 +54,21 @@ class MessagesController extends AbstractController
 
         $em->persist($message);
         $em->flush(); // Enregistrement en base de données
+
+        try {
+            $update = new Update(
+                "https://127.0.0.1/conversations/{$conversation->getId()}",
+                json_encode([
+                    'new_message' => true,
+                    'content'     => $content,           // ← le texte du message
+                    'time'        => $message->getDateEnvoi()->format('H:i'),
+                    'isMine'      => false,              // ← côté receveur c'est jamais "mine"
+                ])
+            );
+            $hub->publish($update);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Mercure Error: ' . $e->getMessage()], 500);
+        }
 
         return new JsonResponse([
             'id' => $message->getId(),
@@ -108,7 +126,8 @@ class MessagesController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         SluggerInterface $slugger,
-        ConversationRepository $convRepo // Si vous l'avez
+        ConversationRepository $convRepo,
+        HubInterface $hub
     ): JsonResponse {
         $file = $request->files->get('file');
         $conversationId = $request->request->get('conversationId');
@@ -153,7 +172,19 @@ class MessagesController extends AbstractController
 
         $em->persist($message);
         $em->flush();
-
+        try {
+            $update = new Update(
+                "https://127.0.0.1/conversations/{$conversation->getId()}",
+                json_encode([
+                    'new_message' => true,          // ← le texte du message
+                    'time'        => $message->getDateEnvoi()->format('H:i'),
+                    'isMine'      => false,              // ← côté receveur c'est jamais "mine"
+                ])
+            );
+            $hub->publish($update);
+        } catch (\Exception $e) {
+            throw new \Exception("Erreur Mercure : " . $e->getMessage());
+        }
         return new JsonResponse(['success' => true]);
     }
 
@@ -187,7 +218,7 @@ class MessagesController extends AbstractController
             $data[] = [
                 'id' => $msg->getId(),
                 'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
-                'time' => $dateTimeFormatter->formatDiff($msg->getDateEnvoi()), 
+                'time' => $dateTimeFormatter->formatDiff($msg->getDateEnvoi()),
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
                 'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu(),

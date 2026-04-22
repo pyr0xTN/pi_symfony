@@ -2,7 +2,7 @@
 	class="messenger-container">
 
 	<!-- ══════════════════════════════════
-																	══════════════════════════════════ -->
+																			══════════════════════════════════ -->
 	<aside class="msng-side">
 		<div class="side-top">
 			<div class="side-title">Messages<span>.</span>
@@ -72,8 +72,8 @@
 	</aside>
 
 	<!-- ══════════════════════════════════
-																	 RIGHT MAIN AREA
-																	 ══════════════════════════════════ -->
+																			 RIGHT MAIN AREA
+																			 ══════════════════════════════════ -->
 	<main
 		class="msng-main" id="chat-window">
 
@@ -109,8 +109,8 @@
 		</div>
 
 		<!-- ══════════════════════════════════
-																																         CHAT INTERFACE																																																							        
-																																		 ══════════════════════════════════ -->
+																																				         CHAT INTERFACE																																																							        
+																																						 ══════════════════════════════════ -->
 		<div
 			class="chat-interface" id="chat-interface" style="display:none;">
 
@@ -239,8 +239,8 @@
 	</main>
 
 	<!-- ══════════════════════════════════
-												OVERLAY + MODALS
-												══════════════════════════════════ -->
+														OVERLAY + MODALS
+														══════════════════════════════════ -->
 	<div
 		class="msng-overlay" id="msng-overlay" onclick="handleOverlayClick(event)">
 
@@ -2727,7 +2727,8 @@
                 if(leaveBtn) leaveBtn.style.display = 'none'; // On ne peut pas quitter deux fois
             }
 			loadAISuggestions(id); 
-	            loadMessages(id);
+			//subscribeToConversationUpdates(id); 
+	        loadMessages(id);
 				if (document.getElementById('media-panel').style.display !== 'none') {
                     loadMediaHistory(id);
                 }
@@ -2787,7 +2788,7 @@
 	    })
 	    .catch(err => console.error('Error deleting conversation:', err));
 	}
-	    function openModal(type) {
+	function openModal(type) {
 	    const overlay = document.getElementById('msng-overlay');
 	    const targetModal = document.getElementById('modal-' + type);
 	
@@ -3853,6 +3854,123 @@ function formatTime(s) {
     const secs = Math.floor(s % 60);
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
+
+let currentMercureSource = null;
+/*function subscribeToConversationUpdates(convId) {
+    if (currentMercureSource) {
+        currentMercureSource.close();
+    }
+
+    const topic = `https://127.0.0.1/conversations/${convId}`;
+    const url = new URL('http://127.0.0.1:3000/.well-known/mercure');
+    url.searchParams.append('topic', topic);
+
+    currentMercureSource = new EventSource(url);
+
+    currentMercureSource.onopen = () => {
+        console.log("✅ CONNEXION ÉTABLIE avec Mercure pour la conv " + convId);
+    };
+
+    currentMercureSource.onmessage = event => {
+        console.log("📩 SIGNAL REÇU ! Données :", event.data);
+        const data = JSON.parse(event.data);
+        if (data.new_message) {
+            loadMessages(convId);
+
+            // ── Mise à jour de la sidebar ──
+            const sideItem = document.querySelector(`.conv-item[data-id="${convId}"]`);
+            if (sideItem) {
+                // 1. Mettre à jour le preview
+                if (data.content) {
+                    const preview = sideItem.querySelector('.conv-preview');
+                    if (preview) preview.textContent = data.content.substring(0, 35) + '...';
+                }
+
+                // 2. Mettre à jour l'heure
+                if (data.time) {
+                    const timeEl = sideItem.querySelector('.conv-time');
+                    if (timeEl) timeEl.textContent = data.time;
+                }
+
+                // 3. Remonter la conversation en haut
+                moveItemToTop(convId);
+
+                // 4. Badge "non lu" si c'est pas notre propre message
+                if (!data.isMine) {
+                    sideItem.classList.add('has-unread');
+                    let badge = sideItem.querySelector('.conv-unread-badge');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'conv-unread-badge';
+                        sideItem.querySelector('.conv-row-bottom').appendChild(badge);
+                    }
+                    const current = parseInt(badge.textContent) || 0;
+                    badge.textContent = current + 1;
+                }
+            }
+        }
+    };
+
+    currentMercureSource.onerror = (e) => {
+        console.error("❌ ERREUR MERCURE : La connexion a été coupée.");
+    };
+}*/
+
+// Ajouter cette fonction
+function subscribeToAllConversations() {
+    const items = document.querySelectorAll('.conv-item');
+    
+    items.forEach(item => {
+        const convId = item.dataset.id;
+        const topic = `https://127.0.0.1/conversations/${convId}`;
+        const url = new URL('http://127.0.0.1:3000/.well-known/mercure');
+        url.searchParams.append('topic', topic);
+
+        const source = new EventSource(url);
+
+        source.onmessage = event => {
+            const data = JSON.parse(event.data);
+            if (!data.new_message) return;
+
+            const isMyOwnMessage = data.senderId === currentUserId;
+            if (isMyOwnMessage) return; // Je suis l'expéditeur → rien
+
+            // Mettre à jour la sidebar
+            const sideItem = document.querySelector(`.conv-item[data-id="${convId}"]`);
+            if (sideItem) {
+                if (data.content) {
+                    const preview = sideItem.querySelector('.conv-preview');
+                    if (preview) preview.textContent = data.content.substring(0, 35) + '...';
+                }
+                if (data.time) {
+                    const timeEl = sideItem.querySelector('.conv-time');
+                    if (timeEl) timeEl.textContent = data.time;
+                }
+                moveItemToTop(convId);
+
+                // Badge non lu seulement si ce n'est pas la conv active
+                if (String(convId) !== String(currentConversationId)) {
+                    sideItem.classList.add('has-unread');
+                    let badge = sideItem.querySelector('.conv-unread-badge');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'conv-unread-badge';
+                        sideItem.querySelector('.conv-row-bottom').appendChild(badge);
+                    }
+                    const current = parseInt(badge.textContent) || 0;
+                    badge.textContent = current + 1;
+                } else {
+                    // Conv active → juste rafraîchir les messages
+                    loadMessages(convId);
+                }
+            }
+        };
+    });
+}
+
+// Appeler au chargement de la page
+const currentUserId = {{ app.user.id }};
+subscribeToAllConversations();
 </script>
  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js"></script>
  <script src="https://unpkg.com/wavesurfer.js@7"></script>
