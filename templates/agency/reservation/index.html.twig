@@ -1,0 +1,135 @@
+{# templates/agency/reservation/index.html.twig #}
+{% extends 'agency/base_agency.html.twig' %}
+
+{% block agency_page_title %}Available Reservations{% endblock %}
+
+{% block agency_content %}
+<div class="page-with-sidebar" style="display: flex; gap: 28px;">
+    
+    {# ── Main Column: Reservations Grid ── #}
+    <div class="main-column" style="flex: 1;">
+        {% if pagination is empty %}
+            <div class="empty-state">
+                <span class="empty-icon">📂</span>
+                <p>Aucune réservation trouvée.</p>
+            </div>
+        {% else %}
+            <div class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; padding-bottom: 24px;">
+                {% for reservation in pagination %}
+                    <div class="reservation-card" style="background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.2s;">
+                        
+                        {# Header: Name & Status #}
+                        <div class="rc-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                            <h3 class="rc-name" style="font-size: 16px; font-weight: 700; color: #183c75; margin: 0;">{{ reservation.nom }}</h3>
+                            
+                            {# Dynamic badge color based on status #}
+                            {% set status = reservation.statut|lower %}
+                            {% set badgeClass = 'badge-info' %}
+                            {% if status == 'en attente' or status == 'pending' %}
+                                {% set badgeClass = 'badge-pending' %}
+                            {% elseif status == 'confirmée' or status == 'confirmed' %}
+                                {% set badgeClass = 'badge-success' %}
+                            {% elseif status == 'annulée' or status == 'cancelled' %}
+                                {% set badgeClass = 'badge-danger' %}
+                            {% endif %}
+                            
+                            <span class="badge {{ badgeClass }}" style="border-radius: 5px; padding: 3px 8px; font-size: 11px;">{{ reservation.statut|upper }}</span>
+                        </div>
+
+                        {# Body: Details #}
+                        <div class="rc-body" style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px;">
+                            <div class="rc-detail-item" style="display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px;">
+                                <span class="rc-icon">📅</span>
+                                <span>{{ reservation.dateReservation|date('d/m/Y') }}</span>
+                            </div>
+                            
+                            <div class="rc-detail-item" style="display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px;">
+                                <span class="rc-icon">💳</span>
+                                <span>{{ reservation.modePaiement|capitalize }}</span>
+                            </div>
+                            <div class="rc-detail-item" style="display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px;">
+                                <span class="rc-icon">🛎️</span>
+                                <span>{{ reservation.idService.nom }}</span>
+                            </div>
+                            
+                            {% if reservation.seatNb > 0 %}
+                                <div class="rc-detail-item" style="display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px;">
+                                    <span class="rc-icon">💺</span>
+                                    <span>Siège : <strong>{{ reservation.seatNb }}</strong></span>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {# Footer: Actions #}
+                        <div class="rc-footer" style="margin-top: 25px; display: flex; gap: 10px;">
+                            {% if status != 'confirmée' and status != 'confirmed' %}
+                                <form method="POST" action="{{ path('agency_reservation_approve', { id: reservation.idReservation }) }}" style="flex: 1;">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('approve_resa_' ~ reservation.idReservation) }}">
+                                    <button type="submit" class="rc-btn" style="width: 100%; border: none; background: #27ae60; color: #fff; padding: 8px; border-radius: 5px; font-weight: 700; font-size: 12px; cursor: pointer;">
+                                        ✅ Approuver
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            <a href="{{ path('agency_reservation_delete', { id: reservation.idReservation }) }}"
+                               class="rc-btn"
+                               style="flex: 1; text-align: center; background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 7px; border-radius: 5px; font-weight: 700; font-size: 12px; text-decoration: none;"
+                               onclick="return confirm('Confirmer la suppression ?')">
+                               Supprimer
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {# ── PAGINATION CONTROLS ── #}
+            <div class="pagination-wrapper" style="display: flex; justify-content: center; margin-top: 20px;">
+                {{ knp_pagination_render(pagination) }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Sidebar: Statistics & Chart ── #}
+    <div class="sidebar-stats" style="width: 300px; display: flex; flex-direction: column; gap: 24px;">
+        
+        <div class="sidebar-chart-card" style="background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h3 style="font-size: 16px; color: #183c75; margin-bottom: 20px;">📊 Status Overview</h3>
+            
+            <div style="height: 220px; position: relative;">
+                {{ render_chart(statusChart) }}
+            </div>
+
+            <div class="chart-legend" style="margin-top: 20px; font-size: 14px;">
+                <div class="chart-legend-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="legend-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #4ba3a1;"></span>
+                    <span>Confirmée: <strong>{{ stats.conf }}</strong></span>
+                </div>
+                <div class="chart-legend-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="legend-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #f6c750;"></span>
+                    <span>En attente: <strong>{{ stats.pend }}</strong></span>
+                </div>
+                <div class="chart-legend-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="legend-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #ff6b6b;"></span>
+                    <span>Annulée: <strong>{{ stats.canc }}</strong></span>
+                </div>
+               
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                <div class="chart-legend-item">
+                    <span>Total Reservations: <strong>{{ stats.total }}</strong></span>
+                </div>
+            </div>
+        </div>
+
+        {# Additional Info Card #}
+        <div class="sidebar-chart-card" style="background: linear-gradient(135deg, #183c75 0%, #0d1e3a 100%); color: white; padding: 25px; border-radius: 10px;">
+            <h3 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; font-size: 16px; margin-bottom: 15px;">💡 Quick Tip</h3>
+            <p style="font-size: 13px; opacity: 0.9; line-height: 1.6; margin: 0;">
+                Use the search bar above to filter reservations by service name or customer identifier. 
+                Pending reservations require manual approval to be confirmed.
+            </p>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

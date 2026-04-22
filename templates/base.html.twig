@@ -1,0 +1,2756 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
+        <script>
+            (function () {
+                function getStoredTheme() {
+                    return localStorage.getItem('theme') === 'dark' ? 'dark' : 'light';
+                }
+
+                function applyTheme(theme) {
+                    var isDark = theme === 'dark';
+                    document.documentElement.classList.toggle('dark-mode', isDark);
+                    if (document.body) {
+                        document.body.classList.toggle('dark-mode', isDark);
+                    }
+                }
+
+                function applyPhoneViewportClass() {
+                    var screenWidth = window.screen && window.screen.width ? window.screen.width : 0;
+                    var screenHeight = window.screen && window.screen.height ? window.screen.height : 0;
+                    var shortSide = Math.min(screenWidth, screenHeight);
+                    var isPhone = shortSide > 0 && shortSide <= 430;
+                    document.documentElement.classList.toggle('phone-viewport-force', isPhone);
+                }
+
+                window.getStoredTheme = getStoredTheme;
+                window.applyTheme = applyTheme;
+                window.toggleTheme = function () {
+                    var next = getStoredTheme() === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem('theme', next);
+                    applyTheme(next);
+                    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: next } }));
+                    return next;
+                };
+
+                applyTheme(getStoredTheme());
+                applyPhoneViewportClass();
+                document.addEventListener('DOMContentLoaded', function () {
+                    applyTheme(getStoredTheme());
+                    applyPhoneViewportClass();
+                });
+                window.addEventListener('resize', applyPhoneViewportClass);
+                window.addEventListener('orientationchange', applyPhoneViewportClass);
+            })();
+        </script>
+        {% block stylesheets %}
+        {% endblock %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock %}
+        {% endblock %}
+        <style>
+            html,
+            body {
+                margin: 0;
+                padding: 0;
+                min-height: 100%;
+                border: 0;
+                outline: 0;
+                background: #f4f9ff;
+                overflow-x: hidden;
+            }
+
+            .phone-viewport-force,
+            .phone-viewport-force body {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+            }
+
+            .phone-viewport-force .dashboard-layout,
+            .phone-viewport-force .dashboard-page {
+                grid-template-columns: 1fr !important;
+            }
+
+            .phone-viewport-force .dash-sidebar {
+                display: none !important;
+            }
+
+            .phone-viewport-force .dash-content,
+            .phone-viewport-force .admin-content,
+            .phone-viewport-force .shell,
+            .phone-viewport-force .welcome-strip,
+            .phone-viewport-force .stats-grid,
+            .phone-viewport-force .dashboard-grid {
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+
+            .phone-viewport-force .stats-grid,
+            .phone-viewport-force .dashboard-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .phone-viewport-force table {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            html.dark-mode,
+            html.dark-mode body {
+                background: #121a27;
+                color: #e8eef5;
+            }
+
+            html.dark-mode input,
+            html.dark-mode textarea,
+            html.dark-mode select,
+            html.dark-mode button {
+                color-scheme: dark;
+            }
+
+            .global-loader {
+                position: fixed;
+                inset: 0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background: linear-gradient(140deg, rgba(4, 22, 38, 0.92), rgba(11, 69, 96, 0.9));
+                z-index: 9999;
+                color: #ffffff;
+                text-align: center;
+                padding: 24px;
+            }
+
+            .global-loader.active {
+                display: flex;
+            }
+
+            .global-quick-toggle {
+                position: fixed;
+                top: 6px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 156px;
+                height: 34px;
+                border-radius: 999px;
+                border: 1px solid rgba(11, 164, 161, 0.4);
+                background: rgba(255, 255, 255, 0.86);
+                color: #1f3f5f;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 13px;
+                font-weight: 800;
+                letter-spacing: 0.2px;
+                white-space: nowrap;
+                cursor: pointer;
+                box-shadow: 0 8px 18px rgba(10, 46, 88, 0.18);
+                z-index: 10003;
+                transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, top 0.2s ease;
+                backdrop-filter: blur(8px);
+                user-select: none;
+                touch-action: none;
+            }
+
+            .global-quick-toggle:hover {
+                transform: translateX(-50%);
+                background: #ffffff;
+                color: #0b8e8b;
+                border-color: rgba(11, 164, 161, 0.82);
+                box-shadow: 0 0 12px rgba(45, 212, 191, 0.55), 0 0 26px rgba(56, 189, 248, 0.28);
+            }
+
+            .global-quick-toggle.dragging {
+                transition: none;
+            }
+
+            .global-quick-badge {
+                position: absolute;
+                top: -5px;
+                right: -7px;
+                min-width: 16px;
+                height: 16px;
+                border-radius: 999px;
+                background: #ff5e62;
+                color: #fff;
+                font-size: 10px;
+                font-weight: 800;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                padding: 0 4px;
+                box-shadow: 0 4px 10px rgba(217, 74, 90, 0.4);
+            }
+
+            .global-quick-badge.show {
+                display: inline-flex;
+            }
+
+            .global-glass-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(255, 255, 255, 0.16);
+                backdrop-filter: blur(1px);
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.25s ease;
+                z-index: 10001;
+            }
+
+            .global-glass-overlay.open {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            .global-glass-panel {
+                position: fixed;
+                inset: 0;
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                border: 1px solid rgba(163, 208, 232, 0.55);
+                background:
+                    linear-gradient(140deg, rgba(255, 255, 255, 0.62), rgba(238, 248, 255, 0.46)),
+                    radial-gradient(420px 220px at 10% -10%, rgba(11, 164, 161, 0.12), transparent 72%);
+                box-shadow: 0 10px 24px rgba(8, 35, 66, 0.14);
+                backdrop-filter: blur(6px);
+                transform: translateY(-105%);
+                opacity: 0;
+                transition: transform 0.28s ease, opacity 0.22s ease;
+                z-index: 10002;
+                overflow: auto;
+            }
+
+            .global-glass-panel.open {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .global-glass-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 22px 22px 16px;
+                border-bottom: 1px solid rgba(167, 202, 228, 0.5);
+            }
+
+            .global-glass-brand {
+                font-weight: 800;
+                color: #194575;
+                letter-spacing: -0.3px;
+                font-size: 16px;
+            }
+
+            .global-glass-close {
+                border: 0;
+                width: 30px;
+                height: 30px;
+                border-radius: 999px;
+                background: rgba(25, 69, 117, 0.1);
+                color: #194575;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .global-glass-actions {
+                padding: 22px;
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 14px;
+                max-width: 760px;
+            }
+
+            .global-glass-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 1px minmax(220px, 280px);
+                align-items: start;
+                gap: 16px;
+                padding: 18px 22px 22px;
+            }
+
+            .global-glass-divider {
+                width: 1px;
+                min-height: 320px;
+                background: linear-gradient(180deg, rgba(120, 166, 198, 0.15), rgba(70, 123, 163, 0.65), rgba(120, 166, 198, 0.15));
+                border-radius: 999px;
+                justify-self: center;
+            }
+
+            .global-profile-side {
+                border: 1px solid rgba(152, 189, 216, 0.58);
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.9);
+                padding: 14px;
+                color: #1e456e;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 6px 16px rgba(10, 45, 78, 0.1);
+            }
+
+            .global-profile-avatar {
+                width: 78px;
+                height: 78px;
+                border-radius: 50%;
+                border: 2px solid rgba(116, 194, 235, 0.75);
+                object-fit: cover;
+                box-shadow: 0 0 0 4px rgba(13, 111, 167, 0.08);
+            }
+
+            .global-profile-name {
+                font-weight: 800;
+                font-size: 17px;
+                text-align: center;
+                line-height: 1.3;
+            }
+
+            .global-profile-role {
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.4px;
+                color: #4d6e90;
+                text-transform: uppercase;
+            }
+
+            .global-profile-twofa {
+                width: 100%;
+                margin-top: 8px;
+                border: 1px solid rgba(152, 189, 216, 0.62);
+                border-radius: 10px;
+                background: rgba(248, 252, 255, 0.96);
+                color: #1e456e;
+                min-height: 54px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-weight: 800;
+                font-size: 13px;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+            }
+
+            .global-profile-twofa:hover {
+                transform: translateY(-1px);
+                border-color: rgba(88, 154, 209, 0.62);
+                box-shadow: 0 0 10px rgba(56, 189, 248, 0.28);
+            }
+
+            .global-profile-twofa.active {
+                border-color: rgba(46, 184, 121, 0.75);
+                background: linear-gradient(135deg, rgba(235, 255, 246, 0.98), rgba(215, 252, 234, 0.96));
+                color: #128455;
+                box-shadow: 0 0 12px rgba(46, 184, 121, 0.4), 0 0 20px rgba(86, 214, 158, 0.22);
+            }
+
+            .global-profile-twofa.active .global-action-icon {
+                color: #128455;
+            }
+
+            .global-profile-qr {
+                width: 100%;
+                border: 1px solid rgba(84, 142, 198, 0.65);
+                border-radius: 10px;
+                background: linear-gradient(135deg, rgba(239, 248, 255, 0.98), rgba(228, 243, 255, 0.95));
+                color: #164972;
+                min-height: 50px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-weight: 800;
+                font-size: 13px;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+            }
+
+            .global-profile-qr:hover {
+                transform: translateY(-1px);
+                border-color: rgba(56, 189, 248, 0.76);
+                box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+            }
+
+            .global-profile-faceid {
+                width: 100%;
+                border: 1px solid rgba(76, 170, 146, 0.65);
+                border-radius: 10px;
+                background: linear-gradient(135deg, rgba(237, 255, 248, 0.98), rgba(223, 248, 239, 0.95));
+                color: #0f5d4a;
+                min-height: 50px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                font-weight: 800;
+                font-size: 13px;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+            }
+
+            .global-profile-faceid:hover {
+                transform: translateY(-1px);
+                border-color: rgba(16, 185, 129, 0.76);
+                box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+            }
+
+            .global-face-modal {
+                position: fixed;
+                inset: 0;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 10040;
+                padding: 14px;
+            }
+
+            .global-face-modal.open {
+                display: flex;
+            }
+
+            .global-face-modal-backdrop {
+                position: absolute;
+                inset: 0;
+                background: rgba(4, 20, 35, 0.7);
+                backdrop-filter: blur(4px);
+            }
+
+            .global-face-modal-card {
+                position: relative;
+                width: min(460px, 96vw);
+                background: linear-gradient(145deg, rgba(248, 252, 255, 0.98), rgba(236, 245, 252, 0.96));
+                border: 1px solid rgba(84, 142, 198, 0.52);
+                border-radius: 16px;
+                box-shadow: 0 20px 54px rgba(6, 34, 63, 0.35);
+                overflow: hidden;
+            }
+
+            .global-face-modal-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 16px;
+                border-bottom: 1px solid rgba(168, 201, 228, 0.55);
+            }
+
+            .global-face-modal-title {
+                margin: 0;
+                color: #194575;
+                font-size: 18px;
+                font-weight: 800;
+            }
+
+            .global-face-modal-close {
+                border: 0;
+                width: 30px;
+                height: 30px;
+                border-radius: 999px;
+                background: rgba(25, 69, 117, 0.12);
+                color: #194575;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .global-face-modal-body {
+                padding: 14px 16px 16px;
+            }
+
+            .global-face-video-wrap {
+                position: relative;
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid rgba(126, 169, 201, 0.62);
+                background: #051a30;
+                aspect-ratio: 1 / 1;
+            }
+
+            .global-face-video-wrap::before {
+                content: '';
+                position: absolute;
+                inset: 10px;
+                border-radius: 24px;
+                background:
+                    radial-gradient(circle at center, rgba(11, 160, 159, 0.05) 0%, rgba(11, 160, 159, 0.02) 36%, rgba(4, 17, 31, 0.54) 72%, rgba(4, 17, 31, 0.82) 100%);
+                pointer-events: none;
+                z-index: 3;
+                mix-blend-mode: screen;
+            }
+
+            .global-face-circle-guide {
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                width: min(74%, 360px);
+                height: min(74%, 360px);
+                transform: translate(-50%, -50%);
+                border-radius: 50%;
+                border: 2px solid rgba(252, 186, 48, 0.9);
+                box-shadow:
+                    0 0 0 10px rgba(252, 186, 48, 0.08),
+                    0 0 0 1px rgba(9, 167, 162, 0.25),
+                    0 0 34px rgba(252, 186, 48, 0.16),
+                    inset 0 0 24px rgba(9, 167, 162, 0.12);
+                pointer-events: none;
+                z-index: 4;
+                animation: globalFacePulse 2.8s ease-in-out infinite;
+            }
+
+            .global-face-circle-guide::before,
+            .global-face-circle-guide::after {
+                content: '';
+                position: absolute;
+                inset: -14px;
+                border-radius: 50%;
+                border: 1px dashed rgba(246, 188, 67, 0.18);
+                animation: globalFacePulse 3.4s ease-in-out infinite;
+            }
+
+            .global-face-circle-guide::after {
+                inset: -32px;
+                border-color: rgba(9, 167, 162, 0.12);
+                animation-delay: 0.45s;
+            }
+
+            .global-face-circle-lines {
+                position: absolute;
+                inset: 0;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 4;
+                opacity: 0.76;
+                background:
+                    linear-gradient(180deg, transparent 0%, transparent 24%, rgba(252, 186, 48, 0.18) 25%, transparent 26%, transparent 49%, rgba(9, 167, 162, 0.18) 50%, transparent 51%, transparent 74%, rgba(252, 186, 48, 0.16) 75%, transparent 76%, transparent 100%),
+                    linear-gradient(90deg, transparent 0%, transparent 24%, rgba(252, 186, 48, 0.14) 25%, transparent 26%, transparent 49%, rgba(9, 167, 162, 0.14) 50%, transparent 51%, transparent 74%, rgba(252, 186, 48, 0.14) 75%, transparent 76%, transparent 100%);
+                mix-blend-mode: screen;
+            }
+
+            .global-face-guide-label {
+                position: absolute;
+                left: 50%;
+                bottom: 16px;
+                transform: translateX(-50%);
+                z-index: 5;
+                padding: 7px 12px;
+                border-radius: 999px;
+                background: rgba(5, 26, 48, 0.7);
+                border: 1px solid rgba(252, 186, 48, 0.24);
+                color: #e8eef5;
+                font-size: 11px;
+                font-weight: 800;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+            }
+
+            @keyframes globalFacePulse {
+                0%, 100% {
+                    transform: translate(-50%, -50%) scale(1);
+                    opacity: 0.9;
+                }
+                50% {
+                    transform: translate(-50%, -50%) scale(1.03);
+                    opacity: 0.65;
+                }
+            }
+
+            .global-face-video {
+                width: 100%;
+                height: 100%;
+                display: block;
+                object-fit: cover;
+                position: relative;
+                z-index: 1;
+            }
+
+            .global-face-preview {
+                width: 100%;
+                height: 100%;
+                display: none;
+                object-fit: cover;
+                position: relative;
+                z-index: 2;
+            }
+
+            .global-face-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: block;
+                border-radius: 11px;
+                z-index: 3;
+            }
+
+            .global-face-status {
+                margin: 10px 0 12px;
+                font-size: 13px;
+                color: #335f86;
+                font-weight: 700;
+                min-height: 20px;
+            }
+
+            .global-face-step {
+                margin: 0 0 12px;
+                font-size: 12px;
+                color: #669bb5;
+                font-weight: 600;
+                min-height: 16px;
+            }
+
+            .global-face-actions {
+                display: flex;
+                gap: 10px;
+            }
+
+            .global-face-btn {
+                border: 1px solid rgba(102, 153, 189, 0.65);
+                border-radius: 10px;
+                min-height: 44px;
+                padding: 0 14px;
+                font-weight: 800;
+                cursor: pointer;
+            }
+
+            .global-face-btn.capture {
+                flex: 1;
+                border-color: rgba(16, 185, 129, 0.65);
+                background: linear-gradient(135deg, rgba(226, 252, 243, 1), rgba(210, 245, 232, 0.96));
+                color: #0f5d4a;
+            }
+
+            .global-face-btn.cancel {
+                background: rgba(243, 248, 253, 0.96);
+                color: #245176;
+            }
+
+            .global-action-btn,
+            .global-action-link {
+                border: 1px solid rgba(152, 189, 216, 0.6);
+                background: rgba(255, 255, 255, 0.88);
+                color: #1e456e;
+                border-radius: 12px;
+                min-height: 72px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 6px;
+                text-decoration: none;
+                font-weight: 700;
+                font-size: 12px;
+                cursor: pointer;
+                transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            }
+
+            .global-action-btn:hover,
+            .global-action-link:hover {
+                transform: translateY(-1px);
+                background: linear-gradient(135deg, rgba(242, 248, 255, 0.98), rgba(231, 243, 255, 0.96));
+                color: #0b8e8b;
+                border-color: rgba(88, 154, 209, 0.45);
+                box-shadow: 0 0 12px rgba(45, 212, 191, 0.48), 0 0 24px rgba(56, 189, 248, 0.24);
+            }
+
+            .global-action-icon {
+                font-size: 20px;
+                line-height: 1;
+            }
+
+            .global-action-link.power {
+                border-color: rgba(220, 109, 109, 0.45);
+                color: #b84848;
+                background: rgba(255, 242, 242, 0.9);
+            }
+
+            .global-action-link.upgrade {
+                border-color: rgba(212, 175, 55, 0.45);
+                color: #c19a3f;
+                background: rgba(255, 248, 235, 0.95);
+                background: linear-gradient(135deg, rgba(255, 248, 235, 0.95), rgba(254, 242, 220, 0.9));
+            }
+
+            .global-action-link.upgrade:hover {
+                background: linear-gradient(135deg, rgba(255, 250, 240, 1), rgba(254, 245, 230, 1));
+            }
+
+            .global-action-link.settings,
+            .global-action-btn.settings,
+            .global-action-language.settings {
+                border-color: rgba(152, 189, 216, 0.6);
+                background: rgba(255, 255, 255, 0.88);
+                color: #1e456e;
+            }
+
+            .global-action-link.settings:hover,
+            .global-action-btn.settings:hover,
+            .global-action-language.settings:hover {
+                background: linear-gradient(135deg, rgba(242, 248, 255, 0.98), rgba(231, 243, 255, 0.96));
+                color: #0b8e8b;
+                border-color: rgba(88, 154, 209, 0.45);
+                box-shadow: 0 0 12px rgba(45, 212, 191, 0.48), 0 0 24px rgba(56, 189, 248, 0.24);
+            }
+
+            .global-action-language {
+                align-items: flex-start;
+                text-align: left;
+                padding: 12px 14px;
+                gap: 8px;
+                flex-direction: column;
+            }
+
+            .global-language-title {
+                font-size: 12px;
+                font-weight: 800;
+                color: #1e456e;
+                display: block;
+                margin-bottom: 8px;
+            }
+
+            .global-language-select {
+                width: 100%;
+                padding: 8px 10px;
+                font-size: 12px;
+                font-weight: 700;
+                color: #1e456e;
+                border: 1px solid rgba(152, 189, 216, 0.7);
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.95);
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .global-language-select:hover {
+                border-color: rgba(11, 164, 161, 0.85);
+                background: rgba(255, 255, 255, 1);
+            }
+
+            .global-language-select:focus {
+                outline: none;
+                border-color: rgba(11, 164, 161, 0.85);
+                background: rgba(11, 164, 161, 0.08);
+                box-shadow: 0 0 0 2px rgba(11, 164, 161, 0.2);
+            }
+
+            .global-action-coin {
+                align-items: flex-start;
+                text-align: left;
+                padding: 12px 14px;
+            }
+
+            .global-coin-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                margin-bottom: 6px;
+            }
+
+            .global-coin-count {
+                font-size: 26px;
+                font-weight: 800;
+                color: #0d5e8a;
+                line-height: 1;
+            }
+
+            .global-coin-tier {
+                font-size: 11px;
+                color: #5b7894;
+                font-weight: 700;
+                text-transform: uppercase;
+            }
+
+            .global-coin-timer {
+                font-size: 12px;
+                color: #516b84;
+                margin-bottom: 8px;
+            }
+
+            /* Collect coin button loading line */
+            #globalCollectCoinBtn {
+                position: relative;
+                overflow: hidden;
+                --coin-button-progress: 0%;
+            }
+
+            #globalCollectCoinBtn::before {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 3px;
+                width: var(--coin-button-progress, 0%);
+                background: linear-gradient(90deg, #ff6b6b, #ff9f44);
+                transition: width 1s linear;
+                border-radius: 999px;
+            }
+
+            .global-coin-btn {
+                border: 0;
+                border-radius: 10px;
+                padding: 8px 12px;
+                font-size: 12px;
+                font-weight: 800;
+                color: #ffffff;
+                background: linear-gradient(135deg, #0fa5a2, #1788b6);
+                cursor: pointer;
+            }
+
+            .global-coin-btn:disabled {
+                cursor: not-allowed;
+                opacity: 0.65;
+            }
+
+            /* Ready state for coin collection button */
+            #globalCollectCoinBtn:not(:disabled)::before {
+                width: 100%;
+                background: linear-gradient(90deg, #51cf66, #37b24d);
+            }
+
+            #globalCollectCoinBtn:disabled {
+                background: rgba(255, 255, 255, 0.65);
+            }
+
+            #globalCollectCoinBtn:not(:disabled) {
+                background: rgba(255, 255, 255, 1);
+                box-shadow: 0 6px 16px rgba(49, 245, 196, 0.25);
+            }
+
+            html.dark-mode .global-quick-toggle {
+                background: rgba(30, 41, 59, 0.95);
+                border-color: rgba(94, 234, 212, 0.45);
+                color: #e2e8f0;
+                box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+            }
+
+            html.dark-mode .global-quick-toggle:hover {
+                color: #7ff0ff;
+                border-color: rgba(94, 234, 212, 0.85);
+                box-shadow: 0 0 12px rgba(94, 234, 212, 0.58), 0 0 26px rgba(56, 189, 248, 0.28);
+            }
+
+            html.dark-mode .global-glass-panel {
+                border-color: rgba(72, 105, 138, 0.55);
+                background:
+                    linear-gradient(140deg, rgba(22, 33, 50, 0.6), rgba(18, 28, 43, 0.5)),
+                    radial-gradient(300px 140px at 10% -20%, rgba(45, 212, 191, 0.1), transparent 70%);
+                box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+            }
+
+            html.dark-mode .global-glass-head {
+                border-bottom-color: rgba(72, 105, 138, 0.55);
+            }
+
+            html.dark-mode .global-glass-brand,
+            html.dark-mode .global-glass-close {
+                color: #dbe8f6;
+            }
+
+            html.dark-mode .global-glass-close {
+                background: rgba(157, 196, 230, 0.12);
+            }
+
+            html.dark-mode .global-action-btn,
+            html.dark-mode .global-action-link {
+                border-color: rgba(66, 95, 125, 0.75);
+                background: rgba(20, 33, 48, 0.86);
+                color: #d0e0f0;
+            }
+
+            html.dark-mode .global-action-btn:hover,
+            html.dark-mode .global-action-link:hover {
+                background: #ffffff;
+                color: #12385f;
+                border-color: rgba(170, 191, 214, 0.9);
+                box-shadow: 0 8px 20px rgba(5, 21, 40, 0.25);
+            }
+
+            html.dark-mode .global-action-btn:hover .global-action-icon,
+            html.dark-mode .global-action-link:hover .global-action-icon {
+                color: #12385f;
+            }
+
+            html.dark-mode .global-action-link.power {
+                border-color: rgba(194, 92, 92, 0.55);
+                background: rgba(60, 24, 24, 0.74);
+                color: #ffb6b6;
+            }
+
+            html.dark-mode .global-action-link.upgrade {
+                border-color: rgba(158, 117, 39, 0.55);
+                background: rgba(60, 50, 24, 0.74);
+                color: #ffd699;
+            }
+
+            html.dark-mode .global-action-link.upgrade:hover {
+                background: rgba(70, 60, 30, 0.9);
+            }
+
+            html.dark-mode .global-action-link.settings,
+            html.dark-mode .global-action-btn.settings,
+            html.dark-mode .global-action-language.settings {
+                border-color: rgba(66, 95, 125, 0.75);
+                background: rgba(20, 33, 48, 0.92);
+                color: #7dd3fc;
+            }
+
+            html.dark-mode .global-action-link.settings:hover,
+            html.dark-mode .global-action-btn.settings:hover,
+            html.dark-mode .global-action-language.settings:hover {
+                background: #ffffff;
+                color: #12385f;
+                border-color: rgba(170, 191, 214, 0.9);
+                box-shadow: 0 8px 20px rgba(5, 21, 40, 0.25);
+            }
+
+            html.dark-mode .global-action-link.settings .global-action-icon,
+            html.dark-mode .global-action-btn.settings .global-action-icon,
+            html.dark-mode .global-language-title {
+                color: #7dd3fc;
+            }
+
+            html.dark-mode .global-action-language:hover .global-language-title {
+                color: #12385f;
+            }
+
+            html.dark-mode .global-profile-side {
+                border-color: rgba(66, 95, 125, 0.78);
+                background: rgba(15, 24, 36, 0.94);
+                color: #d7e5f4;
+                box-shadow: 0 10px 22px rgba(0, 0, 0, 0.28);
+            }
+
+            html.dark-mode .global-profile-name {
+                color: #f0f7ff;
+            }
+
+            html.dark-mode .global-profile-role {
+                color: #8ecdf3;
+            }
+
+            html.dark-mode .global-profile-twofa {
+                border-color: rgba(66, 95, 125, 0.82);
+                background: rgba(20, 33, 48, 0.95);
+                color: #d7e5f4;
+            }
+
+            html.dark-mode .global-profile-twofa:hover {
+                border-color: rgba(94, 234, 212, 0.5);
+                background: rgba(26, 44, 63, 1);
+                color: #ffffff;
+                box-shadow: 0 8px 20px rgba(5, 21, 40, 0.26);
+            }
+
+            html.dark-mode .global-profile-twofa.active {
+                border-color: rgba(46, 184, 121, 0.8);
+                background: linear-gradient(135deg, rgba(18, 51, 34, 0.96), rgba(23, 70, 48, 0.92));
+                color: #a7f3c1;
+                box-shadow: 0 0 12px rgba(46, 184, 121, 0.28), 0 0 20px rgba(86, 214, 158, 0.16);
+            }
+
+            html.dark-mode .global-profile-twofa.active .global-action-icon {
+                color: #a7f3c1;
+            }
+
+            html.dark-mode .global-profile-qr {
+                border-color: rgba(66, 95, 125, 0.82);
+                background: linear-gradient(135deg, rgba(18, 37, 54, 0.96), rgba(20, 44, 66, 0.95));
+                color: #cbe8ff;
+            }
+
+            html.dark-mode .global-profile-qr:hover {
+                border-color: rgba(56, 189, 248, 0.74);
+                background: linear-gradient(135deg, rgba(24, 49, 71, 0.98), rgba(27, 56, 82, 0.96));
+                color: #e6f4ff;
+                box-shadow: 0 8px 20px rgba(5, 21, 40, 0.3);
+            }
+
+            html.dark-mode .global-profile-faceid {
+                border-color: rgba(53, 122, 102, 0.85);
+                background: linear-gradient(135deg, rgba(22, 49, 42, 0.95), rgba(22, 60, 48, 0.94));
+                color: #b9f0de;
+            }
+
+            html.dark-mode .global-profile-faceid:hover {
+                border-color: rgba(16, 185, 129, 0.72);
+                background: linear-gradient(135deg, rgba(25, 58, 48, 0.96), rgba(28, 72, 58, 0.95));
+                color: #dcfff4;
+                box-shadow: 0 8px 20px rgba(5, 21, 40, 0.3);
+            }
+
+            html.dark-mode .global-face-modal-card {
+                background: linear-gradient(145deg, rgba(14, 27, 41, 0.96), rgba(17, 35, 52, 0.95));
+                border-color: rgba(63, 102, 136, 0.74);
+            }
+
+            html.dark-mode .global-face-modal-head {
+                border-bottom-color: rgba(71, 108, 140, 0.65);
+            }
+
+            html.dark-mode .global-face-modal-title,
+            html.dark-mode .global-face-modal-close {
+                color: #d9e9f9;
+            }
+
+            html.dark-mode .global-face-modal-close {
+                background: rgba(157, 196, 230, 0.14);
+            }
+
+            html.dark-mode .global-face-video-wrap {
+                border-color: rgba(80, 122, 156, 0.7);
+            }
+
+            html.dark-mode .global-face-status {
+                color: #9ec2e3;
+            }
+
+            html.dark-mode .global-face-btn.capture {
+                background: linear-gradient(135deg, rgba(21, 68, 55, 0.95), rgba(24, 84, 66, 0.94));
+                border-color: rgba(16, 185, 129, 0.7);
+                color: #cbffe8;
+            }
+
+            html.dark-mode .global-face-btn.cancel {
+                background: rgba(25, 43, 61, 0.94);
+                border-color: rgba(80, 122, 156, 0.72);
+                color: #d6e6f6;
+            }
+
+            html.dark-mode .global-language-select {
+                border-color: rgba(66, 95, 125, 0.75);
+                background: rgba(11, 20, 31, 0.9);
+                color: #d0e0f0;
+            }
+
+            html.dark-mode .global-language-select:hover {
+                border-color: rgba(94, 234, 212, 0.5);
+                background: rgba(11, 20, 31, 1);
+            }
+
+            html.dark-mode .global-language-select:focus {
+                border-color: rgba(94, 234, 212, 0.7);
+                background: rgba(11, 20, 31, 0.95);
+                box-shadow: 0 0 0 2px rgba(94, 234, 212, 0.2);
+            }
+
+            html.dark-mode .global-language-select option {
+                background: #1a2a3a;
+                color: #d0e0f0;
+            }
+
+            html.dark-mode .global-language-option.active {
+                border-color: rgba(45, 212, 191, 0.65);
+                background: rgba(45, 212, 191, 0.14);
+                color: #7de2d6;
+            }
+
+            html.dark-mode .global-action-coin {
+                background: rgba(20, 33, 48, 0.92);
+            }
+
+            html.dark-mode .global-coin-count {
+                color: #7dd3fc;
+            }
+
+            html.dark-mode .global-coin-tier,
+            html.dark-mode .global-coin-timer {
+                color: #b7cadf;
+            }
+
+            html.dark-mode #globalCollectCoinBtn:disabled {
+                background: rgba(30, 41, 59, 0.65);
+                color: #7dd3fc;
+            }
+
+            html.dark-mode #globalCollectCoinBtn:not(:disabled) {
+                background: rgba(40, 60, 80, 1);
+                color: #2dd4bf;
+                box-shadow: 0 6px 16px rgba(45, 212, 191, 0.2);
+            }
+
+            .global-loader-logo {
+                width: clamp(220px, 34vw, 360px);
+                max-width: 100%;
+                height: auto;
+                margin-bottom: 12px;
+                filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
+            }
+
+            .global-loader-text {
+                font-size: 1rem;
+                opacity: 0.92;
+                margin-bottom: 22px;
+            }
+
+            .global-loader-dots {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .global-loader-dots span {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #ffffff;
+                animation: loader-bounce 0.95s infinite ease-in-out;
+            }
+
+            .global-loader-dots span:nth-child(2) {
+                animation-delay: 0.12s;
+            }
+
+            .global-loader-dots span:nth-child(3) {
+                animation-delay: 0.24s;
+            }
+
+            .logout-confirm-modal {
+                position: fixed;
+                inset: 0;
+                z-index: 10010;
+                display: none;
+            }
+
+            .logout-confirm-modal.open {
+                display: block;
+            }
+
+            .logout-confirm-backdrop {
+                position: absolute;
+                inset: 0;
+                background: rgba(6, 16, 28, 0.58);
+                backdrop-filter: blur(4px);
+            }
+
+            .logout-confirm-card {
+                position: relative;
+                width: min(420px, calc(100vw - 24px));
+                margin: 16vh auto 0;
+                border-radius: 16px;
+                border: 1px solid rgba(152, 189, 216, 0.6);
+                background: rgba(255, 255, 255, 0.96);
+                box-shadow: 0 18px 40px rgba(8, 35, 66, 0.25);
+                padding: 18px;
+                color: #1e456e;
+            }
+
+            .logout-confirm-title {
+                margin: 0;
+                font-size: 20px;
+                font-weight: 800;
+            }
+
+            .logout-confirm-text {
+                margin: 10px 0 0;
+                color: #456482;
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            .logout-confirm-actions {
+                margin-top: 16px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+
+            .logout-confirm-btn {
+                border: none;
+                border-radius: 10px;
+                padding: 9px 14px;
+                font-weight: 700;
+                cursor: pointer;
+                min-width: 96px;
+            }
+
+            /* Requested color swap: OK uses cancel color, Cancel uses OK color. */
+            .logout-confirm-btn.ok {
+                background: #ff5e62;
+                color: #ffffff;
+            }
+
+            .logout-confirm-btn.cancel {
+                background: #0BA4A1;
+                color: #ffffff;
+            }
+
+            @media (max-width: 980px) {
+                .global-glass-layout {
+                    grid-template-columns: 1fr;
+                    gap: 14px;
+                }
+
+                .global-glass-divider {
+                    display: none;
+                }
+
+                .global-profile-side {
+                    width: 100%;
+                }
+            }
+
+            html.dark-mode .logout-confirm-card {
+                background: rgba(18, 32, 50, 0.96);
+                border-color: rgba(70, 98, 126, 0.75);
+                color: #d0e0f0;
+            }
+
+            html.dark-mode .logout-confirm-text {
+                color: #a9bfd6;
+            }
+
+            body.vision-theme-default {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(10, 160, 159, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(252, 186, 48, 0.20), transparent 55%), linear-gradient(180deg, #f4f9ff 0%, #eff6fb 100%);
+                --vision-top-bar-background: rgba(255, 255, 255, 0.90);
+                --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #0b8e8b, #1a6ea0);
+                --vision-nav-active-color: #f1fcff;
+                --vision-hover-background: rgba(10, 160, 159, 0.10);
+                --vision-hover-border: rgba(10, 160, 159, 0.22);
+                --vision-hover-color: #0b8e8b;
+                --vision-profile-hover-border: rgba(86, 218, 255, 0.92);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(219, 247, 255, 0.98), rgba(192, 238, 255, 0.94));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(129, 230, 255, 0.72), 0 0 16px rgba(65, 203, 255, 0.46), 0 10px 24px rgba(10, 98, 141, 0.24);
+                --vision-accent: #0FA5A2;
+                --vision-accent-strong: #1D4D7C;
+                --vision-panel-text: #1e456e;
+                --vision-panel-border: rgba(163, 208, 232, 0.55);
+                --vision-panel-bg: linear-gradient(140deg, rgba(255, 255, 255, 0.62), rgba(238, 248, 255, 0.46));
+                --vision-panel-glow: rgba(45, 212, 191, 0.55);
+            }
+
+            body.vision-theme-blue {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(34, 132, 222, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(129, 196, 255, 0.18), transparent 55%), linear-gradient(180deg, #f1f8ff 0%, #eaf4ff 100%);
+                --vision-top-bar-background: rgba(244, 250, 255, 0.94);
+                --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #156fd1, #0f4c9a);
+                --vision-nav-active-color: #f6fbff;
+                --vision-hover-background: rgba(34, 132, 222, 0.10);
+                --vision-hover-border: rgba(34, 132, 222, 0.22);
+                --vision-hover-color: #156fd1;
+                --vision-profile-hover-border: rgba(88, 154, 209, 0.92);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(232, 244, 255, 0.98), rgba(213, 234, 255, 0.94));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(134, 196, 255, 0.72), 0 0 16px rgba(63, 165, 255, 0.40), 0 10px 24px rgba(14, 82, 138, 0.22);
+                --vision-accent: #156fd1;
+                --vision-accent-strong: #0f4c9a;
+                --vision-panel-text: #174a7d;
+                --vision-panel-border: rgba(134, 196, 255, 0.58);
+                --vision-panel-bg: linear-gradient(140deg, rgba(255, 255, 255, 0.68), rgba(235, 246, 255, 0.48));
+                --vision-panel-glow: rgba(63, 165, 255, 0.58);
+            }
+
+            body.vision-theme-red {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(220, 82, 82, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 191, 191, 0.16), transparent 55%), linear-gradient(180deg, #fff4f4 0%, #ffecec 100%);
+                --vision-top-bar-background: rgba(255, 246, 246, 0.95);
+                --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #d33f49, #8f2433);
+                --vision-nav-active-color: #fff8f8;
+                --vision-hover-background: rgba(220, 82, 82, 0.10);
+                --vision-hover-border: rgba(220, 82, 82, 0.22);
+                --vision-hover-color: #d33f49;
+                --vision-profile-hover-border: rgba(224, 114, 114, 0.92);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 237, 237, 0.98), rgba(255, 225, 225, 0.94));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(255, 170, 170, 0.72), 0 0 16px rgba(255, 124, 124, 0.34), 0 10px 24px rgba(152, 50, 50, 0.20);
+                --vision-accent: #d33f49;
+                --vision-accent-strong: #8f2433;
+                --vision-panel-text: #9e3540;
+                --vision-panel-border: rgba(224, 114, 114, 0.58);
+                --vision-panel-bg: linear-gradient(140deg, rgba(255, 255, 255, 0.68), rgba(255, 240, 240, 0.48));
+                --vision-panel-glow: rgba(255, 124, 124, 0.50);
+            }
+
+            body.vision-theme-yellow {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(232, 177, 38, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 238, 181, 0.18), transparent 55%), linear-gradient(180deg, #fffaf0 0%, #fff3d6 100%);
+                --vision-top-bar-background: rgba(255, 251, 240, 0.95);
+                --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff7e4 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #d39a15, #8e5f09);
+                --vision-nav-active-color: #fffdf7;
+                --vision-hover-background: rgba(232, 177, 38, 0.12);
+                --vision-hover-border: rgba(232, 177, 38, 0.24);
+                --vision-hover-color: #c98f00;
+                --vision-profile-hover-border: rgba(230, 194, 86, 0.92);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), rgba(255, 242, 194, 0.94));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(248, 214, 123, 0.72), 0 0 16px rgba(255, 204, 84, 0.34), 0 10px 24px rgba(162, 124, 22, 0.18);
+                --vision-accent: #c98f00;
+                --vision-accent-strong: #8e5f09;
+                --vision-panel-text: #9a6e00;
+                --vision-panel-border: rgba(230, 194, 86, 0.58);
+                --vision-panel-bg: linear-gradient(140deg, rgba(255, 255, 255, 0.70), rgba(255, 248, 225, 0.50));
+                --vision-panel-glow: rgba(255, 204, 84, 0.52);
+            }
+
+            body.vision-theme-black {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(68, 74, 88, 0.30), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(156, 163, 175, 0.16), transparent 55%), linear-gradient(180deg, #1f2733 0%, #121822 100%);
+                --vision-top-bar-background: rgba(25, 32, 44, 0.96);
+                --vision-side-menu-background: linear-gradient(180deg, #1f2733 0%, #151b24 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #586174, #262d3a);
+                --vision-nav-active-color: #f8fafc;
+                --vision-hover-background: rgba(148, 163, 184, 0.12);
+                --vision-hover-border: rgba(148, 163, 184, 0.24);
+                --vision-hover-color: #d8e0ea;
+                --vision-profile-hover-border: rgba(114, 128, 145, 0.92);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(33, 41, 53, 0.98), rgba(24, 31, 42, 0.94));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(86, 95, 109, 0.70), 0 0 16px rgba(74, 85, 104, 0.30), 0 10px 24px rgba(0, 0, 0, 0.38);
+                --vision-accent: #c7d2e1;
+                --vision-accent-strong: #e2e8f0;
+                --vision-panel-text: #d6deea;
+                --vision-panel-border: rgba(109, 121, 139, 0.58);
+                --vision-panel-bg: linear-gradient(140deg, rgba(23, 30, 41, 0.92), rgba(15, 20, 29, 0.88));
+                --vision-panel-glow: rgba(148, 163, 184, 0.28);
+            }
+
+            body.vision-theme-white {
+                --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(203, 213, 225, 0.34), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(241, 245, 249, 0.22), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+                --vision-top-bar-background: rgba(255, 255, 255, 0.96);
+                --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+                --vision-nav-active-background: linear-gradient(135deg, #7a8798, #475569);
+                --vision-nav-active-color: #ffffff;
+                --vision-hover-background: rgba(148, 163, 184, 0.10);
+                --vision-hover-border: rgba(148, 163, 184, 0.24);
+                --vision-hover-color: #475569;
+                --vision-profile-hover-border: rgba(203, 213, 225, 0.95);
+                --vision-profile-hover-background: linear-gradient(135deg, rgba(250, 251, 252, 0.98), rgba(243, 246, 249, 0.95));
+                --vision-profile-hover-shadow: 0 0 0 1px rgba(226, 232, 240, 0.9), 0 0 16px rgba(203, 213, 225, 0.30), 0 10px 24px rgba(148, 163, 184, 0.18);
+                --vision-accent: #64748b;
+                --vision-accent-strong: #334155;
+                --vision-panel-text: #334155;
+                --vision-panel-border: rgba(203, 213, 225, 0.78);
+                --vision-panel-bg: linear-gradient(140deg, rgba(255, 255, 255, 0.70), rgba(249, 250, 251, 0.54));
+                --vision-panel-glow: rgba(148, 163, 184, 0.30);
+            }
+
+            body.vision-theme-default,
+            body.vision-theme-blue,
+            body.vision-theme-red,
+            body.vision-theme-yellow,
+            body.vision-theme-black,
+            body.vision-theme-white {
+                background: var(--vision-main-background);
+            }
+
+            body.vision-theme-default .global-quick-toggle,
+            body.vision-theme-blue .global-quick-toggle,
+            body.vision-theme-red .global-quick-toggle,
+            body.vision-theme-yellow .global-quick-toggle,
+            body.vision-theme-black .global-quick-toggle,
+            body.vision-theme-white .global-quick-toggle {
+                background: rgba(255, 255, 255, 0.88);
+                border-color: var(--vision-panel-border);
+                color: var(--vision-panel-text);
+            }
+
+            body.vision-theme-default .global-quick-toggle:hover,
+            body.vision-theme-blue .global-quick-toggle:hover,
+            body.vision-theme-red .global-quick-toggle:hover,
+            body.vision-theme-yellow .global-quick-toggle:hover,
+            body.vision-theme-black .global-quick-toggle:hover,
+            body.vision-theme-white .global-quick-toggle:hover {
+                color: var(--vision-accent);
+                border-color: var(--vision-accent);
+                box-shadow: 0 0 12px var(--vision-panel-glow), 0 0 26px rgba(56, 189, 248, 0.22);
+            }
+
+            body.vision-theme-default .global-glass-panel,
+            body.vision-theme-blue .global-glass-panel,
+            body.vision-theme-red .global-glass-panel,
+            body.vision-theme-yellow .global-glass-panel,
+            body.vision-theme-black .global-glass-panel,
+            body.vision-theme-white .global-glass-panel {
+                border-color: var(--vision-panel-border);
+                background: var(--vision-panel-bg);
+            }
+
+            body.vision-theme-default .global-glass-head,
+            body.vision-theme-blue .global-glass-head,
+            body.vision-theme-red .global-glass-head,
+            body.vision-theme-yellow .global-glass-head,
+            body.vision-theme-black .global-glass-head,
+            body.vision-theme-white .global-glass-head,
+            body.vision-theme-default .global-action-btn,
+            body.vision-theme-blue .global-action-btn,
+            body.vision-theme-red .global-action-btn,
+            body.vision-theme-yellow .global-action-btn,
+            body.vision-theme-black .global-action-btn,
+            body.vision-theme-white .global-action-btn,
+            body.vision-theme-default .global-action-link,
+            body.vision-theme-blue .global-action-link,
+            body.vision-theme-red .global-action-link,
+            body.vision-theme-yellow .global-action-link,
+            body.vision-theme-black .global-action-link,
+            body.vision-theme-white .global-action-link {
+                color: var(--vision-panel-text);
+            }
+
+            body.vision-theme-default .global-action-btn,
+            body.vision-theme-blue .global-action-btn,
+            body.vision-theme-red .global-action-btn,
+            body.vision-theme-yellow .global-action-btn,
+            body.vision-theme-black .global-action-btn,
+            body.vision-theme-white .global-action-btn,
+            body.vision-theme-default .global-action-link,
+            body.vision-theme-blue .global-action-link,
+            body.vision-theme-red .global-action-link,
+            body.vision-theme-yellow .global-action-link,
+            body.vision-theme-black .global-action-link,
+            body.vision-theme-white .global-action-link {
+                border-color: var(--vision-panel-border);
+                background: rgba(255, 255, 255, 0.90);
+            }
+
+            body.vision-theme-default .global-action-btn:hover,
+            body.vision-theme-blue .global-action-btn:hover,
+            body.vision-theme-red .global-action-btn:hover,
+            body.vision-theme-yellow .global-action-btn:hover,
+            body.vision-theme-black .global-action-btn:hover,
+            body.vision-theme-white .global-action-btn:hover,
+            body.vision-theme-default .global-action-link:hover,
+            body.vision-theme-blue .global-action-link:hover,
+            body.vision-theme-red .global-action-link:hover,
+            body.vision-theme-yellow .global-action-link:hover,
+            body.vision-theme-black .global-action-link:hover,
+            body.vision-theme-white .global-action-link:hover {
+                color: var(--vision-accent);
+                border-color: var(--vision-accent-border, var(--vision-accent));
+                box-shadow: 0 0 12px var(--vision-panel-glow), 0 0 24px rgba(56, 189, 248, 0.18);
+            }
+
+            body.vision-theme-default .global-action-link.power,
+            body.vision-theme-blue .global-action-link.power,
+            body.vision-theme-red .global-action-link.power,
+            body.vision-theme-yellow .global-action-link.power,
+            body.vision-theme-black .global-action-link.power,
+            body.vision-theme-white .global-action-link.power {
+                color: #b84848;
+            }
+
+            body.vision-theme-default .global-action-link.upgrade,
+            body.vision-theme-blue .global-action-link.upgrade,
+            body.vision-theme-red .global-action-link.upgrade,
+            body.vision-theme-yellow .global-action-link.upgrade,
+            body.vision-theme-black .global-action-link.upgrade,
+            body.vision-theme-white .global-action-link.upgrade {
+                color: #c19a3f;
+            }
+
+            @keyframes loader-bounce {
+                0%, 80%, 100% {
+                    transform: translateY(0);
+                    opacity: 0.5;
+                }
+                40% {
+                    transform: translateY(-8px);
+                    opacity: 1;
+                }
+            }
+        </style>
+    </head>
+    {% set currentLocale = app.request.locale|default('en') %}
+    <body class="vision-theme-{{ app.request.session.get('vision_theme')|default('default') }}">
+        <button id="globalQuickToggle" class="global-quick-toggle" type="button" aria-label="{{ 'panel.slide_me'|trans }}">⌄ {{ 'panel.slide_me'|trans }} ⌄<span id="globalQuickBadge" class="global-quick-badge">!</span></button>
+        <div id="globalGlassOverlay" class="global-glass-overlay" aria-hidden="true"></div>
+        <aside id="globalGlassPanel" class="global-glass-panel" aria-hidden="true">
+            <div class="global-glass-head">
+                <div class="global-glass-brand">{{ 'panel.control_title'|trans }}</div>
+                <button id="globalGlassClose" class="global-glass-close" type="button" aria-label="{{ 'panel.close'|trans }}">x</button>
+            </div>
+            <div class="global-glass-layout">
+                <div class="global-glass-actions">
+                    <button id="globalThemeButton" class="global-action-btn settings" type="button" aria-label="{{ 'panel.dark_mode'|trans }}">
+                        <span id="globalThemeIcon" class="global-action-icon">🌙</span>
+                        <span id="globalThemeLabel">{{ 'panel.dark_mode'|trans }}</span>
+                    </button>
+                    <button id="globalCollectCoinBtn" class="global-action-btn global-action-coin" type="button" aria-label="{{ 'panel.collect'|trans }}" disabled>
+                        <div class="global-coin-head">
+                            <span class="global-action-icon">💎</span>
+                            <span id="globalCoinCount" class="global-coin-count">0</span>
+                        </div>
+                        <div id="globalCoinTier" class="global-coin-tier">standard • +1</div>
+                        <div id="globalCoinTimer" class="global-coin-timer">{{ 'panel.ready_to_collect'|trans }}</div>
+                        <span id="globalCoinBtnLabel">{{ 'panel.collect'|trans }}</span>
+                    </button>
+                    <a id="globalUpgradeBtn" class="global-action-link upgrade" href="{{ path('app_premium') }}" aria-label="{{ 'panel.upgrade_plan'|trans }}" style="display: none;">
+                        <span class="global-action-icon">⭐</span>
+                        <span>{{ 'panel.upgrade_plan'|trans }}</span>
+                    </a>
+                    <a class="global-action-link settings" href="{{ path('app_settings') }}" data-no-loader="true" data-turbo="false" aria-label="{{ 'panel.settings'|trans }}">
+                        <span class="global-action-icon">⚙</span>
+                        <span>{{ 'panel.settings'|trans }}</span>
+                    </a>
+                    {% if app.user and is_granted('ROLE_USER') %}
+                        <a class="global-action-link settings" href="{{ path('app_vision_test') }}" data-no-loader="true" data-turbo="false" aria-label="{{ 'panel.eye_test'|trans }}">
+                            <span class="global-action-icon">👁️</span>
+                            <span>{{ 'panel.eye_test'|trans }}</span>
+                        </a>
+                    {% endif %}
+                    <div class="global-action-btn global-action-language settings">
+                        <label for="languageSelect" class="global-language-title">🌍 {{ 'panel.language'|trans }}</label>
+                        <select id="languageSelect" name="locale" class="global-language-select" onchange="window.location.href='/language/' + this.value;">
+                            <option value="en" {% if currentLocale == 'en' %}selected{% endif %}>🇺🇸 {{ 'panel.language_en'|trans }}</option>
+                            <option value="fr" {% if currentLocale == 'fr' %}selected{% endif %}>🇫🇷 {{ 'panel.language_fr'|trans }}</option>
+                        </select>
+                    </div>
+                    <a id="globalLogoutLink" class="global-action-link power" href="{{ path('app_logout') }}" aria-label="{{ 'panel.logout'|trans }}">
+                        <span class="global-action-icon">⏻</span>
+                        <span>{{ 'panel.logout'|trans }}</span>
+                    </a>
+                </div>
+                <div class="global-glass-divider" aria-hidden="true"></div>
+                <aside class="global-profile-side" aria-label="Current user profile">
+                    <img id="globalProfileAvatar" class="global-profile-avatar" src="{{ (app.user and app.user.profile and app.user.profile.imageUrl) ? app.user.profile.imageUrl : asset('images/default_image.png') }}" alt="User profile">
+                    <div id="globalProfileName" class="global-profile-name">{{ app.user ? (app.user.fullName|default(app.user.username)) : 'Guest' }}</div>
+                    <div id="globalProfileRole" class="global-profile-role">
+                        {% if app.user and 'ROLE_ADMIN' in app.user.roles %}
+                            ADMIN
+                        {% elseif app.user and 'ROLE_GUIDE' in app.user.roles %}
+                            GUIDE
+                        {% elseif app.user and 'ROLE_AGENCY' in app.user.roles %}
+                            AGENCY
+                        {% else %}
+                            USER
+                        {% endif %}
+                    </div>
+                    <button id="globalTwoFactorBtn" class="global-profile-twofa" type="button" aria-label="Toggle 2FA">
+                        <span class="global-action-icon">🛡️</span>
+                        <span id="globalTwoFactorLabel">Enable 2FA</span>
+                    </button>
+                    <button id="globalQrEmailBtn" class="global-profile-qr" type="button" aria-label="Send login QR">
+                        <span class="global-action-icon">📧</span>
+                        <span id="globalQrEmailLabel">Send QR Code</span>
+                    </button>
+                    <button id="globalFaceIdBtn" class="global-profile-faceid" type="button" aria-label="Capture face id">
+                        <span class="global-action-icon">📷</span>
+                        <span id="globalFaceIdLabel">Face Id</span>
+                    </button>
+                </aside>
+            </div>
+        </aside>
+        <div id="globalLoader" class="global-loader" aria-hidden="true">
+            <img class="global-loader-logo" src="{{ asset('images/logo.png') }}" alt="Rehletna logo">
+            <div id="globalLoaderText" class="global-loader-text">{{ 'panel.loading_page'|trans }}</div>
+            <div class="global-loader-dots" aria-label="Loading">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <div id="logoutConfirmModal" class="logout-confirm-modal" aria-hidden="true">
+            <div class="logout-confirm-backdrop" id="logoutConfirmBackdrop"></div>
+            <div class="logout-confirm-card" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle">
+                <h3 id="logoutConfirmTitle" class="logout-confirm-title">Confirm Logout</h3>
+                <p class="logout-confirm-text">Are you sure you want to log out?</p>
+                <div class="logout-confirm-actions">
+                    <button id="logoutConfirmCancel" type="button" class="logout-confirm-btn cancel">Cancel</button>
+                    <button id="logoutConfirmOk" type="button" class="logout-confirm-btn ok">OK</button>
+                </div>
+            </div>
+        </div>
+        <div id="globalFaceModal" class="global-face-modal" aria-hidden="true">
+            <div id="globalFaceModalBackdrop" class="global-face-modal-backdrop"></div>
+            <div class="global-face-modal-card" role="dialog" aria-modal="true" aria-labelledby="globalFaceModalTitle">
+                <div class="global-face-modal-head">
+                    <h3 id="globalFaceModalTitle" class="global-face-modal-title">Capture Face Id</h3>
+                    <button id="globalFaceModalClose" class="global-face-modal-close" type="button" aria-label="Close">x</button>
+                </div>
+                <div class="global-face-modal-body">
+                    <div class="global-face-video-wrap">
+                        <video id="globalFaceVideo" class="global-face-video" autoplay playsinline muted></video>
+                        <canvas id="globalFaceOverlay" class="global-face-overlay"></canvas>
+                        <img id="globalFacePreview" class="global-face-preview" alt="Captured face preview">
+                        <div class="global-face-circle-guide" aria-hidden="true"></div>
+                        <div class="global-face-circle-lines" aria-hidden="true"></div>
+                        <div class="global-face-guide-label" aria-hidden="true">Center your face here</div>
+                    </div>
+                    <p id="globalFaceStatus" class="global-face-status">Allow camera access, center your face, then capture.</p>
+                    <p id="globalFaceStep" class="global-face-step" style="display:none; font-size: 0.9em; color: #888;">Step 2: Take a second photo</p>
+                    <div class="global-face-actions">
+                        <button id="globalFaceCaptureBtn" class="global-face-btn capture" type="button">Capture</button>
+                        <button id="globalFaceRetakeBtn" class="global-face-btn cancel" type="button" style="display:none;">Retake</button>
+                        <button id="globalFaceConfirmBtn" class="global-face-btn capture" type="button" style="display:none;">Confirm & Next</button>
+                        <button id="globalFaceSaveBtn" class="global-face-btn capture" type="button" style="display:none;">Save</button>
+                        <button id="globalFaceCancelBtn" class="global-face-btn cancel" type="button">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% block body %}{% endblock %}
+        <script>
+            (function () {
+                const loader = document.getElementById('globalLoader');
+                const loaderText = document.getElementById('globalLoaderText');
+                const globalQuickToggle = document.getElementById('globalQuickToggle');
+                const globalGlassOverlay = document.getElementById('globalGlassOverlay');
+                const globalGlassPanel = document.getElementById('globalGlassPanel');
+                const globalGlassClose = document.getElementById('globalGlassClose');
+                const globalThemeButton = document.getElementById('globalThemeButton');
+                const globalThemeIcon = document.getElementById('globalThemeIcon');
+                const globalThemeLabel = document.getElementById('globalThemeLabel');
+                const globalQuickBadge = document.getElementById('globalQuickBadge');
+                const globalCollectCoinBtn = document.getElementById('globalCollectCoinBtn');
+                const globalUpgradeBtn = document.getElementById('globalUpgradeBtn');
+                const globalCoinCount = document.getElementById('globalCoinCount');
+                const globalCoinTier = document.getElementById('globalCoinTier');
+                const globalCoinTimer = document.getElementById('globalCoinTimer');
+                const globalCoinBtnLabel = document.getElementById('globalCoinBtnLabel');
+                const globalLogoutLink = document.getElementById('globalLogoutLink');
+                const globalTwoFactorBtn = document.getElementById('globalTwoFactorBtn');
+                const globalTwoFactorLabel = document.getElementById('globalTwoFactorLabel');
+                const globalQrEmailBtn = document.getElementById('globalQrEmailBtn');
+                const globalQrEmailLabel = document.getElementById('globalQrEmailLabel');
+                const globalFaceIdBtn = document.getElementById('globalFaceIdBtn');
+                const globalFaceIdLabel = document.getElementById('globalFaceIdLabel');
+                const globalFaceModal = document.getElementById('globalFaceModal');
+                const globalFaceModalBackdrop = document.getElementById('globalFaceModalBackdrop');
+                const globalFaceModalClose = document.getElementById('globalFaceModalClose');
+                const globalFaceVideo = document.getElementById('globalFaceVideo');
+                const globalFaceOverlay = document.getElementById('globalFaceOverlay');
+                const globalFacePreview = document.getElementById('globalFacePreview');
+                const globalFaceStatus = document.getElementById('globalFaceStatus');
+                const globalFaceStep = document.getElementById('globalFaceStep');
+                const globalFaceCaptureBtn = document.getElementById('globalFaceCaptureBtn');
+                const globalFaceRetakeBtn = document.getElementById('globalFaceRetakeBtn');
+                const globalFaceConfirmBtn = document.getElementById('globalFaceConfirmBtn');
+                const globalFaceSaveBtn = document.getElementById('globalFaceSaveBtn');
+                const globalFaceCancelBtn = document.getElementById('globalFaceCancelBtn');
+                const globalProfileAvatar = document.getElementById('globalProfileAvatar');
+                const globalProfileName = document.getElementById('globalProfileName');
+                const globalProfileRole = document.getElementById('globalProfileRole');
+                const logoutConfirmModal = document.getElementById('logoutConfirmModal');
+                const logoutConfirmBackdrop = document.getElementById('logoutConfirmBackdrop');
+                const logoutConfirmCancel = document.getElementById('logoutConfirmCancel');
+                const logoutConfirmOk = document.getElementById('logoutConfirmOk');
+                const panelText = {
+                    darkMode: '{{ 'panel.dark_mode'|trans|e('js') }}',
+                    lightMode: '{{ 'panel.light_mode'|trans|e('js') }}',
+                    collectNow: '{{ 'panel.collect_now'|trans|e('js') }}',
+                    collectingSoon: '{{ 'panel.collecting_soon'|trans|e('js') }}',
+                    collecting: '{{ 'panel.collecting'|trans|e('js') }}',
+                    readyToCollect: '{{ 'panel.ready_to_collect'|trans|e('js') }}',
+                    availableIn: '{{ 'panel.available_in'|trans({'%seconds%': '__SECONDS__'})|e('js') }}',
+                    returningMain: '{{ 'panel.returning_main'|trans|e('js') }}'
+                };
+                let dragStartY = 0;
+                let dragDistance = 0;
+                let isDraggingToggle = false;
+                let coinCooldownRemaining = 0;
+                let coinCountdownInterval = null;
+                let faceStream = null;
+                let capturedFaceImageData = '';
+                let capturedFaceImageData1 = '';
+                let capturedFaceImageData2 = '';
+                let faceDetectionStep = 1;
+                let faceDetectionFrameId = null;
+                let autoCaptureCooldown = false;
+                let stableDetectionFrames = 0;
+                let faceDetector = null;
+
+                if (!loader) {
+                    return;
+                }
+
+                const showLoader = (text) => {
+                    if (loaderText && text) {
+                        loaderText.textContent = text;
+                    }
+                    loader.classList.add('active');
+                    loader.setAttribute('aria-hidden', 'false');
+                };
+
+                const hideLoader = () => {
+                    loader.classList.remove('active');
+                    loader.setAttribute('aria-hidden', 'true');
+                };
+
+                const syncThemeIcon = () => {
+                    if (!globalThemeIcon || !globalThemeLabel) {
+                        return;
+                    }
+                    const isDark = document.documentElement.classList.contains('dark-mode') || document.body.classList.contains('dark-mode');
+                    globalThemeIcon.textContent = isDark ? '☀️' : '🌙';
+                    globalThemeLabel.textContent = isDark ? panelText.lightMode : panelText.darkMode;
+                };
+
+                const syncCoinNotification = () => {
+                    if (!globalQuickBadge) {
+                        return;
+                    }
+                    if (coinCooldownRemaining <= 0) {
+                        globalQuickBadge.classList.add('show');
+                    } else {
+                        globalQuickBadge.classList.remove('show');
+                    }
+                };
+
+                const updateCoinUi = () => {
+                    if (!globalCollectCoinBtn || !globalCoinTimer || !globalCoinBtnLabel) {
+                        return;
+                    }
+
+                    const isReady = coinCooldownRemaining <= 0;
+                    globalCollectCoinBtn.disabled = !isReady;
+                    globalCoinBtnLabel.textContent = isReady ? panelText.collectNow : panelText.collectingSoon;
+                    globalCoinTimer.textContent = isReady
+                        ? panelText.readyToCollect
+                        : panelText.availableIn.replace('__SECONDS__', String(coinCooldownRemaining));
+                    const progress = Math.max(0, Math.min(100, ((30 - coinCooldownRemaining) / 30) * 100));
+                    
+                    // Update collect coin button progress line only
+                    globalCollectCoinBtn.style.setProperty('--coin-button-progress', progress + '%');
+                    
+                    syncCoinNotification();
+                };
+
+                const startCoinCountdown = (seconds) => {
+                    coinCooldownRemaining = Math.max(0, parseInt(seconds || 0, 10));
+                    updateCoinUi();
+
+                    if (coinCountdownInterval) {
+                        clearInterval(coinCountdownInterval);
+                    }
+
+                    if (coinCooldownRemaining <= 0) {
+                        return;
+                    }
+
+                    coinCountdownInterval = window.setInterval(() => {
+                        coinCooldownRemaining = Math.max(0, coinCooldownRemaining - 1);
+                        updateCoinUi();
+                        if (coinCooldownRemaining <= 0) {
+                            clearInterval(coinCountdownInterval);
+                            coinCountdownInterval = null;
+                        }
+                    }, 1000);
+                };
+
+                const loadCoinStatus = () => {
+                    if (!globalCollectCoinBtn) {
+                        return;
+                    }
+
+                    fetch('{{ path('app_collect_coin_status') }}', {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    })
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error('coin-status-failed');
+                            }
+                            return response.json();
+                        })
+                        .then((payload) => {
+                            if (!payload || !payload.success) {
+                                return;
+                            }
+
+                            if (globalCoinCount) {
+                                globalCoinCount.textContent = String(payload.coins || 0);
+                            }
+                            if (globalCoinTier) {
+                                const tierLabel = String(payload.tier || 'standard').toLowerCase();
+                                globalCoinTier.textContent = tierLabel + ' • +' + String(payload.reward || 1);
+                            }
+                            startCoinCountdown(payload.cooldownRemaining || 0);
+                        })
+                        .catch(() => {
+                            // Keep panel usable even if status endpoint is not available for this page.
+                        });
+                };
+
+                const checkUpgradeButton = () => {
+                    if (!globalUpgradeBtn) {
+                        return;
+                    }
+
+                    fetch('{{ path('app_collect_coin_status') }}', {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    })
+                        .then((response) => response.json())
+                        .then((payload) => {
+                            if (payload && payload.tier) {
+                                const tier = String(payload.tier).toLowerCase();
+                                if (tier === 'standard') {
+                                    globalUpgradeBtn.style.display = 'flex';
+                                } else {
+                                    globalUpgradeBtn.style.display = 'none';
+                                }
+                            }
+                        })
+                        .catch(() => {
+                            // Don't show button if we can't determine tier
+                            globalUpgradeBtn.style.display = 'none';
+                        });
+                };
+
+                const collectCoins = () => {
+                    if (!globalCollectCoinBtn || globalCollectCoinBtn.disabled) {
+                        return;
+                    }
+
+                    globalCollectCoinBtn.disabled = true;
+                    globalCoinBtnLabel.textContent = panelText.collecting;
+
+                    fetch('{{ path('app_collect_coin') }}', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: ''
+                    })
+                        .then((response) => response.json())
+                        .then((payload) => {
+                            if (!payload || !payload.success) {
+                                startCoinCountdown(payload && payload.cooldownRemaining ? payload.cooldownRemaining : 0);
+                                return;
+                            }
+
+                            if (globalCoinCount) {
+                                globalCoinCount.textContent = String(payload.coins || 0);
+                            }
+                            if (globalCoinTier) {
+                                const tierLabel = String(payload.tier || 'standard').toLowerCase();
+                                globalCoinTier.textContent = tierLabel + ' • +' + String(payload.awarded || 1);
+                            }
+                            startCoinCountdown(payload.cooldownRemaining || 30);
+                        })
+                        .catch(() => {
+                            loadCoinStatus();
+                        });
+                };
+
+                const loadProfileSummary = () => {
+                    fetch('{{ path('app_panel_profile_summary') }}', {
+                        credentials: 'same-origin',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    })
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error('profile-summary-failed');
+                            }
+                            return response.json();
+                        })
+                        .then((payload) => {
+                            if (!payload || !payload.success) {
+                                return;
+                            }
+
+                            if (globalProfileAvatar && payload.imageUrl) {
+                                globalProfileAvatar.src = payload.imageUrl;
+                            }
+                            if (globalProfileName && payload.name) {
+                                globalProfileName.textContent = payload.name;
+                            }
+                            if (globalProfileRole && payload.role) {
+                                globalProfileRole.textContent = payload.role;
+                            }
+
+                            const isEnabled = !!payload.twoFactorEnabled;
+                            if (globalTwoFactorBtn) {
+                                globalTwoFactorBtn.classList.toggle('active', isEnabled);
+                            }
+                            if (globalTwoFactorLabel) {
+                                globalTwoFactorLabel.textContent = isEnabled ? 'Disable 2FA' : 'Enable 2FA';
+                            }
+                        })
+                        .catch(() => {
+                            // Keep defaults if summary endpoint is unavailable.
+                        });
+                };
+
+                const openGlassPanel = () => {
+                    if (!globalGlassPanel || !globalGlassOverlay) {
+                        return;
+                    }
+                    globalGlassPanel.classList.add('open');
+                    globalGlassOverlay.classList.add('open');
+                    globalGlassPanel.setAttribute('aria-hidden', 'false');
+                    globalGlassOverlay.setAttribute('aria-hidden', 'false');
+                    loadProfileSummary();
+                };
+
+                const closeGlassPanel = () => {
+                    if (!globalGlassPanel || !globalGlassOverlay) {
+                        return;
+                    }
+                    globalGlassPanel.classList.remove('open');
+                    globalGlassOverlay.classList.remove('open');
+                    globalGlassPanel.setAttribute('aria-hidden', 'true');
+                    globalGlassOverlay.setAttribute('aria-hidden', 'true');
+                };
+
+                const openLogoutConfirm = () => {
+                    if (!logoutConfirmModal) {
+                        return;
+                    }
+                    logoutConfirmModal.classList.add('open');
+                    logoutConfirmModal.setAttribute('aria-hidden', 'false');
+                };
+
+                const closeLogoutConfirm = () => {
+                    if (!logoutConfirmModal) {
+                        return;
+                    }
+                    logoutConfirmModal.classList.remove('open');
+                    logoutConfirmModal.setAttribute('aria-hidden', 'true');
+                };
+
+                const resetFaceCaptureState = () => {
+                    capturedFaceImageData = '';
+
+                    if (globalFacePreview) {
+                        globalFacePreview.removeAttribute('src');
+                        globalFacePreview.style.display = 'none';
+                    }
+
+                    if (globalFaceVideo) {
+                        globalFaceVideo.style.display = 'block';
+                    }
+
+                    if (globalFaceOverlay) {
+                        globalFaceOverlay.style.display = 'block';
+                    }
+
+                    if (globalFaceCaptureBtn) {
+                        globalFaceCaptureBtn.style.display = 'inline-flex';
+                        globalFaceCaptureBtn.disabled = false;
+                    }
+
+                    if (globalFaceConfirmBtn) {
+                        globalFaceConfirmBtn.style.display = 'none';
+                        globalFaceConfirmBtn.disabled = false;
+                    }
+
+                    if (globalFaceRetakeBtn) {
+                        globalFaceRetakeBtn.style.display = 'none';
+                        globalFaceRetakeBtn.disabled = false;
+                    }
+
+                    if (globalFaceSaveBtn) {
+                        globalFaceSaveBtn.style.display = 'none';
+                        globalFaceSaveBtn.disabled = false;
+                    }
+
+                    autoCaptureCooldown = false;
+                };
+
+                const setFaceStatus = (text) => {
+                    if (globalFaceStatus) {
+                        globalFaceStatus.textContent = text;
+                    }
+                };
+
+                const stopFaceCamera = () => {
+                    if (faceStream) {
+                        faceStream.getTracks().forEach((track) => track.stop());
+                        faceStream = null;
+                    }
+
+                    if (globalFaceVideo) {
+                        globalFaceVideo.pause();
+                        globalFaceVideo.srcObject = null;
+                    }
+                };
+
+                const closeFaceModal = () => {
+                    if (faceDetectionFrameId) {
+                        cancelAnimationFrame(faceDetectionFrameId);
+                        faceDetectionFrameId = null;
+                    }
+                    stopFaceCamera();
+                    resetFaceCaptureState();
+                    faceDetectionStep = 1;
+                    capturedFaceImageData1 = '';
+                    capturedFaceImageData2 = '';
+                    stableDetectionFrames = 0;
+                    if (globalFaceModal) {
+                        globalFaceModal.classList.remove('open');
+                        globalFaceModal.setAttribute('aria-hidden', 'true');
+                    }
+                };
+
+                const openFaceModal = async () => {
+                    if (!globalFaceModal || !globalFaceVideo) {
+                        return;
+                    }
+
+                    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                        setFaceStatus('Camera is not supported in this browser.');
+                        return;
+                    }
+
+                    try {
+                        setFaceStatus('Requesting camera access...');
+                        globalFaceModal.classList.add('open');
+                        globalFaceModal.setAttribute('aria-hidden', 'false');
+
+                        faceStream = await navigator.mediaDevices.getUserMedia({
+                            video: {
+                                facingMode: 'user',
+                                width: { ideal: 640 },
+                                height: { ideal: 480 }
+                            },
+                            audio: false
+                        });
+
+                        globalFaceVideo.srcObject = faceStream;
+                        
+                        // Wait for video to load metadata before starting detection
+                        await new Promise((resolve) => {
+                            const checkReady = () => {
+                                if (globalFaceVideo.videoWidth && globalFaceVideo.videoHeight) {
+                                    resolve();
+                                } else {
+                                    globalFaceVideo.onloadedmetadata = resolve;
+                                }
+                            };
+                            checkReady();
+                        });
+                        
+                        await globalFaceVideo.play();
+
+                        // Setup overlay canvas to match video display dimensions
+                        if (globalFaceOverlay && globalFaceVideo.clientWidth && globalFaceVideo.clientHeight) {
+                            globalFaceOverlay.width = globalFaceVideo.clientWidth;
+                            globalFaceOverlay.height = globalFaceVideo.clientHeight;
+                        }
+
+                        // Initialize Face Detector if available
+                        if ('FaceDetector' in window) {
+                            try {
+                                faceDetector = new FaceDetector();
+                            } catch (e) {
+                                console.log('FaceDetector API not fully supported');
+                                faceDetector = null;
+                            }
+                        }
+
+                        faceDetectionStep = 1;
+                        capturedFaceImageData1 = '';
+                        capturedFaceImageData2 = '';
+                        resetFaceCaptureState();
+                        setFaceStatus('Waiting to detect your face... or click Capture to take photo manually.');
+                        if (globalFaceStep) {
+                            globalFaceStep.style.display = 'none';
+                        }
+
+                        // Start face detection and overlay rendering loop
+                        runFaceDetectionFrame();
+                    } catch (error) {
+                        closeFaceModal();
+                        setFaceStatus('Unable to access camera. Please allow permission and try again.');
+                        if (globalFaceIdLabel) {
+                            globalFaceIdLabel.textContent = 'Face Id';
+                        }
+                    }
+                };
+
+                const detectFaceByBrightness = (canvas) => {
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return false;
+                    
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    let skinPixels = 0;
+                    let totalPixels = data.length / 4;
+                    
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const a = data[i + 3];
+                        
+                        if (a > 128) {
+                            const brightness = (r + g + b) / 3;
+                            const redness = r - b;
+                            if (brightness > 60 && brightness < 220 && redness > 15) {
+                                skinPixels++;
+                            }
+                        }
+                    }
+                    
+                    return (skinPixels / totalPixels) > 0.05;
+                };
+
+                const runFaceDetectionFrame = async () => {
+                    if (!globalFaceVideo || !faceStream) {
+                        return;
+                    }
+
+                    faceDetectionFrameId = requestAnimationFrame(runFaceDetectionFrame);
+
+                    // Draw video to overlay canvas for detection and rendering
+                    if (globalFaceOverlay && globalFaceOverlay.getContext) {
+                        const overlayCtx = globalFaceOverlay.getContext('2d');
+                        if (overlayCtx) {
+                            overlayCtx.clearRect(0, 0, globalFaceOverlay.width, globalFaceOverlay.height);
+                        }
+
+                        let faceDetected = false;
+                        let detectionBox = null;
+
+                        // Try FaceDetector API first (Chrome/Edge)
+                        if (faceDetector && globalFaceVideo.videoWidth && globalFaceVideo.videoHeight) {
+                            try {
+                                const detections = await faceDetector.detect(globalFaceVideo);
+                                if (detections.length > 0) {
+                                    faceDetected = true;
+                                    detectionBox = detections[0].boundingBox;
+                                }
+                            } catch (e) {
+                                console.log('FaceDetector error, falling back:', e);
+                            }
+                        }
+
+                        // Fallback: Use canvas-based skin detection
+                        if (!faceDetected && globalFaceVideo.videoWidth && globalFaceVideo.videoHeight) {
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = 160;
+                            tempCanvas.height = 120;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            if (tempCtx) {
+                                tempCtx.drawImage(globalFaceVideo, 0, 0, 160, 120);
+                                if (detectFaceByBrightness(tempCanvas)) {
+                                    faceDetected = true;
+                                    detectionBox = {
+                                        x: globalFaceOverlay.width * 0.15,
+                                        y: globalFaceOverlay.height * 0.2,
+                                        width: globalFaceOverlay.width * 0.7,
+                                        height: globalFaceOverlay.height * 0.65
+                                    };
+                                }
+                            }
+                        }
+
+                        // Draw feedback on overlay
+                        if (overlayCtx) {
+                            const guideWidth = globalFaceOverlay.width * 0.62;
+                            const guideHeight = globalFaceOverlay.height * 0.62;
+                            const guideRadius = Math.min(guideWidth, guideHeight) / 2;
+                            const guideCenterX = globalFaceOverlay.width / 2;
+                            const guideCenterY = globalFaceOverlay.height / 2;
+
+                            overlayCtx.fillStyle = 'rgba(3, 15, 27, 0.32)';
+                            overlayCtx.fillRect(0, 0, globalFaceOverlay.width, globalFaceOverlay.height);
+
+                            overlayCtx.save();
+                            overlayCtx.globalCompositeOperation = 'destination-out';
+                            overlayCtx.beginPath();
+                            overlayCtx.arc(guideCenterX, guideCenterY, guideRadius, 0, Math.PI * 2);
+                            overlayCtx.fill();
+                            overlayCtx.restore();
+
+                            overlayCtx.beginPath();
+                            overlayCtx.arc(guideCenterX, guideCenterY, guideRadius, 0, Math.PI * 2);
+                            overlayCtx.strokeStyle = faceDetected ? '#f6bc43' : '#09a7a2';
+                            overlayCtx.lineWidth = 3;
+                            overlayCtx.shadowColor = faceDetected ? 'rgba(246, 188, 67, 0.75)' : 'rgba(9, 167, 162, 0.65)';
+                            overlayCtx.shadowBlur = 18;
+                            overlayCtx.stroke();
+
+                            overlayCtx.shadowBlur = 0;
+
+                            overlayCtx.beginPath();
+                            overlayCtx.arc(guideCenterX, guideCenterY, guideRadius * 0.62, 0, Math.PI * 2);
+                            overlayCtx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+                            overlayCtx.lineWidth = 1;
+                            overlayCtx.setLineDash([8, 8]);
+                            overlayCtx.stroke();
+                            overlayCtx.setLineDash([]);
+
+                            overlayCtx.fillStyle = faceDetected ? 'rgba(246, 188, 67, 0.1)' : 'rgba(9, 167, 162, 0.08)';
+                            overlayCtx.fillRect(0, 0, globalFaceOverlay.width, globalFaceOverlay.height);
+
+                            if (faceDetected && detectionBox) {
+                                const centerX = detectionBox.x + detectionBox.width / 2;
+                                const centerY = detectionBox.y + detectionBox.height / 2;
+                                overlayCtx.fillStyle = 'rgba(246, 188, 67, 0.26)';
+                                overlayCtx.beginPath();
+                                overlayCtx.arc(centerX, centerY, 14, 0, 2 * Math.PI);
+                                overlayCtx.fill();
+
+                                // Increment stable detection counter
+                                stableDetectionFrames++;
+
+                                // Auto-capture after stable detection for ~1 second (30 frames at 30fps)
+                                if (!autoCaptureCooldown && stableDetectionFrames >= 15 && (faceDetectionStep === 1 || faceDetectionStep === 2)) {
+                                    autoCaptureFace();
+                                }
+                            } else {
+                                // No face detected
+                                stableDetectionFrames = 0;
+                                overlayCtx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+                                overlayCtx.font = 'bold 15px sans-serif';
+                                overlayCtx.fillText('Place your face inside the circle', 18, 34);
+                            }
+                        }
+                    }
+                };
+
+                const autoCaptureFace = () => {
+                    if (!globalFaceVideo || !globalFaceVideo.videoWidth || !globalFaceVideo.videoHeight) {
+                        return;
+                    }
+
+                    autoCaptureCooldown = true;
+                    const canvas = document.createElement('canvas');
+                    const displayWidth = globalFaceVideo.videoWidth;
+                    const displayHeight = globalFaceVideo.videoHeight;
+
+                    canvas.width = displayWidth;
+                    canvas.height = displayHeight;
+
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        return;
+                    }
+
+                    context.drawImage(globalFaceVideo, 0, 0, displayWidth, displayHeight);
+                    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+                    if (faceDetectionStep === 1) {
+                        capturedFaceImageData1 = imageData;
+                        faceDetectionStep = 2;
+                        stableDetectionFrames = 0;
+                        setFaceStatus('✓ Photo 1 captured! Now move slightly and hold still for Photo 2.');
+                        if (globalFaceStep) {
+                            globalFaceStep.style.display = 'block';
+                        }
+                        window.setTimeout(() => {
+                            autoCaptureCooldown = false;
+                        }, 1500);
+                    } else if (faceDetectionStep === 2) {
+                        capturedFaceImageData2 = imageData;
+                        faceDetectionStep = 3;
+                        stableDetectionFrames = 0;
+
+                        // Stop detection loop
+                        if (faceDetectionFrameId) {
+                            cancelAnimationFrame(faceDetectionFrameId);
+                            faceDetectionFrameId = null;
+                        }
+
+                        // Show preview comparison
+                        showFaceComparisonPreview();
+                    }
+                };
+
+                const showFaceComparisonPreview = () => {
+                    if (globalFaceVideo) {
+                        globalFaceVideo.style.display = 'none';
+                    }
+
+                    if (globalFaceOverlay) {
+                        globalFaceOverlay.style.display = 'none';
+                    }
+
+                    if (globalFacePreview && capturedFaceImageData1) {
+                        globalFacePreview.src = capturedFaceImageData1;
+                        globalFacePreview.style.display = 'block';
+                    }
+
+                    if (globalFaceCaptureBtn) {
+                        globalFaceCaptureBtn.style.display = 'none';
+                    }
+
+                    if (globalFaceRetakeBtn) {
+                        globalFaceRetakeBtn.style.display = 'inline-flex';
+                    }
+
+                    if (globalFaceSaveBtn) {
+                        globalFaceSaveBtn.style.display = 'inline-flex';
+                    }
+
+                    setFaceStatus('Both photos captured! Verify they match, then save.');
+                };
+
+                const captureFacePreview = () => {
+                    if (!globalFaceVideo || !globalFaceVideo.videoWidth || !globalFaceVideo.videoHeight) {
+                        setFaceStatus('Camera not ready. Please try again.');
+                        return;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    const displayWidth = Math.max(1, globalFaceVideo.clientWidth || 0);
+                    const displayHeight = Math.max(1, globalFaceVideo.clientHeight || 0);
+
+                    canvas.width = displayWidth;
+                    canvas.height = displayHeight;
+
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        setFaceStatus('Capture failed.');
+                        return;
+                    }
+
+                    context.drawImage(globalFaceVideo, 0, 0, displayWidth, displayHeight);
+                    capturedFaceImageData = canvas.toDataURL('image/jpeg', 0.9);
+
+                    if (globalFacePreview) {
+                        globalFacePreview.src = capturedFaceImageData;
+                        globalFacePreview.style.display = 'block';
+                    }
+
+                    globalFaceVideo.style.display = 'none';
+
+                    if (globalFaceCaptureBtn) {
+                        globalFaceCaptureBtn.style.display = 'none';
+                    }
+
+                    if (globalFaceRetakeBtn) {
+                        globalFaceRetakeBtn.style.display = 'inline-flex';
+                    }
+
+                    if (globalFaceSaveBtn) {
+                        globalFaceSaveBtn.style.display = 'inline-flex';
+                    }
+
+                    setFaceStatus('Preview ready. Save it or retake.');
+                };
+
+                const saveCapturedFace = () => {
+                    if (!capturedFaceImageData1 || !capturedFaceImageData2) {
+                        setFaceStatus('Both captures required. Please retry.');
+                        return;
+                    }
+
+                    if (globalFaceSaveBtn) {
+                        globalFaceSaveBtn.disabled = true;
+                    }
+                    if (globalFaceRetakeBtn) {
+                        globalFaceRetakeBtn.disabled = true;
+                    }
+                    setFaceStatus('Verifying and saving face data...');
+
+                    // Step 1: Send first image
+                    fetch('{{ path('app_panel_capture_face_id') }}', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            imageData: capturedFaceImageData1,
+                            step: 1
+                        })
+                    })
+                        .then((response) => response.json())
+                        .then((payload) => {
+                            if (!payload || !payload.success) {
+                                setFaceStatus('First photo validation failed. Please retry.');
+                                throw new Error('Step 1 failed');
+                            }
+
+                            // Step 2: Send second image and compare
+                            return fetch('{{ path('app_panel_capture_face_id') }}', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: JSON.stringify({
+                                    imageData: capturedFaceImageData2,
+                                    step: 2
+                                })
+                            });
+                        })
+                        .then((response) => response.json())
+                        .then((payload) => {
+                            if (!payload || !payload.success) {
+                                setFaceStatus(payload && payload.error ? payload.error : 'Face save failed. Please retry.');
+                                return;
+                            }
+
+                            setFaceStatus('Face data saved successfully! Both photos matched.');
+                            if (globalFaceIdLabel) {
+                                globalFaceIdLabel.textContent = 'Face saved';
+                                window.setTimeout(() => {
+                                    globalFaceIdLabel.textContent = 'Face Id';
+                                }, 2200);
+                            }
+                            window.setTimeout(() => {
+                                closeFaceModal();
+                            }, 1000);
+                        })
+                        .catch((err) => {
+                            setFaceStatus('Face save failed. Please retry.');
+                            console.error('Save error:', err);
+                        })
+                        .finally(() => {
+                            if (globalFaceSaveBtn) {
+                                globalFaceSaveBtn.disabled = false;
+                            }
+                            if (globalFaceRetakeBtn) {
+                                globalFaceRetakeBtn.disabled = false;
+                            }
+                        });
+                };
+
+                const retakeCapturedFace = () => {
+                    faceDetectionStep = 1;
+                    capturedFaceImageData1 = '';
+                    capturedFaceImageData2 = '';
+                    stableDetectionFrames = 0;
+                    autoCaptureCooldown = false;
+
+                    resetFaceCaptureState();
+                    setFaceStatus('Waiting to detect your face... or click Capture to take photo manually.');
+                    if (globalFaceStep) {
+                        globalFaceStep.style.display = 'none';
+                    }
+
+                    if (globalFaceVideo && faceStream) {
+                        globalFaceVideo.style.display = 'block';
+                        if (globalFaceOverlay) {
+                            globalFaceOverlay.style.display = 'block';
+                        }
+                        runFaceDetectionFrame();
+                    }
+                };
+
+                window.showGlobalLoader = showLoader;
+                window.hideGlobalLoader = hideLoader;
+
+                syncThemeIcon();
+
+                if (globalQuickToggle) {
+                    const resetTogglePosition = function () {
+                        globalQuickToggle.classList.remove('dragging');
+                        globalQuickToggle.style.top = '6px';
+                        dragDistance = 0;
+                        isDraggingToggle = false;
+                    };
+
+                    globalQuickToggle.addEventListener('pointerdown', function (event) {
+                        dragStartY = event.clientY;
+                        dragDistance = 0;
+                        isDraggingToggle = true;
+                        globalQuickToggle.classList.add('dragging');
+                        globalQuickToggle.setPointerCapture(event.pointerId);
+                    });
+
+                    globalQuickToggle.addEventListener('pointermove', function (event) {
+                        if (!isDraggingToggle) {
+                            return;
+                        }
+                        dragDistance = Math.max(0, Math.min(70, event.clientY - dragStartY));
+                        globalQuickToggle.style.top = (6 + dragDistance) + 'px';
+                    });
+
+                    globalQuickToggle.addEventListener('pointerup', function (event) {
+                        if (!isDraggingToggle) {
+                            return;
+                        }
+                        if (dragDistance >= 38) {
+                            if (globalGlassPanel && globalGlassPanel.classList.contains('open')) {
+                                closeGlassPanel();
+                            } else {
+                                openGlassPanel();
+                            }
+                        }
+                        resetTogglePosition();
+                        globalQuickToggle.releasePointerCapture(event.pointerId);
+                    });
+
+                    globalQuickToggle.addEventListener('pointercancel', function () {
+                        resetTogglePosition();
+                    });
+                }
+
+                if (globalGlassOverlay) {
+                    globalGlassOverlay.addEventListener('click', closeGlassPanel);
+                }
+
+                if (globalGlassClose) {
+                    globalGlassClose.addEventListener('click', closeGlassPanel);
+                }
+
+                if (globalThemeButton) {
+                    globalThemeButton.addEventListener('click', function () {
+                        if (window.toggleTheme) {
+                            window.toggleTheme();
+                        }
+                        syncThemeIcon();
+                    });
+                }
+
+                if (globalLogoutLink) {
+                    globalLogoutLink.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        closeGlassPanel();
+                        hideLoader();
+                        openLogoutConfirm();
+                    });
+                }
+
+                if (logoutConfirmBackdrop) {
+                    logoutConfirmBackdrop.addEventListener('click', function () {
+                        closeLogoutConfirm();
+                        hideLoader();
+                    });
+                }
+
+                if (logoutConfirmCancel) {
+                    logoutConfirmCancel.addEventListener('click', function () {
+                        closeLogoutConfirm();
+                        hideLoader();
+                    });
+                }
+
+                if (logoutConfirmOk) {
+                    logoutConfirmOk.addEventListener('click', function () {
+                        if (!globalLogoutLink) {
+                            closeLogoutConfirm();
+                            return;
+                        }
+                        closeLogoutConfirm();
+                        showLoader('Signing you out...');
+                        window.location.assign(globalLogoutLink.href);
+                    });
+                }
+
+                if (globalCollectCoinBtn) {
+                    globalCollectCoinBtn.addEventListener('click', collectCoins);
+                }
+
+                if (globalTwoFactorBtn) {
+                    globalTwoFactorBtn.addEventListener('click', function () {
+                        fetch('{{ path('app_panel_toggle_2fa') }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then((response) => response.json())
+                            .then((payload) => {
+                                if (!payload || !payload.success) {
+                                    return;
+                                }
+
+                                const isEnabled = !!payload.enabled;
+                                globalTwoFactorBtn.classList.toggle('active', isEnabled);
+                                if (globalTwoFactorLabel) {
+                                    globalTwoFactorLabel.textContent = isEnabled ? 'Disable 2FA' : 'Enable 2FA';
+                                }
+                            })
+                            .catch(() => {
+                                // Keep UI unchanged if the request fails.
+                            });
+                    });
+                }
+
+                if (globalQrEmailBtn) {
+                    globalQrEmailBtn.addEventListener('click', function () {
+                        if (globalQrEmailLabel) {
+                            globalQrEmailLabel.textContent = 'Sending...';
+                        }
+
+                        fetch('{{ path('app_panel_send_credentials_qr') }}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                            .then((response) => response.json())
+                            .then((payload) => {
+                                if (!payload || !payload.success) {
+                                    if (globalQrEmailLabel) {
+                                        globalQrEmailLabel.textContent = 'Send failed';
+                                    }
+                                    return;
+                                }
+
+                                if (globalQrEmailLabel) {
+                                    globalQrEmailLabel.textContent = 'QR sent to email';
+                                    window.setTimeout(() => {
+                                        globalQrEmailLabel.textContent = 'Send QR Code';
+                                    }, 2000);
+                                }
+                            })
+                            .catch(() => {
+                                if (globalQrEmailLabel) {
+                                    globalQrEmailLabel.textContent = 'Send failed';
+                                    window.setTimeout(() => {
+                                        globalQrEmailLabel.textContent = 'Send QR Code';
+                                    }, 2000);
+                                }
+                            });
+                    });
+                }
+
+                if (globalFaceIdBtn) {
+                    globalFaceIdBtn.addEventListener('click', function () {
+                        if (globalFaceIdLabel) {
+                            globalFaceIdLabel.textContent = 'Opening camera...';
+                        }
+
+                        openFaceModal().finally(() => {
+                            if (globalFaceIdLabel && globalFaceIdLabel.textContent === 'Opening camera...') {
+                                globalFaceIdLabel.textContent = 'Face Id';
+                            }
+                        });
+                    });
+                }
+
+                if (globalFaceCaptureBtn) {
+                    globalFaceCaptureBtn.addEventListener('click', captureFacePreview);
+                }
+
+                if (globalFaceRetakeBtn) {
+                    globalFaceRetakeBtn.addEventListener('click', retakeCapturedFace);
+                }
+
+                if (globalFaceConfirmBtn) {
+                    globalFaceConfirmBtn.addEventListener('click', () => {
+                        setFaceStatus('Step 2: Center your face again. Auto-capture when detected.');
+                    });
+                }
+
+                if (globalFaceSaveBtn) {
+                    globalFaceSaveBtn.addEventListener('click', saveCapturedFace);
+                }
+
+                if (globalFaceCancelBtn) {
+                    globalFaceCancelBtn.addEventListener('click', closeFaceModal);
+                }
+
+                if (globalFaceModalBackdrop) {
+                    globalFaceModalBackdrop.addEventListener('click', closeFaceModal);
+                }
+
+                if (globalFaceModalClose) {
+                    globalFaceModalClose.addEventListener('click', closeFaceModal);
+                }
+
+                loadCoinStatus();
+                checkUpgradeButton();
+                loadProfileSummary();
+
+                window.addEventListener('themechange', syncThemeIcon);
+                window.addEventListener('pageshow', function () {
+                    hideLoader();
+                    closeGlassPanel();
+                    closeFaceModal();
+                });
+                window.addEventListener('load', function () {
+                    hideLoader();
+                    closeGlassPanel();
+                    closeFaceModal();
+                });
+                document.addEventListener('visibilitychange', function () {
+                    if (document.visibilityState === 'visible') {
+                        hideLoader();
+                        closeGlassPanel();
+                    }
+                });
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        closeGlassPanel();
+                        closeLogoutConfirm();
+                        closeFaceModal();
+                    }
+                });
+
+                document.addEventListener('click', function (event) {
+                    const backMainButton = event.target.closest('.back-main-btn');
+                    if (!backMainButton) {
+                        return;
+                    }
+
+                    const href = backMainButton.getAttribute('href');
+                    if (!href) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    showLoader(panelText.returningMain);
+                    window.location.assign(href);
+                });
+
+                document.addEventListener('click', function (event) {
+                    const settingsLink = event.target.closest('.global-action-link.settings');
+                    if (!settingsLink) {
+                        return;
+                    }
+
+                    const href = settingsLink.getAttribute('href');
+                    if (!href) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    closeGlassPanel();
+                    window.location.assign(href);
+                });
+
+                document.addEventListener('click', function (event) {
+                    const panelLink = event.target.closest('#globalGlassPanel a[href]');
+                    if (!panelLink) {
+                        return;
+                    }
+
+                    closeGlassPanel();
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (event.defaultPrevented) {
+                        return;
+                    }
+
+                    const link = event.target.closest('a[href]');
+                    if (!link) {
+                        return;
+                    }
+
+                    const href = link.getAttribute('href') || '';
+                    if (
+                        href.startsWith('#') ||
+                        href.startsWith('mailto:') ||
+                        href.startsWith('tel:') ||
+                        href.startsWith('javascript:') ||
+                        link.target === '_blank' ||
+                        link.hasAttribute('download') ||
+                        link.dataset.noLoader === 'true'
+                    ) {
+                        return;
+                    }
+
+                    const url = new URL(link.href, window.location.origin);
+                    if (url.origin !== window.location.origin) {
+                        return;
+                    }
+
+                    showLoader('Opening page...');
+                });
+
+                document.addEventListener('submit', (event) => {
+                    const form = event.target;
+                    if (!(form instanceof HTMLFormElement)) {
+                        return;
+                    }
+
+                    if (form.dataset.noLoader === 'true') {
+                        return;
+                    }
+
+                    showLoader('Loading...');
+                });
+            })();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,68 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Agency Panel - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <!-- Legacy Dashboard Styles -->
+    <link rel="stylesheet" href="{{ asset('assets/legacy/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/legacy/css/font-awesome.min.css') }}">
+    
+    <style>
+        /* Ensuring full height for the root-pane */
+        .root-pane { min-height: 100vh; display: flex; }
+        .content-area { flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+        .main-scroll { flex: 1; padding: 28px; background-color: #f4f6f8; overflow-y: auto; }
+        
+        /* Sidebar branding adjustment if needed */
+        .sidebar { background-color: #1e293b; color: white; width: 240px; flex-shrink: 0; }
+        .nav-btn { color: #f8fafc; opacity: 0.8; }
+        .nav-btn:hover, .nav-btn.active { opacity: 1; color: #fff; background-color: #4ba3a1; }
+        
+        .top-bar-actions { display: flex; align-items: center; gap: 15px; }
+        .visit-site-btn { background: #183c75; color: white; border-radius: 20px; padding: 8px 20px; font-weight: bold; font-size: 13px; text-decoration: none; }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="root-pane">
+        {# Left Sidebar #}
+        {% include 'agency/partials/_sidebar_agency.html.twig' with { 
+            active_page: active_page|default('dashboard') 
+        } %}
+
+        {# Main Content #}
+        <div class="content-area">
+            {# Top Bar #}
+            <header class="top-bar">
+                <h1 class="page-title">{% block agency_page_title %}Agency Panel{% endblock %}</h1>
+                
+                <div class="top-bar-spacer"></div>
+                
+                <div class="top-bar-actions">
+                    <a href="{{ path('ourservices_index') }}" class="visit-site-btn">🌐 Visit Site</a>
+                    <a href="{{ path('app_logout') }}" class="action-btn" style="background: #ff6b6b; color: white;">Logout</a>
+                </div>
+            </header>
+
+            {# Flash Messages #}
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ type == 'error' or type == 'danger' ? 'danger' : (type == 'success' ? 'success' : 'info') }}" style="margin: 20px 28px 0;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {# Page Content #}
+            <main class="main-scroll">
+                {% block agency_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}

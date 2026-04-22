@@ -1,0 +1,268 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/legacy/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/legacy/style.css') }}">
+    
+    <style>
+        .sidebar-logo img { height: 45px; }
+        .palatin-main-menu { height: 85px; display: flex; align-items: center; }
+        .classynav ul li a { font-weight: 700; color: #1f2b5b; text-transform: uppercase; }
+        .classynav ul li.active a { color: #fbbe30; }
+        
+        /* AI Search Bar Styling */
+        .book-now-form { background: linear-gradient(135deg, #1f2b5b, #00BFFF); border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .ai-filters-badge { background-color: #1f2b5b; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <!-- Navbar Area -->
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <!-- Menu -->
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+
+                        <!-- Nav brand -->
+                        <div class="sidebar-logo">
+                            <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+                        </div>
+
+                        <!-- Menu -->
+                        <div class="classy-menu">
+                            <!-- Nav Start -->
+                            <div class="classynav">
+                                <ul>
+                                    <li class="active"><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li><a href="{{path('myreservations_index')}}">My reservations</a></li>
+                                </ul>
+                                <!-- Button -->
+                                <div class="menu-btn">
+                                    <a href="{{ path('app_mainpage') }}" class="btn palatin-btn" data-turbo="false">HOME</a>
+                                </div>
+                            </div>
+                            <!-- Nav End -->
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ##### Header Area End ##### -->
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/legacy/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>Services</h2>
+        </div>
+    </section>
+    <!-- ##### Breadcumb Area End ##### -->
+
+    <!-- ##### AI Smart Search Area Start ##### -->
+    <div class="book-now-area">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12 col-lg-10">
+                    <div class="book-now-form p-4">
+                        <form action="{{ path('ourservices_index') }}" method="get" class="d-flex align-items-center" style="gap: 15px;">
+                            <div class="flex-grow-1">
+                                <input type="text" name="ai_q" class="form-control" placeholder="✨ Type what you are looking for (e.g. 'A 5-star hotel in Paris under 200 euros')..." value="{{ aiQuery|default('') }}" style="height: 55px; border-radius: 8px; border: none; padding-left: 20px;">
+                            </div>
+                            <button type="submit" class="btn palatin-btn" style="height: 55px; background: #fbbe30; color: #1f2b5b; border-radius: 8px;">✨ Ask AI</button>
+                            
+                            {% if aiQuery|default('') is not empty %}
+                                <a href="{{ path('ourservices_index') }}" class="btn" style="height: 55px; line-height: 40px; color: white; border: 1px solid white; border-radius: 8px;">↺ Reset</a>
+                            {% endif %}
+                        </form>
+                    </div>
+                    
+                    {% if aiFilters|default(null) %}
+                    <div class="ai-filters-alert mt-3 p-3" style="background: rgba(255,255,255,0.1); border-left: 4px solid #fbbe30; border-radius: 6px;">
+                        <h6 style="color: #fff; margin-bottom: 10px;">✨ AI Understood:</h6>
+                        <div class="d-flex flex-wrap" style="gap: 10px;">
+                            {% if aiFilters.type %}<span class="ai-filters-badge">Type: {{ aiFilters.type|capitalize }}</span>{% endif %}
+                            {% if aiFilters.localisation %}<span class="ai-filters-badge">📍 {{ aiFilters.localisation|capitalize }}</span>{% endif %}
+                            {% if aiFilters.nombre_etoiles %}<span class="ai-filters-badge" style="background: #fbbe30; color: #1f2b5b;">⭐ {{ aiFilters.nombre_etoiles }} Stars+</span>{% endif %}
+                            {% if aiFilters.max_prix %}<span class="ai-filters-badge">💰 Max {{ aiFilters.max_prix }} TND</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ##### AI Smart Search Area End ##### -->
+
+    <!-- ##### Service Intro Area Start ##### -->
+    <section class="services-intro">
+        <div class="container">
+            <div class="row align-items-center">
+                <!-- Service Intro Text -->
+                <div class="col-12 col-lg-6">
+                    <div class="service-intro-text mb-100">
+                        <div class="section-heading">
+                            <div class="line-"></div>
+                            <h2>Amazing Services</h2>
+                        </div>
+                        <p>Explore our curated selection of premium hotels and flights designed for your comfort and adventure. Whether you're looking for a relaxing beach resort or a quick business flight, Rehletna has you covered with AI-powered personalized searches and seamless booking.</p>
+                        <a href="#" class="btn palatin-btn mt-50">Read More</a>
+                    </div>
+                </div>
+
+                <!-- Services Features -->
+                <div class="col-12 col-lg-6">
+                    <div class="row mb-100">
+                        <div class="col-12 col-sm-4">
+                            <div class="single-cool-fact">
+                                <div class="scf-text">
+                                    <span style="font-size: 30px;">🏨</span>
+                                    <p>Hotels</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <div class="single-cool-fact">
+                                <div class="scf-text">
+                                   <span style="font-size: 30px;">✈️</span>
+                                    <p>Vols</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- ##### Service Intro Area End ##### -->
+
+    <!-- ##### Our Services Listing Start ##### -->
+    <section class="our-services-area section-padding-100-0">
+        <div class="container">
+            <div class="row">
+                {% if pagination is empty %}
+                    <div class="col-12 text-center">
+                        <div class="empty-state py-5">
+                            <span style="font-size: 4rem;">🔍</span>
+                            <p class="mt-3">Aucun service disponible pour le moment.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    {% for service in pagination %}
+                        <div class="col-12 col-md-6 col-lg-4 col-xl-3 mb-30">
+                            <div class="service-card h-100 p-0" style="background: #fff; border: 1px solid #ebebeb; border-radius: 10px; overflow: hidden; transition: 0.3s;">
+                                {# ── IMAGE AREA ── #}
+                                <div class="card-img-wrapper" style="height: 180px; position: relative;">
+                                    {% if service.imgUrl %}
+                                        <img src="{{ asset(service.imgUrl) }}" alt="{{ service.nom }}" style="width: 100%; height: 100%; object-fit: cover;" />
+                                    {% else %}
+                                        <div style="width: 100%; height: 100%; background: #f8f9fa; display: grid; place-items: center; font-size: 3rem;">
+                                            {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                                        </div>
+                                    {% endif %}
+
+                                    <span style="position: absolute; top: 10px; left: 10px; padding: 3px 10px; border-radius: 50px; font-size: 11px; font-weight: 700; color: #fff; background: {{ service.type == 'hotel' ? '#0BA4A1' : '#1f2b5b' }};">
+                                        {{ service.type|upper }}
+                                    </span>
+
+                                    <span style="position: absolute; top: 10px; right: 10px; padding: 3px 10px; border-radius: 50px; font-size: 11px; font-weight: 600; color: #fff; background: {{ service.disponibilite ? '#27ae60' : '#e74c3c' }};">
+                                        {{ service.disponibilite ? 'Disponible' : 'Indisponible' }}
+                                    </span>
+                                </div>
+
+                                {# ── CARD BODY ── #}
+                                <div class="card-body d-flex flex-column p-4">
+                                    <p style="font-size: 12px; color: #888; margin-bottom: 5px;">
+                                        {% if service.type == 'hotel' %}
+                                            📍 {{ service.localisation }} · {% for i in 1..service.nombreEtoiles|default(0) %}⭐{% endfor %}
+                                        {% else %}
+                                            ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
+                                        {% endif %}
+                                    </p>
+
+                                    <h3 style="font-size: 17px; font-weight: 700; color: #1f2b5b; margin-bottom: 10px;">{{ service.nom }}</h3>
+
+                                    <p style="font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1;">
+                                        {{ service.description|length > 80 ? service.description|slice(0, 80) ~ '…' : service.description }}
+                                    </p>
+
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <span style="font-weight: 700; color: #00BFFF; font-size: 1.1rem;">{{ service.prix }} <small>TND</small></span>
+                                        <span class="text-muted small">👥 {{ service.capacite }}</span>
+                                    </div>
+
+                                    <div class="card-actions">
+                                        {% if service.type == 'hotel' %}
+                                            <a href="{{ path('hotel_showdetails', { id: service.idService }) }}" class="btn palatin-btn w-100" style="font-size: 13px;">View Details</a>
+                                        {% else %}
+                                            <a href="{{ path('vol_showdetails', { id: service.idService }) }}" class="btn palatin-btn w-100" style="font-size: 13px;">View Details</a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    {# ── PAGINATION CONTROLS ── #}
+                    <div class="col-12 mt-50">
+                        <div class="pagination-wrapper d-flex justify-content-center">
+                            {{ knp_pagination_render(pagination) }}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+    <!-- ##### Our Services Listing End ##### -->
+
+    <!-- ##### Footer Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" style="height: 40px; margin-bottom: 20px;" />
+                      </div>
+                      <p>Experience the world with Rehletna.tn. We provide the most reliable hotel and flight reservation services tailored to your needs. Our AI-driven search helps you find the best deals in seconds.</p>
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-30">Find us on the map</h6>
+                        <img src="{{asset('assets/legacy/img/bg-img/footer-map.png')}}" alt="">
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-30">Subscribe to our newsletter</h6>
+                        <form action="#" method="post" class="subscribe-form">
+                            <input type="email" name="subscribe-email" id="subscribeemail" placeholder="Your E-mail">
+                            <button type="submit" style="background: #fbbe30;">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- ##### Footer Area End ##### -->
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <!-- ##### All Javascript Script ##### -->
+    <script src="{{asset('assets/legacy/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/bootstrap/popper.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/bootstrap/bootstrap.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/plugins/plugins.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/active.js')}}"></script>
+{% endblock %}

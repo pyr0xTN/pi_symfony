@@ -1,0 +1,99 @@
+{# templates/agency/dashboard/index.html.twig #}
+{% extends 'agency/base_agency.html.twig' %}
+
+{% block agency_page_title %}Dashboard Overview{% endblock %}
+
+{% block agency_content %}
+
+    {# ===== STAT CARDS ===== #}
+    <div class="stat-cards-row">
+
+        <div class="stat-card card-teal">
+            <span class="card-title">Hôtels</span>
+            <span class="card-value">{{ hotel_count }}</span>
+        </div>
+
+        <div class="stat-card card-yellow">
+            <span class="card-title">Vols</span>
+            <span class="card-value">{{ vol_count }}</span>
+        </div>
+
+        <div class="stat-card card-teal">
+            <span class="card-title">Réservations</span>
+            <span class="card-value">{{ reservation_count }}</span>
+        </div>
+
+    </div>
+
+    {# ===== CHARTS SECTION ===== #}
+    <div class="charts-row" style="display: flex; gap: 20px; margin-top: 28px;">
+        <div class="chart-container-wrapper revenue-chart-card" style="flex: 2; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h3 class="chart-header" style="margin-bottom: 20px; font-size: 16px; color: #183c75;">Revenue Trend (Last 7 Days)</h3>
+            <div class="chart-canvas-wrapper" style="height: 300px;">
+                {{ render_chart(revenueChart) }}
+            </div>
+        </div>
+
+        <div class="chart-container-wrapper type-chart-card" style="flex: 1; background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h3 class="chart-header" style="margin-bottom: 20px; font-size: 16px; color: #183c75;">Revenue by Type</h3>
+            <div class="chart-canvas-wrapper" style="height: 300px;">
+                {{ render_chart(typeChart) }}
+            </div>
+        </div>
+    </div>
+
+    {# ===== SERVICES SECTION ===== #}
+    <section class="dashboard-section" style="margin-top: 28px; background: #fff; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+
+        <div class="section-header-row" style="padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="section-header" style="margin: 0; font-size: 18px; color: #183c75;">Services</h2>
+            <div class="section-actions" style="display: flex; gap: 10px;">
+                <a href="{{ path('agency_vol_new') }}" class="btn-add">+ Add Vol</a>
+                <a href="{{ path('agency_hotel_new') }}" class="btn-add">+ Add Hôtel</a>
+
+                <form method="GET" action="{{ path('agency_dashboard') }}" class="filter-form">
+                    <select name="filter" class="btn-add" onchange="this.form.submit()" style="padding-right: 30px;">
+                        <option value="">Filter By</option>
+                        <option value="hotel" {% if filter == 'hotel' %}selected{% endif %}>Hôtels</option>
+                        <option value="vol" {% if filter == 'vol' %}selected{% endif %}>Vols</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        {# Services Table #}
+        <div class="table-header" style="display: flex; padding: 15px 20px; background: #f9fbfc; border-bottom: 1px solid #eee; font-weight: bold; color: #888; font-size: 12px; text-transform: uppercase;">
+            <span class="col-wide" style="flex: 2;">Service Name</span>
+            <span class="col" style="flex: 1;">Type</span>
+            <span class="col" style="flex: 1;">Price</span>
+            <span class="col" style="flex: 1;">Capacity</span>
+            <span class="col" style="flex: 1;">Status</span>
+            <span class="col" style="flex: 1;">Actions</span>
+        </div>
+
+        <div class="table-body">
+            {% for service in services %}
+                <div class="table-row" style="display: flex; padding: 15px 20px; border-bottom: 1px solid #eee; align-items: center; font-size: 14px;">
+                    <span class="col-wide" style="flex: 2; font-weight: 500;">{{ service.nom }}</span>
+                    <span class="col" style="flex: 1;">{{ service.type|capitalize }}</span>
+                    <span class="col" style="flex: 1;">{{ service.prix }} TND</span>
+                    <span class="col" style="flex: 1;">{{ service.capacite }}</span>
+                    <span class="col" style="flex: 1;">
+                        <span class="badge {% if service.disponibilite %}badge-success{% else %}badge-danger{% endif %}" style="padding: 4px 10px; border-radius: 5px;">
+                            {{ service.disponibilite ? 'Disponible' : 'Indisponible' }}
+                        </span>
+                    </span>
+                    <span class="col" style="flex: 1;">
+                         <a href="{{ path('agency_reservation_index', { q: service.nom }) }}" class="btn-card-action">
+                             📋 Reservations
+                         </a>
+                    </span>
+                </div>
+            {% else %}
+                <p class="empty-state">Aucun service trouvé.</p>
+            {% endfor %}
+        </div>
+
+    </section>
+
+{% endblock %}

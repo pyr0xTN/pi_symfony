@@ -1,0 +1,181 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/legacy/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/legacy/style.css') }}">
+    
+    <style>
+        .sidebar-logo img { height: 45px; }
+        .palatin-main-menu { height: 85px; display: flex; align-items: center; }
+        .classynav ul li a { font-weight: 700; color: #1f2b5b; text-transform: uppercase; }
+        .classynav ul li.active a { color: #fbbe30; }
+        
+        .detail-wrapper { padding: 80px 0; background: #f8f9fa; }
+        .detail-card { background: #fff; border-radius: 20px; box-shadow: 0 15px 50px rgba(0,0,0,0.08); overflow: hidden; max-width: 1000px; margin: 0 auto; }
+        
+        .detail-hero { position: relative; height: 450px; overflow: hidden; }
+        .detail-hero-img { width: 100%; height: 100%; object-fit: cover; }
+        .detail-hero-placeholder { width: 100%; height: 100%; background: #eee; display: grid; place-items: center; font-size: 5rem; }
+        
+        .detail-badge { position: absolute; top: 20px; padding: 6px 15px; border-radius: 50px; font-size: 13px; font-weight: 700; color: #fff; text-transform: uppercase; }
+        .detail-badge--type { left: 20px; background: #0BA4A1; }
+        .detail-badge--dispo { right: 20px; }
+        .badge-avail { background: #27ae60; }
+        .badge-unavail { background: #e74c3c; }
+
+        .detail-content { padding: 40px; }
+        .detail-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .detail-name { font-size: 32px; font-weight: 800; color: #1f2b5b; margin-bottom: 5px; }
+        .detail-location { color: #888; font-size: 16px; }
+        
+        .detail-price-box { text-align: right; }
+        .detail-price { display: block; font-size: 32px; font-weight: 800; color: #00BFFF; line-height: 1; }
+        .detail-price-label { font-size: 14px; color: #888; font-weight: 600; }
+
+        .detail-divider { border: 0; border-top: 1px solid #eee; margin: 30px 0; }
+        
+        .detail-chips { display: flex; gap: 40px; margin-bottom: 30px; }
+        .detail-chip { display: flex; align-items: center; gap: 15px; }
+        .chip-icon { font-size: 24px; background: #f0f7ff; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 12px; }
+        .chip-label { display: block; font-size: 12px; color: #888; font-weight: 700; text-transform: uppercase; }
+        .chip-value { font-weight: 700; color: #1f2b5b; font-size: 16px; }
+
+        .detail-section-title { font-size: 20px; font-weight: 700; color: #1f2b5b; margin-bottom: 15px; }
+        .detail-description p { line-height: 1.8; color: #666; font-size: 15px; }
+
+        .detail-actions { margin-top: 50px; display: flex; gap: 20px; }
+        .btn-back { display: flex; align-items: center; justify-content: center; padding: 15px 30px; border: 2px solid #1f2b5b; border-radius: 50px; color: #1f2b5b; font-weight: 700; text-decoration: none; transition: 0.3s; }
+        .btn-back:hover { background: #1f2b5b; color: #fff; }
+        .btn-submit { flex-grow: 1; display: flex; align-items: center; justify-content: center; padding: 15px 30px; background: #fbbe30; border-radius: 50px; color: #1f2b5b; font-weight: 700; text-decoration: none; transition: 0.3s; border: none; font-size: 18px; }
+        .btn-submit:hover { background: #e2ab2b; transform: translateY(-3px); box-shadow: 0 10px 20px rgba(251, 190, 48, 0.3); }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+                        <div class="sidebar-logo">
+                            <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+                        </div>
+                        <div class="classy-menu">
+                            <div class="classynav">
+                                <ul>
+                                    <li class="active"><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li><a href="{{path('myreservations_index')}}">My reservations</a></li>
+                                </ul>
+                                <div class="menu-btn">
+                                    <a href="{{ path('app_mainpage') }}" class="btn palatin-btn" data-turbo="false">HOME</a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/legacy/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>Hotel Details</h2>
+        </div>
+    </section>
+
+    <div class="detail-wrapper">
+        <div class="container">
+            <div class="detail-card">
+                <div class="detail-hero">
+                    {% if hotel.imgUrl %}
+                        <img src="{{ asset(hotel.imgUrl) }}" alt="{{ hotel.nom }}" class="detail-hero-img" />
+                    {% else %}
+                        <div class="detail-hero-placeholder">🏨</div>
+                    {% endif %}
+
+                    <span class="detail-badge detail-badge--type">Hôtel</span>
+                    <span class="detail-badge detail-badge--dispo {{ hotel.disponibilite ? 'badge-avail' : 'badge-unavail' }}">
+                        {{ hotel.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+                    </span>
+                </div>
+
+                <div class="detail-content">
+                    <div class="detail-title-row">
+                        <div>
+                            <h2 class="detail-name">{{ hotel.nom }}</h2>
+                            <p class="detail-location">📍 {{ hotel.localisation }}</p>
+                        </div>
+                        <div class="detail-price-box">
+                            <span class="detail-price">{{ hotel.prix }}</span>
+                            <span class="detail-price-label">TND / nuit</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-chips">
+                        <div class="detail-chip">
+                            <span class="chip-icon">⭐</span>
+                            <div>
+                                <span class="chip-label">Étoiles</span>
+                                <span class="chip-value">{% for i in 1..hotel.nombreEtoiles|default(0) %}★{% endfor %}</span>
+                            </div>
+                        </div>
+                    
+                        <div class="detail-chip">
+                            <span class="chip-icon">👥</span>
+                            <div>
+                                <span class="chip-label">Capacité Max</span>
+                                <span class="chip-value">{{ hotel.capacite }} personnes</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-divider"></div>
+
+                    <div class="detail-description">
+                        <h4 class="detail-section-title">À propos de cet établissement</h4>
+                        <p>{{ hotel.description }}</p>
+                    </div>
+
+                    <div class="detail-actions">
+                        <a href="{{ path('ourservices_index') }}" class="btn-back">← Retour</a>
+                        {% if hotel.disponibilite %}
+                            <a href="{{ path('reservation_new_front', { serviceId: hotel.idService, serviceType: 'hotel' }) }}" class="btn-submit">
+                                Réserver cet hôtel →
+                            </a>
+                        {% else %}
+                            <button class="btn-submit" style="background: #ccc; cursor: not-allowed;" disabled>Momentanément Indisponible</button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ##### Footer Area Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" style="height: 40px; margin-bottom: 20px;" />
+                      </div>
+                      <p>Rehletna helps you discover the best hotels and flights with AI-personalized recommendations and seamless booking.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{asset('assets/legacy/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/bootstrap/popper.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/bootstrap/bootstrap.min.js')}}"></script>
+    <script src="{{asset('assets/legacy/js/active.js')}}"></script>
+{% endblock %}

@@ -1,0 +1,928 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ 'dashboard.title'|trans }} - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .dashboard-page {
+            min-height: 100vh;
+            background: #f2f4f7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #213142;
+        }
+
+        .sidebar-nav {
+            display: grid;
+            gap: 0;
+        }
+
+        .sidebar-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding-top: 18px;
+        }
+
+        .sidebar-action-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            border: 1px solid rgba(168, 192, 214, 0.25);
+            display: grid;
+            place-items: center;
+            text-decoration: none;
+            font-size: 22px;
+            background: rgba(19, 38, 58, 0.55);
+            color: #d9e4ef;
+            transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar-action-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .sidebar-action-btn.home-action:hover {
+            color: #86f5ff;
+            border-color: rgba(100, 235, 255, 0.8);
+            box-shadow: 0 0 12px rgba(100, 235, 255, 0.7), 0 0 26px rgba(100, 235, 255, 0.38);
+        }
+
+        .sidebar-action-btn.logout-action:hover {
+            color: #ff9ca2;
+            border-color: rgba(255, 105, 120, 0.8);
+            box-shadow: 0 0 12px rgba(255, 105, 120, 0.7), 0 0 26px rgba(255, 105, 120, 0.38);
+        }
+
+        .top-logo {
+            color: #0BA4A1;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            height: 40px;
+            width: auto;
+        }
+
+        .top-logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 260px minmax(0, 1fr);
+            min-height: 100vh;
+            align-items: stretch;
+        }
+
+        .dash-sidebar {
+            background: #2f445a;
+            color: #fff;
+            padding: 28px 14px;
+            min-height: 100%;
+            height: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .admin-avatar {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #e5e9ef;
+            color: #2f445a;
+            font-size: 28px;
+            font-weight: 800;
+            margin: 0 auto 14px;
+            border: 4px solid rgba(255, 255, 255, 0.25);
+            overflow: hidden;
+        }
+
+        .admin-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .admin-name {
+            text-align: center;
+            font-size: 32px;
+            line-height: 1;
+            margin-bottom: 4px;
+            color: #ffffff;
+        }
+
+        .admin-role {
+            text-align: center;
+            color: #FCBE31;
+            font-weight: 800;
+            margin-bottom: 26px;
+        }
+
+        .sidebar-link {
+            display: block;
+            color: #d9e4ef;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .sidebar-link.active {
+            background: #d8f4f2;
+            color: #0BA4A1;
+            font-weight: 700;
+        }
+
+        .dash-content {
+            padding: 22px;
+        }
+
+        .welcome-strip {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 18px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+            border: 1px solid #e8edf2;
+        }
+
+        .welcome-strip h2 {
+            margin: 0;
+            color: #194575;
+            font-size: 40px;
+            font-weight: 800;
+        }
+
+        .timer-ring {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            border: 3px solid #0BA4A1;
+            display: grid;
+            place-items: center;
+            color: #194575;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e7edf2;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            color: #5b6e81;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            margin-top: 8px;
+            font-size: 42px;
+            line-height: 1;
+            font-weight: 800;
+        }
+
+        .stat-value.total {
+            color: #0BA4A1;
+        }
+
+        .stat-value.admin {
+            color: #FCBE31;
+        }
+
+        .stat-value.guider {
+            color: #9b34c6;
+        }
+
+        .stat-value.user {
+            color: #003972;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 14px;
+            border: 1px solid #e7edf2;
+            padding: 16px;
+        }
+
+        .panel h3 {
+            margin: 0 0 12px;
+            color: #194575;
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .users-table th,
+        .users-table td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 12px;
+        }
+
+        .users-table th {
+            color: #586b7f;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+
+        .badge-role {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 4px 8px;
+            background: #eef5fb;
+            color: #355272;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .status-item {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #e8edf2;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .online {
+            background: #2fc56f;
+        }
+
+        .offline {
+            background: #9ca9b5;
+        }
+
+        .status-item strong {
+            display: block;
+            font-size: 38px;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .user-list {
+            margin-top: 8px;
+            border: 1px solid #e7edf2;
+            border-radius: 10px;
+            background: #fafcfe;
+            max-height: 130px;
+            overflow: auto;
+        }
+
+        .user-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .user-row:last-child {
+            border-bottom: none;
+        }
+
+        .user-mini {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #3f556b;
+            font-size: 12px;
+        }
+
+        .user-mini-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: #0BA4A1;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        body.dark-mode .dashboard-page {
+            background: #0f1724;
+            color: #d8e2ef;
+        }
+
+        body.dark-mode .dash-sidebar {
+            background: #131c2a;
+        }
+
+        body.dark-mode .sidebar-action-btn {
+            background: rgba(13, 24, 38, 0.85);
+            border-color: rgba(70, 98, 126, 0.75);
+            color: #b5c5d7;
+        }
+
+        body.dark-mode .sidebar-link {
+            color: #b5c5d7;
+        }
+
+        body.dark-mode .sidebar-link.active {
+            background: #1d3346;
+            color: #66d8d5;
+        }
+
+        body.dark-mode .welcome-strip,
+        body.dark-mode .stat-card,
+        body.dark-mode .panel {
+            background: #182232;
+            border-color: #2a374b;
+        }
+
+        body.dark-mode .welcome-strip h2,
+        body.dark-mode .panel h3 {
+            color: #dbe8f6;
+        }
+
+        body.dark-mode .timer-ring {
+            border-color: #2caeab;
+            color: #b7c9dd;
+        }
+
+        body.dark-mode .stat-card h4 {
+            color: #9fb2c7;
+        }
+
+        body.dark-mode .users-table th,
+        body.dark-mode .users-table td {
+            border-bottom-color: #2a374b;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .users-table th {
+            color: #8fa5bd;
+        }
+
+        body.dark-mode .badge-role {
+            background: #22344a;
+            color: #b9d0e8;
+        }
+
+        body.dark-mode .status-item {
+            background: #121c2b;
+            border-color: #2a374b;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .user-list {
+            background: #121c2b;
+            border-color: #2a374b;
+        }
+
+        body.dark-mode .user-row {
+            border-bottom-color: #27354a;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .user-mini {
+            color: #c6d4e3;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .dash-sidebar {
+                display: none;
+            }
+
+            .stats-grid,
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .welcome-strip h2 {
+                font-size: 30px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="dashboard-page">
+        <div class="dashboard-layout" id="dashboardLayout">
+            <aside class="dash-sidebar">
+                <div class="admin-avatar">
+                    {% if adminImageUrl is defined and adminImageUrl %}
+                        <img src="{{ adminImageUrl }}" alt="{{ app.user.username }}" />
+                    {% else %}
+                        {{ app.user.username|first|upper }}
+                    {% endif %}
+                </div>
+                <div class="admin-name">{{ app.user.username }}</div>
+                <div class="admin-role">{{ 'dashboard.admin_role'|trans }}</div>
+
+                <nav class="sidebar-nav" aria-label="{{ 'dashboard.title'|trans }}">
+                    <a href="{{ path('app_dashboard') }}" class="sidebar-link js-dashboard-module active" data-content-selector=".dash-content" data-no-loader="true">{{ 'dashboard.sidebar.dashboard'|trans }}</a>
+                    <a href="{{ path('app_users') }}" class="sidebar-link js-dashboard-module" data-content-selector=".admin-content" data-no-loader="true">{{ 'dashboard.sidebar.users'|trans }}</a>
+                    <a href="{{ path('app_todos') }}" class="sidebar-link js-dashboard-module" data-content-selector=".admin-content" data-no-loader="true">{{ 'dashboard.sidebar.todo_list'|trans }}</a>
+                    <a href="{{ path('app_admin_stats') }}" class="sidebar-link js-dashboard-module" data-content-selector=".shell" data-no-loader="true">{{ 'dashboard.sidebar.statistics'|trans }}</a>
+                    <a href="{{ path('app_admin_shop') }}" class="sidebar-link js-dashboard-module" data-content-selector=".admin-content" data-no-loader="true">{{ 'dashboard.sidebar.shop'|trans }}</a>
+                    <a href="{{ path('app_admin_orders') }}" class="sidebar-link js-dashboard-module" data-content-selector=".admin-content" data-no-loader="true">{{ 'dashboard.sidebar.orders'|trans }}</a>
+                </nav>
+
+                <div class="sidebar-actions">
+                    <a href="{{ path('app_mainpage') }}" class="sidebar-action-btn home-action" data-no-loader="true" data-turbo="false" title="{{ 'dashboard.back_main'|trans }}" aria-label="{{ 'dashboard.back_main'|trans }}">⌂</a>
+                    <a href="{{ path('app_logout') }}" class="sidebar-action-btn logout-action" id="sidebarLogoutBtn" title="{{ 'dashboard.sidebar.logout'|trans }}" aria-label="{{ 'dashboard.sidebar.logout'|trans }}">⏻</a>
+                </div>
+            </aside>
+
+            <main class="dash-content" id="dashboardContent">
+                <section class="welcome-strip">
+                    <div>
+                        <div>{{ 'dashboard.welcome_back'|trans }}</div>
+                        <h2>{{ app.user.username }}!</h2>
+                    </div>
+                    <div class="timer-ring" id="dashboardClock">00:00:00</div>
+                </section>
+
+                <section class="stats-grid">
+                    <article class="stat-card">
+                        <h4>{{ 'dashboard.stats.total_users'|trans }}</h4>
+                        <div class="stat-value total">{{ stats.totalUsers }}</div>
+                    </article>
+                    <article class="stat-card">
+                        <h4>{{ 'dashboard.stats.admins'|trans }}</h4>
+                        <div class="stat-value admin">{{ stats.admins }}</div>
+                    </article>
+                    <article class="stat-card">
+                        <h4>{{ 'dashboard.stats.guiders'|trans }}</h4>
+                        <div class="stat-value guider">{{ stats.guiders }}</div>
+                    </article>
+                    <article class="stat-card">
+                        <h4>{{ 'dashboard.stats.regular_users'|trans }}</h4>
+                        <div class="stat-value user">{{ stats.regularUsers }}</div>
+                    </article>
+                </section>
+
+                <section class="dashboard-grid">
+                    <article class="panel">
+                        <h3>{{ 'dashboard.recent_users'|trans }}</h3>
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'dashboard.table.avatar'|trans }}</th>
+                                    <th>{{ 'dashboard.table.username'|trans }}</th>
+                                    <th>{{ 'dashboard.table.email'|trans }}</th>
+                                    <th>{{ 'dashboard.table.role'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recentUsers %}
+                                    <tr>
+                                        <td>
+                                            <img src="{{ user.image_url|default('/images/default_avatar.png') }}" alt="{{ user.username }}" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover;" />
+                                        </td>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td><span class="badge-role">{{ user.role|upper }}</span></td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4">{{ 'dashboard.table.no_users'|trans }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </article>
+
+                    <article class="panel">
+                        <h3>{{ 'dashboard.user_status'|trans }}</h3>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div><span class="status-dot online"></span>{{ 'dashboard.status.online'|trans }}</div>
+                                <strong style="color:#2fc56f;">{{ stats.online }}</strong>
+                            </div>
+                            <div class="status-item">
+                                <div><span class="status-dot offline"></span>{{ 'dashboard.status.offline'|trans }}</div>
+                                <strong style="color:#9ca9b5;">{{ stats.offline }}</strong>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div style="font-weight:700;color:#2aa35f;">{{ 'dashboard.online_users'|trans }}</div>
+                            <div class="user-list">
+                                {% for user in onlineUsers %}
+                                    <div class="user-row">
+                                        <div class="user-mini">
+                                            <div class="user-mini-avatar">{{ user.username|first|upper }}</div>
+                                            <div>
+                                                <div>{{ user.username }}</div>
+                                                <div style="font-size:10px;color:#7b8a99;">{{ user.role|upper }}</div>
+                                            </div>
+                                        </div>
+                                        <span class="status-dot online"></span>
+                                    </div>
+                                {% else %}
+                                    <div class="user-row">{{ 'dashboard.no_online_users'|trans }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div style="margin-top:10px;">
+                            <div style="font-weight:700;color:#6f7f90;">{{ 'dashboard.offline_users'|trans }}</div>
+                            <div class="user-list">
+                                {% for user in offlineUsers %}
+                                    <div class="user-row">
+                                        <div class="user-mini">
+                                            <div class="user-mini-avatar" style="background:#9ca9b5;">{{ user.username|first|upper }}</div>
+                                            <div>
+                                                <div>{{ user.username }}</div>
+                                                <div style="font-size:10px;color:#7b8a99;">{{ user.role|upper }}</div>
+                                            </div>
+                                        </div>
+                                        <span class="status-dot offline"></span>
+                                    </div>
+                                {% else %}
+                                    <div class="user-row">{{ 'dashboard.no_offline_users'|trans }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </article>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const clock = document.getElementById('dashboardClock');
+            const dashboardContent = document.getElementById('dashboardContent');
+            const moduleLinks = Array.from(document.querySelectorAll('.js-dashboard-module'));
+            const dynamicStylesId = 'dashboardDynamicModuleStyles';
+            const sidebarLockStylesId = 'dashboardSidebarLockStyles';
+            const moduleText = {
+                loading: '{{ 'dashboard.module.loading'|trans|e('js') }}',
+                error: '{{ 'dashboard.module.error'|trans|e('js') }}',
+                timeout: '{{ 'dashboard.module.timeout'|trans|e('js') }}'
+            };
+            const logoutText = {
+                confirm: '{{ 'dashboard.logout_confirm'|trans|e('js') }}'
+            };
+
+            function startClock() {
+                if (!clock) {
+                    return;
+                }
+
+                const tick = () => {
+                    const now = new Date();
+                    const h = String(now.getHours()).padStart(2, '0');
+                    const m = String(now.getMinutes()).padStart(2, '0');
+                    const s = String(now.getSeconds()).padStart(2, '0');
+                    clock.textContent = `${h}:${m}:${s}`;
+                };
+
+                tick();
+                setInterval(tick, 1000);
+            }
+
+            function applyModuleStyles(sourceDoc) {
+                const styleBlocks = Array.from(sourceDoc.querySelectorAll('style'));
+                let styleEl = document.getElementById(dynamicStylesId);
+
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = dynamicStylesId;
+                    document.head.appendChild(styleEl);
+                }
+
+                styleEl.textContent = styleBlocks.map((node) => node.textContent || '').join('\n\n');
+            }
+
+            function runModuleScripts(sourceDoc) {
+                const scripts = Array.from(sourceDoc.querySelectorAll('body script'));
+
+                scripts.forEach((sourceScript) => {
+                    const code = (sourceScript.textContent || '').trim();
+
+                    // Skip global base layout scripts to avoid duplicate global handlers.
+                    if (
+                        code.includes("const loader = document.getElementById('globalLoader')") ||
+                        code.includes('window.showGlobalLoader = showLoader')
+                    ) {
+                        return;
+                    }
+
+                    if (sourceScript.src) {
+                        const newScript = document.createElement('script');
+                        newScript.src = sourceScript.src;
+                        newScript.async = false;
+                        document.body.appendChild(newScript);
+                        return;
+                    }
+
+                    if (code === '') {
+                        return;
+                    }
+
+                    const inlineScript = document.createElement('script');
+                    inlineScript.textContent = code;
+                    document.body.appendChild(inlineScript);
+                });
+            }
+
+            function syncStoredTheme() {
+                if (window.getStoredTheme && window.applyTheme) {
+                    window.applyTheme(window.getStoredTheme());
+                }
+            }
+
+            function lockSidebarStyles() {
+                let styleEl = document.getElementById(sidebarLockStylesId);
+                if (!styleEl) {
+                    styleEl = document.createElement('style');
+                    styleEl.id = sidebarLockStylesId;
+                    document.head.appendChild(styleEl);
+                }
+
+                styleEl.textContent = `
+                    #dashboardLayout {
+                        grid-template-columns: 260px minmax(0, 1fr) !important;
+                        min-height: 100vh !important;
+                    }
+
+                    #dashboardLayout > .dash-sidebar {
+                        background: #2f445a !important;
+                        color: #ffffff !important;
+                        padding: 28px 14px !important;
+                        min-height: 100vh !important;
+                        position: sticky !important;
+                        top: 0 !important;
+                        align-self: start !important;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+                        display: flex !important;
+                        flex-direction: column !important;
+                    }
+
+                    #dashboardLayout .sidebar-nav {
+                        display: grid !important;
+                        gap: 0 !important;
+                    }
+
+                    #dashboardLayout .admin-name {
+                        font-size: 32px !important;
+                        color: #ffffff !important;
+                    }
+
+                    #dashboardLayout .admin-role {
+                        color: #FCBE31 !important;
+                        font-weight: 800 !important;
+                    }
+
+                    #dashboardLayout .sidebar-link {
+                        display: block !important;
+                        color: #d9e4ef !important;
+                        border-radius: 10px !important;
+                        padding: 10px 12px !important;
+                        margin-bottom: 8px !important;
+                        font-size: 14px !important;
+                        text-decoration: none !important;
+                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+                    }
+
+                    #dashboardLayout .sidebar-link.active {
+                        background: #d8f4f2 !important;
+                        color: #0BA4A1 !important;
+                        font-weight: 700 !important;
+                    }
+
+                    #dashboardLayout .sidebar-actions {
+                        margin-top: auto !important;
+                        display: flex !important;
+                        justify-content: center !important;
+                        gap: 12px !important;
+                        padding-top: 18px !important;
+                    }
+
+                    #dashboardLayout .sidebar-action-btn {
+                        width: 46px !important;
+                        height: 46px !important;
+                        border-radius: 14px !important;
+                        border: 1px solid rgba(168, 192, 214, 0.25) !important;
+                        display: grid !important;
+                        place-items: center !important;
+                        text-decoration: none !important;
+                        font-size: 22px !important;
+                        background: rgba(19, 38, 58, 0.55) !important;
+                        color: #d9e4ef !important;
+                        transition: transform 0.18s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+                    }
+
+                    #dashboardLayout .sidebar-action-btn:hover {
+                        transform: translateY(-2px) !important;
+                    }
+
+                    #dashboardLayout .sidebar-action-btn.home-action:hover {
+                        color: #86f5ff !important;
+                        border-color: rgba(100, 235, 255, 0.8) !important;
+                        box-shadow: 0 0 12px rgba(100, 235, 255, 0.7), 0 0 26px rgba(100, 235, 255, 0.38) !important;
+                    }
+
+                    #dashboardLayout .sidebar-action-btn.logout-action:hover {
+                        color: #ff9ca2 !important;
+                        border-color: rgba(255, 105, 120, 0.8) !important;
+                        box-shadow: 0 0 12px rgba(255, 105, 120, 0.7), 0 0 26px rgba(255, 105, 120, 0.38) !important;
+                    }
+
+                    body.dark-mode #dashboardLayout > .dash-sidebar {
+                        background: #131c2a !important;
+                    }
+
+                    body.dark-mode #dashboardLayout .sidebar-link {
+                        color: #b5c5d7 !important;
+                    }
+
+                    body.dark-mode #dashboardLayout .sidebar-link.active {
+                        background: #1d3346 !important;
+                        color: #66d8d5 !important;
+                    }
+
+                    body.dark-mode #dashboardLayout .sidebar-action-btn {
+                        background: rgba(13, 24, 38, 0.85) !important;
+                        border-color: rgba(70, 98, 126, 0.75) !important;
+                        color: #b5c5d7 !important;
+                    }
+                `;
+            }
+
+            async function loadModule(link) {
+                if (!dashboardContent) {
+                    return;
+                }
+
+                if (window.hideGlobalLoader) {
+                    window.hideGlobalLoader();
+                }
+
+                const url = link.getAttribute('href');
+                const selector = link.getAttribute('data-content-selector') || '.admin-content';
+                if (!url) {
+                    return;
+                }
+
+                dashboardContent.innerHTML = '<div style="padding:20px;font-weight:700;color:#194575;">' + moduleText.loading + '</div>';
+
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(function () {
+                        controller.abort();
+                    }, 10000);
+
+                    const response = await fetch(url, {
+                        credentials: 'same-origin',
+                        redirect: 'follow',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error('Failed to load module');
+                    }
+
+                    // If server redirected (e.g. auth/role), follow full navigation.
+                    if (response.url && response.url !== window.location.href && !response.url.endsWith(url)) {
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const moduleRoot = doc.querySelector(selector)
+                        || doc.querySelector('.admin-content')
+                        || doc.querySelector('.dash-content')
+                        || doc.querySelector('main');
+
+                    if (!moduleRoot) {
+                        throw new Error('Module content not found');
+                    }
+
+                    applyModuleStyles(doc);
+                    dashboardContent.innerHTML = moduleRoot.innerHTML;
+                    runModuleScripts(doc);
+                    syncStoredTheme();
+                    lockSidebarStyles();
+
+                    moduleLinks.forEach((item) => item.classList.remove('active'));
+                    link.classList.add('active');
+                    window.history.pushState({}, '', url);
+                } catch (error) {
+                    const isTimeout = error && error.name === 'AbortError';
+                    dashboardContent.innerHTML = '<div style="padding:20px;color:#c43d3d;font-weight:700;">' + (isTimeout ? moduleText.timeout : moduleText.error) + '</div>';
+
+                    // Fallback to a full page navigation so the user is never blocked on loading.
+                    setTimeout(function () {
+                        window.location.href = url;
+                    }, 300);
+                }
+            }
+
+            moduleLinks.forEach((link) => {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    loadModule(link);
+                });
+            });
+
+            const moduleFromQuery = new URLSearchParams(window.location.search).get('module');
+            if (moduleFromQuery) {
+                const moduleLink = moduleLinks.find((link) => {
+                    const href = link.getAttribute('href') || '';
+                    return href.endsWith('/' + moduleFromQuery) || href.includes('/' + moduleFromQuery + '?');
+                });
+
+                if (moduleLink) {
+                    loadModule(moduleLink);
+                }
+            }
+
+            document.addEventListener('click', function (event) {
+                const homeBtn = event.target.closest('.home-action');
+                if (homeBtn) {
+                    event.preventDefault();
+                    const href = homeBtn.getAttribute('href');
+                    if (href) {
+                        window.location.assign(href);
+                    }
+                    return;
+                }
+
+                const logoutBtn = event.target.closest('#sidebarLogoutBtn');
+                if (!logoutBtn) {
+                    return;
+                }
+
+                event.preventDefault();
+                const href = logoutBtn.getAttribute('href');
+                if (!href) {
+                    return;
+                }
+
+                const globalLogoutLink = document.getElementById('globalLogoutLink');
+                if (globalLogoutLink) {
+                    globalLogoutLink.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+                    return;
+                }
+
+                if (window.confirm(logoutText.confirm)) {
+                    window.location.href = href;
+                }
+            });
+
+            startClock();
+            syncStoredTheme();
+            lockSidebarStyles();
+        })();
+    </script>
+{% endblock %}

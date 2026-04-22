@@ -1,0 +1,703 @@
+{% extends "base.html.twig" %}
+
+{% block title %}AI Photo-to-Itinerary - Find Similar Places{% endblock %}
+
+{% block body %}
+<div class="ai-guide-container">
+    <div class="ai-guide-header">
+        <h1 class="ai-guide-title">🤖 AI Photo-to-Itinerary</h1>
+        <p class="ai-guide-subtitle">Upload a photo and get an instant place match with the best time to visit</p>
+    </div>
+
+    <div class="ai-guide-content">
+        <div class="ai-guide-upload-section">
+            <div class="ai-guide-upload-box" id="uploadBox">
+                <div class="upload-icon">📸</div>
+                <p class="upload-text">Drag & drop your image here or click to browse</p>
+                <p class="upload-hint">Supports JPG, PNG (Max 10MB)</p>
+                <input type="file" id="imageInput" accept="image/*" style="display: none;">
+            </div>
+
+            <div class="ai-guide-preview" id="previewSection" style="display: none;">
+                <img id="previewImage" class="preview-img" alt="Preview">
+                <div class="preview-controls">
+                    <button id="analyzeBtn" class="ai-btn analyze" type="button">Analyze Image</button>
+                    <button id="changeBtn" class="ai-btn secondary" type="button">Change Image</button>
+                </div>
+            </div>
+
+            <div class="ai-guide-loading" id="loadingSection" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Analyzing image... Finding similar places...</p>
+            </div>
+        </div>
+
+        <div class="ai-guide-results" id="resultsSection" style="display: none;">
+            <h2 class="results-title">🎯 Suggested Locations</h2>
+            <div class="confidence-meter">
+                <label>Confidence:</label>
+                <div class="meter-bar">
+                    <div id="confidenceBar" class="meter-fill"></div>
+                </div>
+                <span id="confidenceText" class="confidence-value">0%</span>
+            </div>
+
+            <p id="analysisDescription" class="analysis-description"></p>
+            <div class="analysis-insights" id="analysisInsights" style="display: none;">
+                <p class="analysis-insight-item"><strong>Analysis engine:</strong> <span id="analysisSourceText"></span></p>
+                <p class="analysis-insight-item"><strong>Photo says:</strong> <span id="photoSummaryText"></span></p>
+                <p class="analysis-insight-item"><strong>Best time to go:</strong> <span id="bestTimeText"></span></p>
+            </div>
+
+            <div id="suggestionsContainer" class="suggestions-grid">
+                <!-- Suggestions will be populated here -->
+            </div>
+
+            <button id="backBtn" class="ai-btn secondary" type="button">← Back</button>
+        </div>
+
+        <div class="ai-guide-error" id="errorSection" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <p id="errorMessage" class="error-text"></p>
+            <button id="retryBtn" class="ai-btn secondary" type="button">Try Again</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ai-guide-container {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(226, 252, 243, 0.5), rgba(210, 245, 232, 0.3));
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    html.dark-mode .ai-guide-container {
+        background: linear-gradient(135deg, rgba(30, 70, 100, 0.4), rgba(40, 80, 120, 0.3));
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .ai-guide-header {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .ai-guide-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: #0f5d4a;
+        margin: 0 0 10px;
+    }
+
+    html.dark-mode .ai-guide-title {
+        color: #5dd9d2;
+    }
+
+    .ai-guide-subtitle {
+        font-size: 16px;
+        color: #669bb5;
+        margin: 0;
+    }
+
+    html.dark-mode .ai-guide-subtitle {
+        color: #8db5cc;
+    }
+
+    .ai-guide-content {
+        display: flex;
+        gap: 20px;
+    }
+
+    .ai-guide-upload-section {
+        flex: 1;
+    }
+
+    .ai-guide-upload-box {
+        border: 3px dashed rgba(16, 185, 129, 0.5);
+        border-radius: 15px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(226, 252, 243, 0.4);
+    }
+
+    html.dark-mode .ai-guide-upload-box {
+        border-color: rgba(93, 217, 210, 0.4);
+        background: rgba(30, 70, 100, 0.3);
+    }
+
+    .ai-guide-upload-box:hover {
+        border-color: #10b981;
+        background: rgba(226, 252, 243, 0.7);
+        transform: translateY(-2px);
+    }
+
+    html.dark-mode .ai-guide-upload-box:hover {
+        border-color: #5dd9d2;
+        background: rgba(30, 70, 100, 0.5);
+    }
+
+    .ai-guide-upload-box.drag-over {
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.15);
+        transform: scale(1.02);
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .upload-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #245176;
+        margin: 10px 0;
+    }
+
+    html.dark-mode .upload-text {
+        color: #8db5cc;
+    }
+
+    .upload-hint {
+        font-size: 13px;
+        color: #669bb5;
+        margin: 5px 0 0;
+    }
+
+    html.dark-mode .upload-hint {
+        color: #5fa3c1;
+    }
+
+    .ai-guide-preview {
+        text-align: center;
+    }
+
+    .preview-img {
+        max-width: 100%;
+        max-height: 400px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    html.dark-mode .preview-img {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .preview-controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+    }
+
+    .ai-guide-loading {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(16, 185, 129, 0.2);
+        border-top-color: #10b981;
+        border-radius: 50%;
+        margin: 0 auto 20px;
+        animation: spin 0.8s linear infinite;
+    }
+
+    html.dark-mode .loading-spinner {
+        border-color: rgba(93, 217, 210, 0.2);
+        border-top-color: #5dd9d2;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        font-size: 16px;
+        color: #669bb5;
+        margin: 0;
+    }
+
+    html.dark-mode .loading-text {
+        color: #8db5cc;
+    }
+
+    .ai-guide-results {
+        flex: 1.2;
+    }
+
+    .results-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #0f5d4a;
+        margin: 0 0 20px;
+    }
+
+    html.dark-mode .results-title {
+        color: #5dd9d2;
+    }
+
+    .confidence-meter {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: rgba(226, 252, 243, 0.5);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    html.dark-mode .confidence-meter {
+        background: rgba(30, 70, 100, 0.3);
+    }
+
+    .confidence-meter label {
+        font-weight: 600;
+        color: #245176;
+        min-width: 80px;
+    }
+
+    html.dark-mode .confidence-meter label {
+        color: #8db5cc;
+    }
+
+    .meter-bar {
+        flex: 1;
+        height: 8px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    html.dark-mode .meter-bar {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .meter-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #10b981, #059669);
+        border-radius: 10px;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .confidence-value {
+        font-weight: 600;
+        color: #10b981;
+        min-width: 35px;
+        text-align: right;
+    }
+
+    .analysis-description {
+        font-size: 14px;
+        color: #669bb5;
+        line-height: 1.6;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: rgba(102, 153, 189, 0.1);
+        border-left: 4px solid #10b981;
+        border-radius: 5px;
+    }
+
+    html.dark-mode .analysis-description {
+        color: #8db5cc;
+        background: rgba(102, 153, 189, 0.05);
+        border-left-color: #5dd9d2;
+    }
+
+    .analysis-insights {
+        margin-bottom: 16px;
+        padding: 12px;
+        background: rgba(16, 185, 129, 0.08);
+        border-radius: 8px;
+    }
+
+    html.dark-mode .analysis-insights {
+        background: rgba(93, 217, 210, 0.08);
+    }
+
+    .analysis-insight-item {
+        margin: 0 0 6px;
+        font-size: 13px;
+        color: #245176;
+    }
+
+    .analysis-insight-item:last-child {
+        margin-bottom: 0;
+    }
+
+    html.dark-mode .analysis-insight-item {
+        color: #8db5cc;
+    }
+
+    .suggestions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .suggestion-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    html.dark-mode .suggestion-card {
+        background: rgba(30, 70, 100, 0.5);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .suggestion-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    html.dark-mode .suggestion-card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .suggestion-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+
+    .suggestion-name {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f5d4a;
+        margin: 10px 0 5px;
+    }
+
+    html.dark-mode .suggestion-name {
+        color: #5dd9d2;
+    }
+
+    .suggestion-country {
+        font-size: 14px;
+        color: #669bb5;
+        margin: 5px 0;
+    }
+
+    html.dark-mode .suggestion-country {
+        color: #8db5cc;
+    }
+
+    .suggestion-match {
+        font-size: 12px;
+        color: #10b981;
+        font-weight: 600;
+        margin-top: 10px;
+    }
+
+    .suggestion-description {
+        font-size: 12px;
+        color: #669bb5;
+        margin-top: 8px;
+        line-height: 1.4;
+    }
+
+    html.dark-mode .suggestion-description {
+        color: #8db5cc;
+    }
+
+    .ai-guide-error {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .error-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+    }
+
+    .error-text {
+        font-size: 16px;
+        color: #e74c3c;
+        margin: 15px 0;
+    }
+
+    html.dark-mode .error-text {
+        color: #f08080;
+    }
+
+    .ai-btn {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+    .ai-btn.analyze {
+        flex: 1;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border-radius: 12px;
+        padding: 14px 28px;
+        min-height: 48px;
+    }
+
+    .ai-btn.analyze:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .ai-btn.analyze:active {
+        transform: translateY(0);
+    }
+
+    .ai-btn.analyze:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .ai-btn.secondary {
+        background: rgba(243, 248, 253, 0.96);
+        color: #245176;
+        border: 1px solid rgba(102, 153, 189, 0.5);
+    }
+
+    html.dark-mode .ai-btn.secondary {
+        background: rgba(30, 70, 100, 0.4);
+        color: #8db5cc;
+        border-color: rgba(93, 217, 210, 0.3);
+    }
+
+    .ai-btn.secondary:hover {
+        background: rgba(243, 248, 253, 1);
+        border-color: rgba(102, 153, 189, 0.8);
+    }
+
+    html.dark-mode .ai-btn.secondary:hover {
+        background: rgba(30, 70, 100, 0.6);
+        border-color: rgba(93, 217, 210, 0.5);
+    }
+
+    @media (max-width: 768px) {
+        .ai-guide-container {
+            margin: 20px auto;
+            padding: 15px;
+        }
+
+        .ai-guide-content {
+            flex-direction: column;
+        }
+
+        .ai-guide-upload-box {
+            padding: 30px;
+        }
+
+        .suggestions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .preview-controls {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    (function () {
+        const uploadBox = document.getElementById('uploadBox');
+        const imageInput = document.getElementById('imageInput');
+        const previewSection = document.getElementById('previewSection');
+        const previewImage = document.getElementById('previewImage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const changeBtn = document.getElementById('changeBtn');
+        const loadingSection = document.getElementById('loadingSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const suggestionsContainer = document.getElementById('suggestionsContainer');
+        const errorSection = document.getElementById('errorSection');
+        const errorMessage = document.getElementById('errorMessage');
+        const backBtn = document.getElementById('backBtn');
+        const retryBtn = document.getElementById('retryBtn');
+        const confidenceBar = document.getElementById('confidenceBar');
+        const confidenceText = document.getElementById('confidenceText');
+        const analysisDescription = document.getElementById('analysisDescription');
+        const analysisInsights = document.getElementById('analysisInsights');
+        const analysisSourceText = document.getElementById('analysisSourceText');
+        const photoSummaryText = document.getElementById('photoSummaryText');
+        const bestTimeText = document.getElementById('bestTimeText');
+
+        let currentImageData = '';
+
+        uploadBox.addEventListener('click', () => imageInput.click());
+
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('drag-over');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('drag-over');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleImageUpload(files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageUpload(e.target.files[0]);
+            }
+        });
+
+        function handleImageUpload(file) {
+            if (!file.type.startsWith('image/')) {
+                showError('Please upload an image file');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showError('Image size must be less than 10MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentImageData = e.target.result;
+                previewImage.src = currentImageData;
+                uploadBox.style.display = 'none';
+                previewSection.style.display = 'block';
+                resultsSection.style.display = 'none';
+                errorSection.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        analyzeBtn.addEventListener('click', analyzeImage);
+        changeBtn.addEventListener('click', resetUpload);
+        backBtn.addEventListener('click', resetUpload);
+        retryBtn.addEventListener('click', resetUpload);
+
+        function analyzeImage() {
+            if (!currentImageData) return;
+
+            analyzeBtn.disabled = true;
+            changeBtn.disabled = true;
+            previewSection.style.display = 'none';
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
+            errorSection.style.display = 'none';
+
+            fetch('{{ path('app_ai_guide_analyze') }}', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ imageData: currentImageData })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !data.success) {
+                        showError(data?.error || 'Analysis failed. Please try again.');
+                        return;
+                    }
+
+                    displayResults(data);
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    showError('An error occurred. Please try again.');
+                })
+                .finally(() => {
+                    analyzeBtn.disabled = false;
+                    changeBtn.disabled = false;
+                });
+        }
+
+        function displayResults(data) {
+            loadingSection.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            if (data.confidence) {
+                confidenceBar.style.width = (data.confidence * 100) + '%';
+                confidenceText.textContent = Math.round(data.confidence * 100) + '%';
+            }
+
+            if (data.description) {
+                analysisDescription.textContent = data.description;
+            }
+
+            const summary = (data.photo_summary || '').trim();
+            const bestTime = (data.best_time_to_visit || data.visit_window || '').trim();
+            const source = (data.analysis_source || 'opencv').toLowerCase();
+            analysisSourceText.textContent = source === 'deepseek' ? 'AI Vision Engine' : 'Fallback local analyzer';
+            if (summary || bestTime) {
+                analysisInsights.style.display = 'block';
+                photoSummaryText.textContent = summary || 'No detailed photo summary available.';
+                bestTimeText.textContent = bestTime || 'No season guidance available.';
+            } else {
+                analysisInsights.style.display = 'none';
+                photoSummaryText.textContent = '';
+                bestTimeText.textContent = '';
+            }
+
+            suggestionsContainer.innerHTML = '';
+            if (data.suggestions && Array.isArray(data.suggestions)) {
+                data.suggestions.forEach(suggestion => {
+                    const card = document.createElement('div');
+                    card.className = 'suggestion-card';
+                    card.innerHTML = `
+                        <div class="suggestion-icon">${suggestion.icon || '📍'}</div>
+                        <div class="suggestion-name">${escapeHtml(suggestion.name)}</div>
+                        <div class="suggestion-country">🌍 ${escapeHtml(suggestion.country)}</div>
+                        ${suggestion.match ? `<div class="suggestion-match">✓ ${Math.round(suggestion.match * 100)}% Match</div>` : ''}
+                        ${suggestion.best_time ? `<div class="suggestion-description"><strong>Best time:</strong> ${escapeHtml(suggestion.best_time)}</div>` : ''}
+                        ${suggestion.description ? `<div class="suggestion-description">${escapeHtml(suggestion.description)}</div>` : ''}
+                    `;
+                    suggestionsContainer.appendChild(card);
+                });
+            }
+        }
+
+        function showError(message) {
+            previewSection.style.display = 'none';
+            loadingSection.style.display = 'none';
+            resultsSection.style.display = 'none';
+            errorSection.style.display = 'block';
+            errorMessage.textContent = message;
+        }
+
+        function resetUpload() {
+            currentImageData = '';
+            imageInput.value = '';
+            uploadBox.style.display = 'block';
+            previewSection.style.display = 'none';
+            resultsSection.style.display = 'none';
+            errorSection.style.display = 'none';
+            analysisInsights.style.display = 'none';
+            analysisSourceText.textContent = '';
+            photoSummaryText.textContent = '';
+            bestTimeText.textContent = '';
+            suggestionsContainer.innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    })();
+</script>
+{% endblock %}

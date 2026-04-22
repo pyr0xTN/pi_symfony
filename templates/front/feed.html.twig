@@ -1,0 +1,65 @@
+{% extends embed|default(false) ? 'empty.html.twig' : 'front/layout.html.twig' %}
+
+{% block title %}Feed{% endblock %}
+
+{% block content %}
+{% if embed|default(false) %}
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    
+    {# Mini Nav-bar since the layout one is stripped out #}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div class="view-toggle-container">
+            <a href="javascript:void(0)" onclick="window.loadMainpageModule('post'); return false;" class="view-toggle-btn {{ viewMode|default('grid') == 'grid' ? 'active-view' : '' }}">Grid</a>
+        </div>
+        <a href="{{ path('app_post_new') }}" class="primary-btn" style="padding: 10px 16px; font-size: 14px;">+ New Post</a>
+    </div>
+{% endif %}
+{% if search is not empty %}
+    <div class="search-results-header">
+        <span>Results for "<strong>{{ search }}</strong>"</span>
+        <a href="{{ path('app_feed') }}" class="clear-search">✕ Clear</a>
+    </div>
+{% endif %}
+
+{% if posts is empty %}
+    <div class="empty-state">
+        <h3>No posts yet</h3>
+        <p>Be the first to share your travel experience!</p>
+        <a href="{{ path('app_post_new') }}" class="primary-btn">+ Create Post</a>
+    </div>
+{% elseif viewMode == 'list' %}
+    {# ═══ LIST / FEED VIEW ═══ #}
+    <div class="posts-list">
+        {% for post in posts %}
+            {% include 'components/post_card_list.html.twig' with {
+                post: post,
+                meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+            } %}
+        {% endfor %}
+    </div>
+{% else %}
+    {# ═══ GRID VIEW — 2-column masonry ═══ #}
+    <div class="posts-grid">
+        <div class="masonry-col">
+            {% for post in posts %}
+                {% if loop.index is odd %}
+                    {% include 'components/post_card.html.twig' with {
+                        post: post,
+                        meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+                    } %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        <div class="masonry-col">
+            {% for post in posts %}
+                {% if loop.index is even %}
+                    {% include 'components/post_card.html.twig' with {
+                        post: post,
+                        meta: postMeta[post.id]|default({likeCount:0, commentCount:0, userLiked:false})
+                    } %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

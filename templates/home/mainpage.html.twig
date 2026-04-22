@@ -1,0 +1,3508 @@
+{# templates/home/mainpage.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Main Page - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
+
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            background: var(--vision-main-background, radial-gradient(1400px 500px at 10% -20%, rgba(10, 160, 159, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(252, 186, 48, 0.20), transparent 55%), linear-gradient(180deg, #f4f9ff 0%, #eff6fb 100%));
+            font-family: 'Sora', 'Segoe UI', sans-serif;
+        }
+
+        .main-content-shell {
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .airport-background {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 0.9;
+            --parallax-x: 0px;
+            --parallax-y: 0px;
+        }
+
+        .depth-background {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .depth-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(8px);
+            opacity: 0.42;
+            animation: depthFloat 16s ease-in-out infinite alternate;
+        }
+
+        .depth-orb.one {
+            width: 420px;
+            height: 420px;
+            left: -140px;
+            top: 210px;
+            background: radial-gradient(circle at 35% 35%, rgba(85, 206, 255, 0.54), rgba(85, 206, 255, 0.06) 68%, transparent 100%);
+        }
+
+        .depth-orb.two {
+            width: 500px;
+            height: 500px;
+            right: -160px;
+            top: 130px;
+            background: radial-gradient(circle at 50% 45%, rgba(134, 219, 255, 0.4), rgba(134, 219, 255, 0.07) 68%, transparent 100%);
+            animation-delay: 2.8s;
+        }
+
+        .depth-orb.three {
+            width: 360px;
+            height: 360px;
+            right: 16%;
+            bottom: -110px;
+            background: radial-gradient(circle at 45% 45%, rgba(255, 194, 111, 0.34), rgba(255, 194, 111, 0.05) 68%, transparent 100%);
+            animation-delay: 1.2s;
+        }
+
+
+        .airport-layer {
+            will-change: transform;
+            transition: transform 0.18s ease-out;
+            transform: translate3d(
+                calc(var(--parallax-x) * var(--depth, 0)),
+                calc(var(--parallax-y) * var(--depth, 0)),
+                0
+            );
+        }
+
+        .airport-skyglow {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(860px 320px at 88% 8%, rgba(106, 204, 255, 0.34), transparent 70%),
+                radial-gradient(940px 380px at 12% 12%, rgba(110, 228, 255, 0.2), transparent 74%),
+                linear-gradient(180deg, rgba(17, 41, 77, 0.06), rgba(10, 33, 66, 0.34));
+            animation: skyPulse 9s ease-in-out infinite alternate;
+        }
+
+        .airport-clouds {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(130px 34px at 14% 15%, rgba(231, 248, 255, 0.48), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(170px 40px at 32% 10%, rgba(231, 248, 255, 0.37), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(142px 38px at 57% 18%, rgba(231, 248, 255, 0.45), rgba(231, 248, 255, 0) 72%),
+                radial-gradient(190px 42px at 80% 12%, rgba(231, 248, 255, 0.4), rgba(231, 248, 255, 0) 72%);
+            opacity: 0.72;
+            animation: cloudDrift 60s linear infinite;
+        }
+
+        .airport-terminal {
+            display: none;
+        }
+
+        .airport-apron {
+            display: none;
+        }
+
+        .airport-control-tower {
+            display: none;
+        }
+
+        .airport-control-tower::after {
+            content: none;
+        }
+
+        .airport-control-tower::before {
+            content: none;
+        }
+
+        .airport-runway {
+            display: none;
+        }
+
+        .airport-runway-lights {
+            display: none;
+        }
+
+        .airport-plane {
+            position: absolute;
+            width: 260px;
+            height: 6px;
+            left: -28%;
+            top: 24%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(145, 227, 255, 0) 0%, rgba(145, 227, 255, 0.4) 46%, rgba(224, 247, 255, 0.92) 82%, rgba(255, 255, 255, 0.98) 100%);
+            filter: drop-shadow(0 0 10px rgba(123, 217, 255, 0.64));
+        }
+
+        .airport-plane::before {
+            content: '';
+            position: absolute;
+            right: 18px;
+            top: -8px;
+            width: 36px;
+            height: 18px;
+            border-top: 2px solid rgba(214, 244, 255, 0.9);
+            border-bottom: 2px solid rgba(214, 244, 255, 0.9);
+            border-radius: 12px;
+            opacity: 0.95;
+        }
+
+        .airport-plane::after {
+            content: '';
+            position: absolute;
+            right: -12px;
+            top: -7px;
+            border-left: 14px solid rgba(247, 252, 255, 0.95);
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+
+        .airport-plane.plane-one {
+            width: 210px;
+            height: 72px;
+            background: none;
+            border-radius: 0;
+            filter: drop-shadow(0 0 12px rgba(123, 217, 255, 0.42));
+            animation: flyAcross 16s linear infinite;
+        }
+
+        .airport-plane.plane-one::before,
+        .airport-plane.plane-one::after {
+            content: none;
+        }
+
+        .airport-plane-svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+            filter: drop-shadow(0 0 8px rgba(167, 232, 255, 0.45));
+        }
+
+        .airport-plane-svg .plane-body {
+            fill: rgba(237, 248, 255, 0.94);
+        }
+
+        .airport-plane-svg .plane-wing {
+            fill: rgba(201, 232, 248, 0.88);
+        }
+
+        .airport-plane-svg .plane-window {
+            fill: rgba(132, 196, 224, 0.72);
+        }
+
+        .airport-plane-svg .plane-light {
+            fill: #ff4d57;
+            filter: drop-shadow(0 0 4px rgba(255, 77, 87, 0.8));
+            animation: wingLightBlink 1.1s steps(2) infinite;
+        }
+
+        .airport-plane.plane-two {
+            top: 42%;
+            width: 170px;
+            opacity: 0.52;
+            transform: scaleX(-1);
+            animation: flyAcrossReverse 19s linear infinite;
+            animation-delay: 5s;
+        }
+
+        .airport-plane.plane-three {
+            top: 14%;
+            width: 130px;
+            opacity: 0.36;
+            animation: flyAcross 26s linear infinite;
+            animation-delay: 10s;
+        }
+
+        .airport-beacon {
+            display: none;
+        }
+
+        @keyframes flyAcross {
+            0% {
+                transform: translateX(0) translateY(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.95;
+            }
+            75% {
+                opacity: 0.94;
+            }
+            100% {
+                transform: translateX(136vw) translateY(-62px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes flyAcrossReverse {
+            0% {
+                transform: translateX(112vw) translateY(0) scaleX(-1);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.58;
+            }
+            75% {
+                opacity: 0.54;
+            }
+            100% {
+                transform: translateX(-44vw) translateY(-40px) scaleX(-1);
+                opacity: 0;
+            }
+        }
+
+        @keyframes runwayBlink {
+            0%, 100% {
+                opacity: 0.4;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes skyPulse {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-8px);
+            }
+        }
+
+        @keyframes cloudDrift {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(5%);
+            }
+        }
+
+        @keyframes wingLightBlink {
+            0%, 42%, 100% {
+                opacity: 0.2;
+            }
+            45%, 52% {
+                opacity: 1;
+            }
+            70% {
+                opacity: 0.25;
+            }
+        }
+
+        @keyframes beaconPulse {
+            0% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes depthFloat {
+            0% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            100% {
+                transform: translate3d(0, -22px, 0) scale(1.06);
+            }
+        }
+
+
+        .main-container.vision-support {
+            background: var(--vision-support-background, radial-gradient(1400px 500px at 10% -20%, rgba(37, 130, 150, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(226, 169, 52, 0.2), transparent 55%), linear-gradient(180deg, #edf7fb 0%, #e6f2f8 100%));
+        }
+
+
+        .main-container.vision-support .top-bar {
+            background: var(--vision-top-bar-background, rgba(240, 251, 255, 0.95));
+        }
+
+        .main-container.vision-support .nav-tab.active {
+            background: var(--vision-nav-active-background, linear-gradient(135deg, #0b8e8b, #1a6ea0));
+            color: var(--vision-nav-active-color, #f1fcff);
+        }
+
+        .main-container.vision-support .profile-section {
+            border-color: var(--vision-profile-hover-border, rgba(31, 136, 171, 0.35));
+        }
+
+        .side-menu {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: var(--vision-side-menu-background, linear-gradient(180deg, #ffffff 0%, #f3f9ff 100%));
+            box-shadow: 10px 0 32px rgba(3, 39, 75, 0.15);
+            transition: left 0.3s ease;
+            z-index: 1000;
+            overflow-y: auto;
+            border-right: none;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .side-menu-content {
+            padding: 28px 22px;
+        }
+
+        .user-info {
+            text-align: center;
+            padding-bottom: 18px;
+            border-bottom: none;
+            margin-bottom: 18px;
+        }
+
+        .avatar {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
+            background: linear-gradient(145deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.25);
+        }
+
+        .avatar-img {
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #11406f;
+            margin: 0;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #d29a16;
+            font-weight: 700;
+            margin: 2px 0 0;
+            text-transform: capitalize;
+        }
+
+        .side-menu-btn {
+            width: 100%;
+            text-align: left;
+            padding: 12px 18px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            color: #33506f;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .side-menu-btn:hover {
+            background: var(--vision-hover-background, rgba(10, 160, 159, 0.10));
+            border-color: var(--vision-hover-border, rgba(10, 160, 159, 0.22));
+            color: var(--vision-hover-color, #0b8e8b);
+        }
+
+        .logout-btn {
+            margin-top: 18px;
+            background: #fff2f2;
+            color: #d94a5a;
+            font-weight: 700;
+            border-color: #ffd9de;
+        }
+
+        .logout-btn:hover {
+            background: #ffe9ec;
+            border-color: #ffccd4;
+            color: #c03b4d;
+        }
+
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(3, 30, 58, 0.40);
+            backdrop-filter: blur(2px);
+            z-index: 999;
+        }
+
+        .menu-overlay.show {
+            display: block;
+        }
+
+        .top-bar {
+            background: var(--vision-top-bar-background, rgba(255, 255, 255, 0.90));
+            backdrop-filter: blur(10px);
+            padding: 16px 28px;
+            box-shadow: 0 8px 24px rgba(10, 46, 88, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: none;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            height: 40px;
+            width: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo .reh {
+            color: #0FA5A2;
+        }
+
+        .logo .let {
+            color: #FEC74C;
+        }
+
+        .logo .na {
+            color: #1D4D7C;
+        }
+
+        .menu-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            margin-right: 12px;
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        .menu-toggle:hover {
+            background: var(--vision-hover-background, rgba(10, 160, 159, 0.10));
+        }
+
+        .menu-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--vision-accent-strong, #1D4D7C);
+            margin: 5px 0;
+            transition: 0.3s;
+        }
+
+        .profile-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 6px 8px 6px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(80, 149, 198, 0.16);
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .profile-section:hover {
+            transform: translateY(-1px);
+            border-color: var(--vision-profile-hover-border, rgba(86, 218, 255, 0.92));
+            background: var(--vision-profile-hover-background, linear-gradient(135deg, rgba(219, 247, 255, 0.98), rgba(192, 238, 255, 0.94)));
+            box-shadow: var(--vision-profile-hover-shadow, 0 0 0 1px rgba(129, 230, 255, 0.72), 0 0 16px rgba(65, 203, 255, 0.46), 0 10px 24px rgba(10, 98, 141, 0.24));
+        }
+
+        .profile-section::after {
+            content: 'Settings';
+            position: absolute;
+            right: 14px;
+            bottom: -18px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(29, 77, 124, 0.96);
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            opacity: 0;
+            transform: translateY(-2px);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            pointer-events: none;
+            box-shadow: 0 6px 14px rgba(7, 57, 107, 0.24);
+            white-space: nowrap;
+        }
+
+        .profile-section:hover::after {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .profile-info {
+            text-align: right;
+        }
+
+        .profile-name {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1D4D7C;
+            margin: 0;
+        }
+
+        .profile-role {
+            font-size: 11px;
+            color: #d19a1a;
+            font-weight: 700;
+            margin: 0;
+            text-transform: capitalize;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0FA5A2, #1D4D7C);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(7, 57, 107, 0.20);
+        }
+
+        .profile-avatar img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .premium-crown-badge {
+            position: absolute;
+            top: -8px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            background: linear-gradient(135deg, #ffd66e, #f3b019);
+            border: 2px solid #ffffff;
+            box-shadow: 0 6px 14px rgba(90, 63, 0, 0.28);
+            z-index: 3;
+        }
+
+        .online-status {
+            position: absolute;
+            bottom: 1px;
+            right: 1px;
+            width: 12px;
+            height: 12px;
+            background: #2ecc71;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(10, 160, 159, 0.2);
+            border-radius: 999px;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+            margin: 0 12px;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(10, 160, 159, 0.4);
+            box-shadow: 0 6px 16px rgba(10, 160, 159, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .theme-toggle:active {
+            transform: translateY(0);
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background: #1a1a2e !important;
+        }
+
+        body.dark-mode .main-container {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%) !important;
+        }
+
+        body.dark-mode .airport-background {
+            opacity: 0.72;
+        }
+
+        body.dark-mode .depth-orb {
+            opacity: 0.28;
+            filter: blur(12px);
+        }
+
+        body.dark-mode .depth-orb.one {
+            background: radial-gradient(circle at 35% 35%, rgba(90, 180, 255, 0.36), rgba(90, 180, 255, 0.04) 68%, transparent 100%);
+        }
+
+        body.dark-mode .depth-orb.two {
+            background: radial-gradient(circle at 50% 45%, rgba(114, 186, 255, 0.28), rgba(114, 186, 255, 0.03) 68%, transparent 100%);
+        }
+
+        body.dark-mode .depth-orb.three {
+            background: radial-gradient(circle at 45% 45%, rgba(255, 182, 97, 0.2), rgba(255, 182, 97, 0.02) 68%, transparent 100%);
+        }
+
+
+        body.dark-mode .airport-clouds {
+            opacity: 0.34;
+            filter: saturate(0.8) blur(0.4px);
+        }
+
+        body.dark-mode .airport-terminal {
+            display: none;
+        }
+
+        body.dark-mode .airport-apron {
+            display: none;
+        }
+
+        body.dark-mode .airport-runway-lights {
+            display: none;
+        }
+
+        body.dark-mode .airport-plane {
+            background: linear-gradient(90deg, rgba(145, 227, 255, 0) 0%, rgba(145, 227, 255, 0.3) 46%, rgba(204, 228, 255, 0.82) 82%, rgba(237, 246, 255, 0.9) 100%);
+            filter: drop-shadow(0 0 8px rgba(123, 217, 255, 0.4));
+        }
+
+        body.dark-mode .airport-plane.plane-one {
+            background: none;
+            filter: drop-shadow(0 0 10px rgba(120, 200, 255, 0.45));
+        }
+
+        body.dark-mode .airport-plane-svg .plane-body {
+            fill: rgba(209, 226, 244, 0.92);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-wing {
+            fill: rgba(169, 194, 219, 0.84);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-window {
+            fill: rgba(110, 157, 197, 0.72);
+        }
+
+        body.dark-mode .airport-plane-svg .plane-light {
+            fill: #ff6c74;
+            filter: drop-shadow(0 0 5px rgba(255, 108, 116, 0.9));
+        }
+
+        body.dark-mode .airport-plane::before {
+            border-top-color: rgba(182, 215, 255, 0.72);
+            border-bottom-color: rgba(182, 215, 255, 0.72);
+        }
+
+        body.dark-mode .top-bar {
+            background: rgba(30, 30, 50, 0.95) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        body.dark-mode .menu-toggle span {
+            background: #e8f0f6 !important;
+        }
+
+        body.dark-mode .nav-tab {
+            background: rgba(255, 255, 255, 0.05) !important;
+            color: #b8d4f1 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .nav-tab:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .nav-tab.active {
+            background: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .profile-section {
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        body.dark-mode .profile-section:hover {
+            background: linear-gradient(135deg, rgba(14, 79, 110, 0.95), rgba(7, 118, 139, 0.9)) !important;
+            border-color: rgba(108, 229, 255, 0.92) !important;
+            box-shadow:
+                0 0 0 1px rgba(108, 229, 255, 0.54),
+                0 0 18px rgba(54, 185, 235, 0.44),
+                0 10px 24px rgba(3, 22, 38, 0.62) !important;
+        }
+
+        body.dark-mode .profile-name {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .profile-role {
+            color: #ffd89b !important;
+        }
+
+        body.dark-mode .premium-crown-badge {
+            border-color: #1b2b3e;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+        }
+
+        body.dark-mode .theme-toggle {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(10, 160, 159, 0.3) !important;
+        }
+
+        body.dark-mode .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+            border-color: rgba(10, 160, 159, 0.5) !important;
+        }
+
+        body.dark-mode .side-menu {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+        }
+
+        body.dark-mode .side-menu-btn {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .side-menu-btn:hover {
+            background: rgba(10, 160, 159, 0.2) !important;
+            border-color: rgba(10, 160, 159, 0.3) !important;
+            color: #0FA5A2 !important;
+        }
+
+        body.dark-mode .user-name {
+            color: #e8f0f6 !important;
+        }
+
+        body.dark-mode .user-role {
+            color: #ffd89b !important;
+        }
+
+        /* Dark mode content styles */
+        body.dark-mode .content-area {
+            background: transparent !important;
+        }
+
+        body.dark-mode .welcome-section {
+            background:
+                radial-gradient(320px 130px at 12% 0%, rgba(102, 194, 255, 0.14), transparent 75%),
+                radial-gradient(360px 140px at 90% 100%, rgba(255, 162, 71, 0.12), transparent 78%),
+                linear-gradient(130deg, rgba(22, 31, 59, 0.52), rgba(15, 28, 55, 0.42)) !important;
+            border-color: rgba(120, 189, 247, 0.34) !important;
+            box-shadow: 0 18px 36px rgba(1, 8, 20, 0.46), inset 0 1px 0 rgba(203, 235, 255, 0.2) !important;
+        }
+
+        body.dark-mode .welcome-title {
+            color: #d4e4f0 !important;
+        }
+
+        body.dark-mode .welcome-subtitle {
+            color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .feature-card {
+            background: linear-gradient(155deg, rgba(30, 30, 50, 0.8), rgba(22, 33, 62, 0.8)) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        body.dark-mode .feature-card:hover {
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        body.dark-mode .feature-title {
+            color: #d4e4f0 !important;
+        }
+
+        body.dark-mode .feature-text {
+            color: #9cb3d4 !important;
+        }
+
+        body.dark-mode .metric-card {
+            background:
+                radial-gradient(130px 70px at 10% 0%, rgba(105, 202, 255, 0.16), transparent 78%),
+                linear-gradient(145deg, rgba(22, 36, 67, 0.5), rgba(15, 28, 54, 0.36)) !important;
+            border-color: rgba(102, 168, 224, 0.36) !important;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(190, 226, 255, 0.16) !important;
+        }
+
+        body.dark-mode .metric-value {
+            color: #d7e9f8;
+        }
+
+        body.dark-mode .metric-label {
+            color: #9fbdd7;
+        }
+
+        body.dark-mode .chat-modal {
+            background: rgba(30, 30, 50, 0.98) !important;
+            box-shadow: 0 22px 46px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        body.dark-mode .menu-overlay {
+            background: rgba(0, 0, 0, 0.6) !important;
+        }
+
+        .nav-tabs {
+            background: transparent;
+            padding: 10px 28px 0;
+            border-bottom: 0;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-tab {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.75);
+            border: none;
+            border-radius: 999px;
+            color: #49617a;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        .nav-tab:hover {
+            background: #ffffff;
+            border-color: rgba(10, 160, 159, 0.30);
+            color: #0FA5A2;
+        }
+
+        .nav-tab.active {
+            background: var(--vision-nav-active-background, linear-gradient(135deg, #0FA5A2 0%, #1788b6 100%));
+            color: var(--vision-nav-active-color, white);
+            border-color: transparent;
+            box-shadow: 0 8px 18px rgba(15, 165, 162, 0.26);
+        }
+
+        .main-container.theme-blue {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(34, 132, 222, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(129, 196, 255, 0.18), transparent 55%), linear-gradient(180deg, #f1f8ff 0%, #eaf4ff 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(37, 130, 150, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(129, 196, 255, 0.16), transparent 55%), linear-gradient(180deg, #edf7fb 0%, #e6f2f8 100%);
+            --vision-top-bar-background: rgba(244, 250, 255, 0.94);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #156fd1, #0f4c9a);
+            --vision-nav-active-color: #f6fbff;
+            --vision-hover-background: rgba(34, 132, 222, 0.10);
+            --vision-hover-border: rgba(34, 132, 222, 0.22);
+            --vision-hover-color: #156fd1;
+            --vision-profile-hover-border: rgba(88, 154, 209, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(232, 244, 255, 0.98), rgba(213, 234, 255, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(134, 196, 255, 0.72), 0 0 16px rgba(63, 165, 255, 0.40), 0 10px 24px rgba(14, 82, 138, 0.22);
+            --vision-accent-strong: #0f4c9a;
+        }
+
+        .main-container.theme-red {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(220, 82, 82, 0.24), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 191, 191, 0.16), transparent 55%), linear-gradient(180deg, #fff4f4 0%, #ffecec 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(220, 82, 82, 0.18), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 191, 191, 0.12), transparent 55%), linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%);
+            --vision-top-bar-background: rgba(255, 246, 246, 0.95);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff1f1 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #d33f49, #8f2433);
+            --vision-nav-active-color: #fff8f8;
+            --vision-hover-background: rgba(220, 82, 82, 0.10);
+            --vision-hover-border: rgba(220, 82, 82, 0.22);
+            --vision-hover-color: #d33f49;
+            --vision-profile-hover-border: rgba(224, 114, 114, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 237, 237, 0.98), rgba(255, 225, 225, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(255, 170, 170, 0.72), 0 0 16px rgba(255, 124, 124, 0.34), 0 10px 24px rgba(152, 50, 50, 0.20);
+            --vision-accent-strong: #8f2433;
+        }
+
+        .main-container.theme-yellow {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(232, 177, 38, 0.28), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 238, 181, 0.18), transparent 55%), linear-gradient(180deg, #fffaf0 0%, #fff3d6 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(232, 177, 38, 0.20), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(255, 238, 181, 0.14), transparent 55%), linear-gradient(180deg, #fffdf6 0%, #fff6dd 100%);
+            --vision-top-bar-background: rgba(255, 251, 240, 0.95);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #fff7e4 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #d39a15, #8e5f09);
+            --vision-nav-active-color: #fffdf7;
+            --vision-hover-background: rgba(232, 177, 38, 0.12);
+            --vision-hover-border: rgba(232, 177, 38, 0.24);
+            --vision-hover-color: #c98f00;
+            --vision-profile-hover-border: rgba(230, 194, 86, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(255, 248, 220, 0.98), rgba(255, 242, 194, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(248, 214, 123, 0.72), 0 0 16px rgba(255, 204, 84, 0.34), 0 10px 24px rgba(162, 124, 22, 0.18);
+            --vision-accent-strong: #8e5f09;
+        }
+
+        .main-container.theme-black {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(68, 74, 88, 0.30), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(156, 163, 175, 0.16), transparent 55%), linear-gradient(180deg, #1f2733 0%, #121822 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(68, 74, 88, 0.22), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(156, 163, 175, 0.12), transparent 55%), linear-gradient(180deg, #1b232f 0%, #121822 100%);
+            --vision-top-bar-background: rgba(25, 32, 44, 0.96);
+            --vision-side-menu-background: linear-gradient(180deg, #1f2733 0%, #151b24 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #586174, #262d3a);
+            --vision-nav-active-color: #f8fafc;
+            --vision-hover-background: rgba(148, 163, 184, 0.12);
+            --vision-hover-border: rgba(148, 163, 184, 0.24);
+            --vision-hover-color: #d8e0ea;
+            --vision-profile-hover-border: rgba(114, 128, 145, 0.92);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(33, 41, 53, 0.98), rgba(24, 31, 42, 0.94));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(86, 95, 109, 0.70), 0 0 16px rgba(74, 85, 104, 0.30), 0 10px 24px rgba(0, 0, 0, 0.38);
+            --vision-accent-strong: #e2e8f0;
+        }
+
+        .main-container.theme-white {
+            --vision-main-background: radial-gradient(1400px 500px at 10% -20%, rgba(203, 213, 225, 0.34), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(241, 245, 249, 0.22), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+            --vision-support-background: radial-gradient(1400px 500px at 10% -20%, rgba(203, 213, 225, 0.20), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(241, 245, 249, 0.14), transparent 55%), linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
+            --vision-top-bar-background: rgba(255, 255, 255, 0.96);
+            --vision-side-menu-background: linear-gradient(180deg, #ffffff 0%, #f6f8fb 100%);
+            --vision-nav-active-background: linear-gradient(135deg, #7a8798, #475569);
+            --vision-nav-active-color: #ffffff;
+            --vision-hover-background: rgba(148, 163, 184, 0.10);
+            --vision-hover-border: rgba(148, 163, 184, 0.24);
+            --vision-hover-color: #475569;
+            --vision-profile-hover-border: rgba(203, 213, 225, 0.95);
+            --vision-profile-hover-background: linear-gradient(135deg, rgba(250, 251, 252, 0.98), rgba(243, 246, 249, 0.95));
+            --vision-profile-hover-shadow: 0 0 0 1px rgba(226, 232, 240, 0.9), 0 0 16px rgba(203, 213, 225, 0.30), 0 10px 24px rgba(148, 163, 184, 0.18);
+            --vision-accent-strong: #334155;
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 22px 28px 36px;
+            background: transparent;
+        }
+
+        .welcome-section {
+            margin-bottom: 24px;
+            padding: 28px;
+            border-radius: 24px;
+            background:
+                radial-gradient(320px 130px at 10% 0%, rgba(10, 160, 159, 0.16), transparent 78%),
+                radial-gradient(380px 150px at 92% 100%, rgba(252, 186, 48, 0.15), transparent 82%),
+                linear-gradient(120deg, rgba(255, 255, 255, 0.52) 0%, rgba(246, 252, 255, 0.36) 100%);
+            border: 1px solid rgba(138, 205, 247, 0.36);
+            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+            backdrop-filter: blur(10px) saturate(120%);
+            -webkit-backdrop-filter: blur(10px) saturate(120%);
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .welcome-section::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.22) 62%, rgba(255, 255, 255, 0.06) 100%);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .welcome-title {
+            font-size: clamp(2rem, 3.8vw, 3rem);
+            font-weight: 800;
+            color: #133f6a;
+            margin-bottom: 8px;
+            line-height: 1.06;
+            letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: #4f657c;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .birthday-gift-banner {
+            margin-bottom: 18px;
+            padding: 18px 20px;
+            border-radius: 22px;
+            background:
+                radial-gradient(260px 120px at 10% 0%, rgba(255, 238, 188, 0.78), transparent 70%),
+                linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 232, 0.84));
+            border: 1px solid rgba(252, 186, 48, 0.42);
+            box-shadow: 0 16px 30px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.84);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+            animation: birthdayGiftIntro 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .birthday-gift-banner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.34), rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.16) 62%, rgba(255, 255, 255, 0.02));
+            pointer-events: none;
+        }
+
+        .birthday-gift-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            font-size: 2rem;
+            background: linear-gradient(135deg, rgba(252, 186, 48, 0.24), rgba(10, 160, 159, 0.18));
+            border: 1px solid rgba(252, 186, 48, 0.38);
+        }
+
+        .birthday-gift-content {
+            position: relative;
+            z-index: 1;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .birthday-gift-kicker {
+            margin: 0 0 4px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9b5d00;
+        }
+
+        .birthday-gift-title {
+            margin: 0 0 6px;
+            color: #173e63;
+            font-size: clamp(1.15rem, 2vw, 1.45rem);
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .birthday-gift-text {
+            margin: 0;
+            color: #51667a;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .birthday-gift-action {
+            position: relative;
+            z-index: 1;
+            flex: 0 0 auto;
+        }
+
+        .birthday-gift-btn {
+            border: 0;
+            border-radius: 14px;
+            padding: 13px 18px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, #0AA09F 0%, #07396B 100%);
+            box-shadow: 0 10px 22px rgba(7, 57, 107, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .birthday-gift-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 28px rgba(7, 57, 107, 0.28);
+            filter: brightness(1.04);
+        }
+
+        .birthday-gift-btn.is-collected,
+        .birthday-gift-btn:disabled {
+            background: linear-gradient(135deg, #9fb5c7 0%, #6f879c 100%);
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        @keyframes birthdayGiftIntro {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .birthday-gift-banner {
+                animation: none;
+            }
+        }
+
+        body.dark-mode .birthday-gift-banner {
+            background:
+                radial-gradient(260px 120px at 10% 0%, rgba(252, 186, 48, 0.18), transparent 70%),
+                linear-gradient(135deg, rgba(12, 26, 42, 0.94), rgba(16, 40, 61, 0.92));
+            border-color: rgba(252, 186, 48, 0.38);
+            box-shadow: 0 18px 34px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        body.dark-mode .birthday-gift-title,
+        body.dark-mode .birthday-gift-text {
+            color: #e7f3ff;
+        }
+
+        body.dark-mode .birthday-gift-kicker {
+            color: #ffd27e;
+        }
+
+        .trust-metrics {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin: 22px 0 0;
+        }
+
+        .metric-card {
+            border-radius: 16px;
+            padding: 14px 14px 12px;
+            background:
+                radial-gradient(130px 70px at 10% 0%, rgba(56, 203, 220, 0.2), transparent 78%),
+                linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(243, 250, 255, 0.32));
+            border: 1px solid rgba(132, 201, 242, 0.36);
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+            backdrop-filter: blur(9px) saturate(118%);
+            -webkit-backdrop-filter: blur(9px) saturate(118%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.26) 70%, rgba(255, 255, 255, 0.04) 100%);
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
+        .metric-value,
+        .metric-label {
+            position: relative;
+            z-index: 1;
+        }
+
+        .metric-value {
+            font-size: 1.12rem;
+            font-weight: 800;
+            color: #143f6a;
+            line-height: 1.1;
+            margin-bottom: 3px;
+        }
+
+        .metric-label {
+            font-size: 0.76rem;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            color: #597189;
+            text-transform: uppercase;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .feature-card {
+            background:
+                radial-gradient(190px 90px at 10% 0%, rgba(20, 191, 210, 0.14), transparent 78%),
+                linear-gradient(155deg, rgba(255, 255, 255, 0.5), rgba(248, 252, 255, 0.34));
+            border: 1px solid rgba(141, 207, 245, 0.34);
+            padding: 24px 20px;
+            border-radius: 18px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            box-shadow: 0 10px 22px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(9px) saturate(118%);
+            -webkit-backdrop-filter: blur(9px) saturate(118%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.1) 34%, rgba(255, 255, 255, 0.2) 64%, rgba(255, 255, 255, 0.05) 100%);
+            pointer-events: none;
+            opacity: 0.72;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 30px rgba(7, 57, 107, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.74);
+            border-color: rgba(122, 200, 245, 0.5);
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #173f69;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-text {
+            font-size: 12px;
+            color: #5c7087;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Chat Button */
+        .chat-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 10px 24px rgba(6, 44, 82, 0.2);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.05);
+        }
+
+        .chat-button span {
+            font-size: 24px;
+            color: white;
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff5e62;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .chat-modal {
+            position: fixed;
+            right: 20px;
+            bottom: 94px;
+            width: min(380px, calc(100vw - 24px));
+            height: min(560px, calc(100vh - 140px));
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 18px;
+            box-shadow: 0 22px 46px rgba(6, 44, 82, 0.26);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1200;
+        }
+
+        .chat-modal.show {
+            display: flex;
+            animation: chatPopupIn 0.2s ease;
+        }
+
+        .chat-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+        }
+
+        .chat-modal-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .chat-admin-row {
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .chat-admin-select {
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(7, 45, 79, 0.36);
+            color: #eaf7ff;
+            border-radius: 9px;
+            padding: 7px 10px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .chat-admin-select option {
+            color: #143a5e;
+            background: #f4fbff;
+        }
+
+        .chat-modal-close {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .chat-modal-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-modal-call {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .chat-modal-call:hover,
+        .chat-modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-user-call-picker {
+            width: 100%;
+            margin-top: 8px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .chat-user-call-picker select {
+            flex: 1;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(7, 45, 79, 0.36);
+            color: #eaf7ff;
+            border-radius: 9px;
+            padding: 6px 8px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .chat-user-call-picker select option {
+            color: #143a5e;
+            background: #f4fbff;
+        }
+
+        .chat-user-call-btn {
+            border: none;
+            border-radius: 9px;
+            padding: 6px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .chat-user-call-btn.start {
+            background: rgba(18, 201, 124, 0.86);
+        }
+
+        .chat-user-call-btn.cancel {
+            background: rgba(255, 255, 255, 0.26);
+        }
+
+        .chat-modal-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            background: linear-gradient(180deg, #f7fbff 0%, #eef6fd 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .chat-message {
+            max-width: 85%;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        .chat-message.mine {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+        }
+
+        .chat-message.other {
+            align-self: flex-start;
+            background: #ffffff;
+            color: #2a4460;
+            border-bottom-left-radius: 6px;
+            box-shadow: 0 6px 14px rgba(7, 57, 107, 0.1);
+        }
+
+        .chat-message-meta {
+            margin-top: 6px;
+            font-size: 10px;
+            opacity: 0.75;
+        }
+
+        .chat-message-actions {
+            margin-top: 6px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+        }
+
+        .chat-action-btn {
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background: rgba(255, 255, 255, 0.16);
+            color: #f2fbff;
+            border-radius: 7px;
+            font-size: 11px;
+            line-height: 1;
+            padding: 4px 6px;
+            cursor: pointer;
+        }
+
+        .chat-action-btn:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .chat-message.other .chat-action-btn {
+            border-color: rgba(32, 75, 109, 0.25);
+            background: rgba(20, 62, 95, 0.06);
+            color: #27557f;
+        }
+
+        .chat-message.other .chat-action-btn:hover {
+            background: rgba(20, 62, 95, 0.12);
+        }
+
+        .chat-message-content.deleted {
+            opacity: 0.72;
+            font-style: italic;
+        }
+
+        .chat-inline-editor {
+            margin-top: 6px;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .chat-inline-input {
+            flex: 1;
+            border-radius: 8px;
+            border: 1px solid rgba(18, 120, 168, 0.25);
+            padding: 7px 9px;
+            font-size: 12px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1d3f5e;
+        }
+
+        .chat-inline-input:focus {
+            border-color: rgba(18, 152, 210, 0.6);
+            box-shadow: 0 0 0 2px rgba(18, 152, 210, 0.18);
+        }
+
+        .chat-inline-btn {
+            border: 1px solid rgba(255, 255, 255, 0.36);
+            background: rgba(255, 255, 255, 0.18);
+            color: #f2fbff;
+            border-radius: 7px;
+            font-size: 11px;
+            line-height: 1;
+            padding: 6px 7px;
+            cursor: pointer;
+        }
+
+        .chat-inline-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-message.other .chat-inline-btn {
+            border-color: rgba(32, 75, 109, 0.25);
+            background: rgba(20, 62, 95, 0.08);
+            color: #27557f;
+        }
+
+        .chat-delivery {
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            display: inline-block;
+            min-width: 10px;
+            text-align: center;
+        }
+
+        .chat-delivery-sent,
+        .chat-delivery-delivered {
+            color: rgba(245, 255, 255, 0.88);
+        }
+
+        .chat-message.other .chat-delivery-sent,
+        .chat-message.other .chat-delivery-delivered {
+            color: rgba(40, 73, 102, 0.8);
+        }
+
+        .chat-delivery-seen {
+            color: #5dd6ff;
+        }
+
+        .chat-empty {
+            margin: auto;
+            text-align: center;
+            color: #6a7f95;
+            font-size: 13px;
+        }
+
+        .chat-modal-input {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: #fff;
+            border-top: 1px solid rgba(15, 80, 128, 0.12);
+        }
+
+        .chat-attach-btn {
+            width: 36px;
+            min-width: 36px;
+            border: 1px solid rgba(10, 118, 160, 0.28);
+            border-radius: 10px;
+            background: #f3f9ff;
+            color: #1f78aa;
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-attach-btn:hover {
+            background: #e8f4ff;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid rgba(10, 118, 160, 0.2);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 13px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: rgba(10, 160, 159, 0.6);
+            box-shadow: 0 0 0 3px rgba(10, 160, 159, 0.14);
+        }
+
+        .chat-send-btn {
+            border: none;
+            border-radius: 10px;
+            padding: 0 14px;
+            background: linear-gradient(135deg, #0FA5A2, #1788b6);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chat-status {
+            min-height: 18px;
+            font-size: 11px;
+            color: #d94a5a;
+            padding: 0 12px 8px;
+            background: #fff;
+        }
+
+        .chat-selected-file {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 6px 12px 8px;
+            background: #fff;
+            border-top: 1px dashed rgba(15, 80, 128, 0.15);
+            font-size: 12px;
+            color: #2a4460;
+        }
+
+        .chat-selected-file-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chat-selected-file-clear {
+            width: 22px;
+            height: 22px;
+            border: 1px solid rgba(10, 118, 160, 0.26);
+            border-radius: 50%;
+            background: #eef7ff;
+            color: #1f78aa;
+            cursor: pointer;
+            line-height: 1;
+            font-size: 14px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-selected-file-clear:hover {
+            background: #dff1ff;
+        }
+
+        .chat-attachment-preview {
+            margin-top: 6px;
+            max-width: 180px;
+            max-height: 120px;
+            border-radius: 8px;
+            display: block;
+            object-fit: cover;
+            border: 1px solid rgba(164, 211, 240, 0.5);
+            box-shadow: 0 6px 14px rgba(10, 56, 94, 0.14);
+        }
+
+        .chat-attachment-link {
+            color: #0c6fa4;
+            text-decoration: none;
+            font-weight: 700;
+            display: inline-flex;
+            gap: 5px;
+            align-items: center;
+        }
+
+        .chat-call-card {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .chat-message.other .chat-call-card {
+            background: rgba(12, 108, 154, 0.1);
+            border-color: rgba(13, 96, 139, 0.2);
+        }
+
+        .chat-call-title {
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .chat-call-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chat-call-action-btn {
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .chat-call-action-btn.join {
+            background: #0db582;
+            color: #fff;
+        }
+
+        .chat-call-action-btn.decline {
+            background: #f4d9dd;
+            color: #943747;
+        }
+
+        .chat-attachment-link:hover {
+            text-decoration: underline;
+        }
+
+        .chat-attachment-name {
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.9;
+            word-break: break-word;
+        }
+
+        @keyframes chatPopupIn {
+            from {
+                transform: translateY(12px) scale(0.98);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Profile Popup */
+        .profile-popup {
+            position: absolute;
+            background:
+                radial-gradient(260px 120px at 100% 0%, rgba(123, 233, 255, 0.34), transparent 72%),
+                linear-gradient(145deg, rgba(245, 253, 255, 0.99), rgba(222, 247, 255, 0.97));
+            border-radius: 16px;
+            padding: 14px;
+            min-width: 248px;
+            border: 1px solid rgba(86, 218, 255, 0.72);
+            box-shadow:
+                0 0 0 1px rgba(164, 240, 255, 0.7),
+                0 14px 28px rgba(8, 67, 104, 0.2),
+                0 0 24px rgba(95, 222, 255, 0.32);
+            z-index: 1000;
+            display: none;
+        }
+
+        .profile-popup.show {
+            display: block;
+        }
+
+        .profile-popup .popup-username {
+            margin: 0 0 10px;
+            color: #0f3f63;
+            font-size: 18px;
+            line-height: 1.1;
+        }
+
+        .profile-popup .popup-stats {
+            display: grid;
+            gap: 7px;
+        }
+
+        .profile-popup .popup-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 9px;
+            border-radius: 10px;
+            border: 1px solid rgba(130, 221, 246, 0.42);
+            background: rgba(255, 255, 255, 0.56);
+            color: #194a71;
+            font-size: 13px;
+        }
+
+        .profile-popup .popup-label {
+            font-weight: 700;
+            color: #4a6d89;
+        }
+
+        .profile-popup .popup-value {
+            font-weight: 800;
+            color: #0e3f67;
+            text-align: right;
+        }
+
+        body.dark-mode .profile-popup {
+            background:
+                radial-gradient(260px 120px at 100% 0%, rgba(84, 218, 255, 0.34), transparent 72%),
+                linear-gradient(145deg, rgba(8, 28, 42, 0.98), rgba(11, 44, 63, 0.98));
+            border-color: rgba(98, 227, 255, 0.8);
+            box-shadow:
+                0 0 0 1px rgba(98, 227, 255, 0.54),
+                0 14px 28px rgba(0, 0, 0, 0.5),
+                0 0 24px rgba(60, 198, 255, 0.32);
+        }
+
+        body.dark-mode .profile-popup .popup-username,
+        body.dark-mode .profile-popup .popup-value {
+            color: #ddf6ff;
+        }
+
+        body.dark-mode .profile-popup .popup-row {
+            background: rgba(7, 31, 44, 0.75);
+            border-color: rgba(96, 222, 255, 0.34);
+            color: #bee8fb;
+        }
+
+        body.dark-mode .profile-popup .popup-label {
+            color: #9ccde3;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .airport-background {
+                opacity: 0.7;
+            }
+
+            .airport-terminal {
+                display: none;
+            }
+
+            .airport-apron {
+                display: none;
+            }
+
+            .airport-control-tower {
+                display: none;
+            }
+
+            .airport-beacon {
+                display: none;
+            }
+
+            .airport-plane {
+                width: 150px;
+                top: 20%;
+            }
+
+            .airport-plane.plane-one {
+                width: 140px;
+                height: 48px;
+            }
+
+            .airport-clouds {
+                animation-duration: 60s;
+            }
+
+            .depth-orb.one {
+                width: 280px;
+                height: 280px;
+                left: -110px;
+                top: 230px;
+            }
+
+            .depth-orb.two {
+                width: 320px;
+                height: 320px;
+                right: -120px;
+                top: 160px;
+            }
+
+            .depth-orb.three {
+                width: 240px;
+                height: 240px;
+                right: -50px;
+                bottom: -70px;
+            }
+
+            .trust-metrics {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-top: -2px;
+            }
+
+            .airport-layer {
+                transition: transform 0.12s ease-out;
+            }
+
+            .airport-background {
+                --parallax-x: 0px !important;
+                --parallax-y: 0px !important;
+            }
+
+            .top-bar {
+                padding: 10px 15px;
+            }
+
+            .profile-info {
+                display: none;
+            }
+
+            .nav-tabs {
+                padding: 0 15px 10px 15px;
+            }
+
+            .content-area {
+                padding: 15px;
+            }
+
+            .welcome-title {
+                font-size: 24px;
+            }
+
+            .feature-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .chat-modal {
+                right: 12px;
+                bottom: 86px;
+                width: calc(100vw - 24px);
+                height: min(560px, calc(100vh - 120px));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script>
+        $(document).ready(function() {
+            initializeAirportParallax();
+
+            function updateProfileCoinsValue(coins) {
+                const $coinsValue = $('[data-profile-coins-value]');
+                if ($coinsValue.length) {
+                    $coinsValue.text(String(coins));
+                }
+            }
+
+            $(document).on('submit', '.birthday-gift-form', function (event) {
+                event.preventDefault();
+
+                const $form = $(this);
+                const $button = $form.find('.birthday-gift-btn');
+                const originalText = $button.text();
+
+                if ($button.prop('disabled')) {
+                    return;
+                }
+
+                $button.prop('disabled', true).text('Collecting...');
+
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: $form.serialize(),
+                    dataType: 'json',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    success: function (response) {
+                        if (response && response.success) {
+                            updateProfileCoinsValue(response.coins);
+                            $form.closest('.birthday-gift-banner').fadeOut(220, function () {
+                                $(this).remove();
+                            });
+                            return;
+                        }
+
+                        $button.prop('disabled', false).text(originalText);
+                        alert((response && response.message) ? response.message : 'Unable to collect birthday gift.');
+                    },
+                    error: function (xhr) {
+                        $button.prop('disabled', false).text(originalText);
+                        const message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Unable to collect birthday gift.';
+                        alert(message);
+                    }
+                });
+            });
+
+            function initializeAirportParallax() {
+                const airportBackground = document.querySelector('.airport-background');
+                if (!airportBackground) {
+                    return;
+                }
+
+                const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                if (prefersReducedMotion || window.innerWidth <= 768) {
+                    airportBackground.style.setProperty('--parallax-x', '0px');
+                    airportBackground.style.setProperty('--parallax-y', '0px');
+                    return;
+                }
+
+                let targetX = 0;
+                let targetY = 0;
+                let currentX = 0;
+                let currentY = 0;
+
+                const animate = function() {
+                    currentX += (targetX - currentX) * 0.08;
+                    currentY += (targetY - currentY) * 0.08;
+
+                    airportBackground.style.setProperty('--parallax-x', currentX.toFixed(2) + 'px');
+                    airportBackground.style.setProperty('--parallax-y', currentY.toFixed(2) + 'px');
+
+                    window.requestAnimationFrame(animate);
+                };
+
+                document.addEventListener('mousemove', function (event) {
+                    const centerX = window.innerWidth / 2;
+                    const centerY = window.innerHeight / 2;
+                    const deltaX = (event.clientX - centerX) / centerX;
+                    const deltaY = (event.clientY - centerY) / centerY;
+
+                    targetX = deltaX * -6;
+                    targetY = deltaY * -5;
+                });
+
+                animate();
+            }
+
+            // Menu toggle
+            let isMenuOpen = false;
+            
+            $('.menu-toggle').click(function() {
+                if (isMenuOpen) {
+                    $('.side-menu').removeClass('open');
+                    $('.menu-overlay').removeClass('show');
+                } else {
+                    $('.side-menu').addClass('open');
+                    $('.menu-overlay').addClass('show');
+                }
+                isMenuOpen = !isMenuOpen;
+            });
+            
+            $('.menu-overlay').click(function() {
+                $('.side-menu').removeClass('open');
+                $('.menu-overlay').removeClass('show');
+                isMenuOpen = false;
+            });
+            
+            // Profile popup on hover
+            let hoverTimer;
+            const $profileSection = $('.profile-section');
+            const $profilePopup = $('.profile-popup');
+            
+            $profileSection.hover(
+                function() {
+                    hoverTimer = setTimeout(function() {
+                        $profilePopup.addClass('show');
+                        // Position popup near avatar
+                        const offset = $profileSection.offset();
+                        $profilePopup.css({
+                            top: offset.top + 60,
+                            right: 20
+                        });
+                    }, 120);
+                },
+                function() {
+                    clearTimeout(hoverTimer);
+                    $profilePopup.removeClass('show');
+                }
+            );
+            
+            // Nav tab switching (load content dynamically)
+            $('.nav-tab').click(function() {
+                if ($(this).is('a') && $(this).attr('href')) {
+                    return;
+                }
+                $('.nav-tab').removeClass('active');
+                $(this).addClass('active');
+                
+                const view = $(this).data('view');
+                loadContentView(view);
+            });
+            
+            function loadContentView(view) {
+                $.ajax({
+                    url: '{{ path('app_load_content') }}',
+                    type: 'POST',
+                    data: { view: view },
+                    success: function(response) {
+                        $('.content-area').html(response);
+                        if (view === 'shop') {
+                            initializeShopModule();
+                        }
+                        if (view === 'messenger') {
+                            initializeMessengerModule();
+                        }
+                    },
+                    error: function() {
+                        console.error('Failed to load content');
+                    }
+                });
+            }
+
+            function loadModuleFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const moduleView = params.get('module');
+                if (!moduleView) {
+                    return;
+                }
+
+                const $targetTab = $('.nav-tab[data-view="' + moduleView + '"]');
+                if ($targetTab.length) {
+                    $('.nav-tab').removeClass('active');
+                    $targetTab.addClass('active');
+                }
+
+                loadContentView(moduleView);
+            }
+
+            loadModuleFromUrl();
+
+            window.loadMainpageModule = loadContentView;
+
+            function initializeShopModule() {
+                const $module = $('.shop-module');
+                if (!$module.length) {
+                    return;
+                }
+
+                const $productCards = $module.find('.shop-grid .product-card');
+                const $pagination = $module.find('.shop-pagination');
+                const itemsPerPage = Math.max(1, Number($pagination.data('itemsPerPage') || 25));
+                let currentPage = 1;
+
+                function renderShopPagination() {
+                    if (!$pagination.length || !$productCards.length) {
+                        return;
+                    }
+
+                    const totalPages = Math.ceil($productCards.length / itemsPerPage);
+                    if (totalPages <= 1) {
+                        $pagination.empty().hide();
+                        $productCards.show();
+                        return;
+                    }
+
+                    currentPage = Math.min(Math.max(1, currentPage), totalPages);
+                    $productCards.each(function (index) {
+                        const page = Math.floor(index / itemsPerPage) + 1;
+                        $(this).toggle(page === currentPage);
+                    });
+
+                    let buttonsHtml = '';
+                    for (let page = 1; page <= totalPages; page += 1) {
+                        buttonsHtml += '<button type="button" class="shop-page-btn' + (page === currentPage ? ' is-active' : '') + '" data-page="' + page + '">' + page + '</button>';
+                    }
+
+                    $pagination.html(buttonsHtml).show();
+                }
+
+                $(document).off('click.shopPagination').on('click.shopPagination', '.shop-module .shop-page-btn', function () {
+                    const nextPage = Number($(this).data('page') || 1);
+                    if (!Number.isFinite(nextPage) || nextPage < 1) {
+                        return;
+                    }
+
+                    currentPage = nextPage;
+                    renderShopPagination();
+                });
+
+                renderShopPagination();
+
+                const availableCoins = Number($module.data('availableCoins') || 0);
+                const mapboxToken = String($module.data('mapboxToken') || '');
+                const mapHintNoToken = String($module.data('mapHintNoToken') || '');
+                const mapHintError = String($module.data('mapHintError') || '');
+                const $overlay = $module.find('.shop-order-modal');
+                const $productId = $module.find('.js-product-id');
+                const $productName = $module.find('.js-product-name');
+                const $productPrice = $module.find('.js-product-price');
+                const $totalCoins = $module.find('.js-total-coins');
+                const $locationText = $module.find('.js-location-text');
+                const $locationLat = $module.find('.js-location-lat');
+                const $locationLng = $module.find('.js-location-lng');
+                const mapContainer = $module.find('.js-order-map')[0];
+                const $mapHint = $module.find('.map-hint');
+                const $submitButton = $module.find('.btn-submit');
+                let currentPrice = 0;
+                let currentStock = 1;
+                let map = null;
+                let marker = null;
+
+                function updateTotal() {
+                    const total = currentPrice;
+                    $totalCoins.text(String(total));
+                    $submitButton.prop('disabled', total > availableCoins || currentStock <= 0);
+                }
+
+                function closeModal() {
+                    $overlay.removeClass('show').attr('aria-hidden', 'true');
+                }
+
+                function openModal() {
+                    $overlay.addClass('show').attr('aria-hidden', 'false');
+                    if (map && typeof map.resize === 'function') {
+                        setTimeout(function () {
+                            map.resize();
+                        }, 120);
+                    } else if (map && typeof map.invalidateSize === 'function') {
+                        setTimeout(function () {
+                            map.invalidateSize();
+                        }, 120);
+                    }
+                }
+
+                function setLocation(lat, lng, label) {
+                    $locationLat.val(lat.toFixed(6));
+                    $locationLng.val(lng.toFixed(6));
+                    $locationText.val(label || (lat.toFixed(6) + ', ' + lng.toFixed(6)));
+                }
+
+                function loadLeafletAssets() {
+                    return new Promise(function (resolve, reject) {
+                        if (typeof window.L !== 'undefined') {
+                            resolve();
+                            return;
+                        }
+
+                        const existingScript = document.getElementById('leaflet-js');
+                        if (existingScript) {
+                            existingScript.addEventListener('load', function () { resolve(); }, { once: true });
+                            existingScript.addEventListener('error', function () { reject(new Error('Leaflet failed to load.')); }, { once: true });
+                            return;
+                        }
+
+                        if (!document.getElementById('leaflet-css')) {
+                            const leafletCss = document.createElement('link');
+                            leafletCss.id = 'leaflet-css';
+                            leafletCss.rel = 'stylesheet';
+                            leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                            leafletCss.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+                            leafletCss.crossOrigin = '';
+                            document.head.appendChild(leafletCss);
+                        }
+
+                        const leafletScript = document.createElement('script');
+                        leafletScript.id = 'leaflet-js';
+                        leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                        leafletScript.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+                        leafletScript.crossOrigin = '';
+                        leafletScript.onload = function () { resolve(); };
+                        leafletScript.onerror = function () { reject(new Error('Leaflet failed to load.')); };
+                        document.body.appendChild(leafletScript);
+                    });
+                }
+
+                function initMap() {
+                    if (map || !mapContainer) {
+                        return;
+                    }
+
+                    if (mapboxToken && typeof window.mapboxgl !== 'undefined') {
+                        window.mapboxgl.accessToken = mapboxToken;
+                        map = new window.mapboxgl.Map({
+                            container: mapContainer,
+                            style: 'mapbox://styles/mapbox/streets-v12',
+                            center: [10.1815, 36.8065],
+                            zoom: 10,
+                        });
+
+                        map.on('click', function (event) {
+                            const lng = event.lngLat.lng;
+                            const lat = event.lngLat.lat;
+
+                            if (!marker) {
+                                marker = new window.mapboxgl.Marker({ color: '#0fa5a2' }).setLngLat([lng, lat]).addTo(map);
+                            } else {
+                                marker.setLngLat([lng, lat]);
+                            }
+
+                            fetch('https://api.mapbox.com/geocoding/v5/mapbox.places/' + lng + ',' + lat + '.json?access_token=' + mapboxToken)
+                                .then((response) => response.ok ? response.json() : null)
+                                .then((payload) => {
+                                    const place = payload && payload.features && payload.features[0] ? payload.features[0].place_name : '';
+                                    setLocation(lat, lng, place);
+                                })
+                                .catch(() => {
+                                    setLocation(lat, lng, '');
+                                });
+                        });
+
+                        return;
+                    }
+
+                    $mapHint.text(mapHintNoToken);
+
+                    loadLeafletAssets()
+                        .then(function () {
+                            if (map || typeof window.L === 'undefined') {
+                                return;
+                            }
+
+                            map = window.L.map(mapContainer).setView([36.8065, 10.1815], 10);
+
+                            window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                maxZoom: 19,
+                                attribution: '&copy; OpenStreetMap contributors'
+                            }).addTo(map);
+
+                            map.on('click', function (event) {
+                                const lat = event.latlng.lat;
+                                const lng = event.latlng.lng;
+
+                                if (!marker) {
+                                    marker = window.L.marker([lat, lng]).addTo(map);
+                                } else {
+                                    marker.setLatLng([lat, lng]);
+                                }
+
+                                fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng)
+                                    .then((response) => response.ok ? response.json() : null)
+                                    .then((payload) => {
+                                        const label = payload && payload.display_name ? payload.display_name : '';
+                                        setLocation(lat, lng, label);
+                                    })
+                                    .catch(() => {
+                                        setLocation(lat, lng, '');
+                                    });
+                            });
+                        })
+                        .catch(function () {
+                            $mapHint.text(mapHintError);
+                        });
+                }
+
+                $(document).off('click.shopModule').on('click.shopModule', '.shop-module .order-btn', function () {
+                    const $button = $(this);
+                    currentPrice = Number($button.data('productPrice') || 0);
+                    currentStock = Math.max(1, Number($button.data('productStock') || 1));
+
+                    $productId.val(String($button.data('productId') || ''));
+                    $productName.text(String($button.data('productName') || 'Product'));
+                    $productPrice.text(String(currentPrice));
+                    $locationLat.val('');
+                    $locationLng.val('');
+                    $locationText.val('');
+                    updateTotal();
+                    openModal();
+                    initMap();
+                });
+
+                $(document).off('click.shopModuleClose').on('click.shopModuleClose', '.shop-module .order-close', function () {
+                    closeModal();
+                });
+
+                $(document).off('click.shopModuleOverlay').on('click.shopModuleOverlay', '.shop-module .shop-order-modal', function (event) {
+                    if (event.target === this) {
+                        closeModal();
+                    }
+                });
+
+                $(document).off('input.shopModule').on('input.shopModule', '.shop-module .js-location-text', function () {
+                    $locationText.val($(this).val());
+                });
+
+                if (!mapboxToken) {
+                    $mapHint.text(mapHintNoToken);
+                }
+            }
+
+            let messengerPoller = null;
+            let currentConversationId = null;
+
+            function initializeMessengerModule() {
+                const messagesArea = document.getElementById('messagesArea');
+                const messageInput = document.getElementById('messageInput');
+                const sendMessageBtn = document.getElementById('sendMessageBtn');
+                const inputStatus = document.getElementById('inputStatus');
+                const conversationViewContent = document.getElementById('conversationViewContent');
+                const noConversationView = document.getElementById('noConversationView');
+                const selectedConvName = document.getElementById('selectedConvName');
+                const selectedConvStatus = document.getElementById('selectedConvStatus');
+
+                if (!messagesArea) return;
+
+                function escapeHtml(val) {
+                    const div = document.createElement('div');
+                    div.textContent = val;
+                    return div.innerHTML;
+                }
+
+                function loadMessages() {
+                    if (!currentConversationId) return;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_messages') }}',
+                        type: 'GET',
+                        success: function(response) {
+                            if (!Array.isArray(response.messages) || response.messages.length === 0) {
+                                messagesArea.innerHTML = '<div class="messages-empty">Aucun message. Commencez la conversation!</div>';
+                                return;
+                            }
+
+                            const html = response.messages.map(function(msg) {
+                                const groupClass = msg.isMine ? 'sent' : 'received';
+                                const bubbleClass = msg.isMine ? 'sent' : 'received';
+                                const senderLabel = msg.isMine ? 'Vous' : escapeHtml(msg.senderName || 'Support');
+                                const timestamp = escapeHtml(msg.timestamp || '');
+                                const content = escapeHtml(msg.message || '');
+
+                                return `
+                                    <div class="message-group ${groupClass}">
+                                        <div class="message-bubble ${bubbleClass}">${content}</div>
+                                        <div class="message-time">${timestamp}</div>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            messagesArea.innerHTML = html;
+                            messagesArea.scrollTop = messagesArea.scrollHeight;
+                        }
+                    });
+                }
+
+                function sendMessage() {
+                    const text = (messageInput.value || '').trim();
+                    if (!text) {
+                        return;
+                    }
+
+                    inputStatus.textContent = '';
+                    messageInput.disabled = true;
+                    sendMessageBtn.disabled = true;
+
+                    $.ajax({
+                        url: '{{ path('app_chat_send') }}',
+                        type: 'POST',
+                        data: { message: text },
+                        success: function() {
+                            messageInput.value = '';
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            loadMessages();
+                            messageInput.focus();
+                        },
+                        error: function(xhr) {
+                            messageInput.disabled = false;
+                            sendMessageBtn.disabled = false;
+                            const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                            inputStatus.textContent = payload && payload.error ? payload.error : 'Erreur lors de l\'envoi.';
+                        }
+                    });
+                }
+
+                if (sendMessageBtn) {
+                    sendMessageBtn.addEventListener('click', sendMessage);
+                }
+
+                if (messageInput) {
+                    messageInput.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                        }
+                    });
+                }
+
+                // Afficher la conversation et charger les messages
+                if (conversationViewContent && noConversationView) {
+                    conversationViewContent.style.display = 'flex';
+                    noConversationView.style.display = 'none';
+                    currentConversationId = 1;
+                    selectedConvName.textContent = 'Support Admin';
+                    selectedConvStatus.textContent = 'En ligne';
+                    loadMessages();
+                }
+
+                if (messengerPoller) {
+                    clearInterval(messengerPoller);
+                }
+                messengerPoller = setInterval(loadMessages, 8000);
+            }
+            
+            // Refresh unread badge periodically
+            function refreshBadge() {
+                $.ajax({
+                    url: '{{ path('app_unread_count') }}',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        const rawCount = response && (response.unreadCount ?? response.unread_count ?? 0);
+                        const count = Number(rawCount || 0);
+                        if (count > 0) {
+                            $('.chat-badge').text(count > 99 ? '99+' : count).show();
+                        } else {
+                            $('.chat-badge').hide();
+                        }
+                    },
+                    error: function() {
+                        $('.chat-badge').hide();
+                    }
+                });
+            }
+            
+            refreshBadge();
+            setInterval(refreshBadge, 10000);
+
+            const $chatModal = $('#chatModal');
+            const $chatMessages = $('#chatMessages');
+            const $chatInput = $('#chatInput');
+            const $chatStatus = $('#chatStatus');
+            const $chatAdminRow = $('#chatAdminConversationRow');
+            const $chatAdminSelect = $('#chatAdminConversationSelect');
+            const $chatCallBtn = $('#chatCallBtn');
+            const $chatUserCallPicker = $('#chatUserCallPicker');
+            const $chatUserCallAdminSelect = $('#chatUserCallAdminSelect');
+            const $chatUserCallStartBtn = $('#chatUserCallStartBtn');
+            const $chatUserCallCancelBtn = $('#chatUserCallCancelBtn');
+            const $chatAttachBtn = $('#chatAttachBtn');
+            const $chatAttachmentInput = $('#chatAttachmentInput');
+            const $chatSelectedFile = $('#chatSelectedFile');
+            const $chatSelectedFileName = $('#chatSelectedFileName');
+            const $chatSelectedFileClear = $('#chatSelectedFileClear');
+            let chatPoller = null;
+            let lastMessagesSignature = '';
+            let chatIsAdmin = false;
+            let activeChatUserId = 0;
+            let chatSupportAdmins = [];
+            let pendingAttachmentFile = null;
+            const chatLabels = {
+                you: '{{ 'main.chat.you'|trans }}',
+                admin: '{{ 'main.chat.admin'|trans }}',
+                deleted: '{{ 'main.chat.deleted_text'|trans }}',
+                edited: '{{ 'main.chat.edited'|trans }}',
+                edit: '{{ 'main.chat.edit'|trans }}',
+                delete: '{{ 'main.chat.delete'|trans }}',
+                editPrompt: '{{ 'main.chat.edit_prompt'|trans }}',
+                deleteConfirm: '{{ 'main.chat.delete_confirm'|trans }}',
+                editFailed: '{{ 'main.chat.edit_failed'|trans }}',
+                deleteFailed: '{{ 'main.chat.delete_failed'|trans }}',
+                emptyAdmin: '{{ 'main.chat.empty_admin'|trans }}',
+                emptyUser: '{{ 'main.chat.empty_user'|trans }}',
+                attachmentSelected: '{{ 'main.chat.attachment_selected'|trans }}'
+            };
+            const chatCurrentUserId = Number('{{ app.user.id|default(0) }}') || 0;
+            const chatCallerName = '{{ app.user.fullName|default(app.user.username)|e('js') }}';
+            const chatCallBase = 'rehletna-support';
+            const chatCallPrefix = '[call]:';
+
+            function buildSupportCallRoom() {
+                if (chatIsAdmin) {
+                    if (activeChatUserId <= 0) {
+                        return '';
+                    }
+
+                    return chatCallBase + '-u' + String(activeChatUserId);
+                }
+
+                return chatCurrentUserId > 0
+                    ? chatCallBase + '-u' + String(chatCurrentUserId)
+                    : chatCallBase;
+            }
+
+            function sendCallSignal(signal, options) {
+                const payload = new FormData();
+                payload.append('message', chatCallPrefix + JSON.stringify(signal));
+
+                if (options && options.userId) {
+                    payload.append('userId', String(options.userId));
+                }
+
+                if (options && options.adminId) {
+                    payload.append('adminId', String(options.adminId));
+                }
+
+                return $.ajax({
+                    url: '{{ path('app_chat_send') }}',
+                    type: 'POST',
+                    data: payload,
+                    processData: false,
+                    contentType: false
+                });
+            }
+
+            function openSupportCall() {
+                $chatStatus.text('');
+
+                if (chatIsAdmin) {
+                    const room = buildSupportCallRoom();
+                    if (!room || activeChatUserId <= 0) {
+                        $chatStatus.text('Choose a user conversation first.');
+                        return;
+                    }
+
+                    sendCallSignal(
+                        { type: 'invite', room: room, fromName: chatCallerName },
+                        { userId: activeChatUserId }
+                    ).done(function () {
+                        $chatStatus.text('Call invitation sent to user.');
+                        loadChatMessages();
+                    }).fail(function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : 'Unable to send call invitation.');
+                    });
+
+                    return;
+                }
+
+                if (!Array.isArray(chatSupportAdmins) || chatSupportAdmins.length === 0) {
+                    $chatStatus.text('No admin available to call right now.');
+                    return;
+                }
+
+                $chatUserCallPicker.show();
+                $chatUserCallAdminSelect.trigger('focus');
+            }
+
+            function clearSelectedAttachment() {
+                pendingAttachmentFile = null;
+                $chatAttachmentInput.val('');
+                $chatSelectedFile.hide();
+                $chatSelectedFileName.text('');
+            }
+
+            function escapeHtml(value) {
+                return $('<div>').text(value || '').html();
+            }
+
+            function deliveryBadge(state) {
+                if (!state) {
+                    return '';
+                }
+
+                if (state === 'seen') {
+                    return '<span class="chat-delivery chat-delivery-seen">✓✓</span>';
+                }
+
+                if (state === 'delivered') {
+                    return '<span class="chat-delivery chat-delivery-delivered">✓✓</span>';
+                }
+
+                return '<span class="chat-delivery chat-delivery-sent">✓</span>';
+            }
+
+            function renderAdminConversations(response) {
+                chatIsAdmin = !!(response && response.isAdmin);
+
+                if (!chatIsAdmin) {
+                    $chatAdminRow.hide();
+                    activeChatUserId = 0;
+                    return;
+                }
+
+                $chatUserCallPicker.hide();
+
+                const conversations = Array.isArray(response.conversations) ? response.conversations : [];
+                const nextActive = Number(response.activeUserId || activeChatUserId || 0);
+                activeChatUserId = Number.isFinite(nextActive) ? nextActive : 0;
+
+                if (conversations.length === 0) {
+                    $chatAdminRow.show();
+                    $chatAdminSelect.html('<option value="">No user conversations</option>').prop('disabled', true);
+                    return;
+                }
+
+                const options = conversations.map(function (conversation) {
+                    const id = Number(conversation.userId || 0);
+                    const username = String(conversation.username || 'user');
+                    const displayName = String(conversation.userName || username);
+                    const unreadCount = Number(conversation.unreadCount || 0);
+                    const onlineDot = conversation.isOnline ? '●' : '○';
+                    const unreadPart = unreadCount > 0 ? ' [' + unreadCount + ']' : '';
+                    const selected = id === activeChatUserId ? ' selected' : '';
+
+                    return '<option value="' + id + '"' + selected + '>'
+                        + onlineDot + ' ' + escapeHtml(displayName) + ' (@' + escapeHtml(username) + ')' + unreadPart
+                        + '</option>';
+                }).join('');
+
+                $chatAdminSelect.html(options).prop('disabled', false);
+                $chatAdminRow.show();
+
+                if (!activeChatUserId) {
+                    const firstId = Number(conversations[0].userId || 0);
+                    activeChatUserId = Number.isFinite(firstId) ? firstId : 0;
+                }
+            }
+
+            function renderUserCallAdmins(response) {
+                if (chatIsAdmin) {
+                    $chatUserCallPicker.hide();
+                    chatSupportAdmins = [];
+                    return;
+                }
+
+                const admins = Array.isArray(response.admins) ? response.admins : [];
+                chatSupportAdmins = admins;
+                if (admins.length === 0) {
+                    $chatUserCallPicker.hide();
+                    $chatUserCallAdminSelect.html('<option value="">No admin available</option>');
+                    return;
+                }
+
+                const options = admins.map(function (admin) {
+                    const id = Number(admin.id || 0);
+                    const username = String(admin.username || 'admin');
+                    const name = String(admin.name || username);
+                    const dot = admin.isOnline ? '●' : '○';
+                    return '<option value="' + id + '">' + dot + ' ' + escapeHtml(name) + ' (@' + escapeHtml(username) + ')</option>';
+                }).join('');
+
+                $chatUserCallAdminSelect.html(options);
+            }
+
+            function renderChatMessages(messages) {
+                if (!Array.isArray(messages) || messages.length === 0) {
+                    const emptyText = chatIsAdmin
+                        ? chatLabels.emptyAdmin
+                        : chatLabels.emptyUser;
+                    $chatMessages.html('<div class="chat-empty">' + escapeHtml(emptyText) + '</div>');
+                    lastMessagesSignature = 'empty';
+                    return;
+                }
+
+                const signature = messages.map(m => `${m.id}:${m.isRead ? 1 : 0}`).join('|');
+                if (signature === lastMessagesSignature) {
+                    return;
+                }
+                lastMessagesSignature = signature;
+
+                const html = messages.map(function(msg) {
+                    const sideClass = msg.isMine ? 'mine' : 'other';
+                    const senderLabel = msg.isMine ? chatLabels.you : escapeHtml(msg.senderName || msg.senderUsername || chatLabels.admin);
+                    const timeLabel = escapeHtml(msg.timestamp || '');
+                    const callSignal = msg.callSignal && typeof msg.callSignal === 'object' ? msg.callSignal : null;
+                    const content = msg.isDeleted ? escapeHtml(chatLabels.deleted) : escapeHtml(msg.message || '');
+                    const contentClass = msg.isDeleted ? 'chat-message-content deleted' : 'chat-message-content';
+                    const attachment = msg.attachment && typeof msg.attachment === 'object' ? msg.attachment : null;
+                    let attachmentHtml = '';
+                    let callHtml = '';
+                    if (!msg.isDeleted && attachment && attachment.url) {
+                        const fileUrl = escapeHtml(attachment.url);
+                        const fileName = escapeHtml(attachment.name || 'attachment');
+                        if ((attachment.kind || '') === 'image') {
+                            attachmentHtml = `
+                                <a class="chat-attachment-link" href="${fileUrl}" target="_blank" rel="noopener noreferrer">
+                                    <img class="chat-attachment-preview" src="${fileUrl}" alt="${fileName}" />
+                                </a>
+                                <div class="chat-attachment-name">📎 ${fileName}</div>
+                            `;
+                        } else {
+                            attachmentHtml = `
+                                <a class="chat-attachment-link" href="${fileUrl}" target="_blank" rel="noopener noreferrer">📄 ${fileName}</a>
+                            `;
+                        }
+                    }
+
+                    if (!msg.isDeleted && !attachment && callSignal && callSignal.type) {
+                        const room = escapeHtml(callSignal.room || '');
+                        if (callSignal.type === 'invite') {
+                            if (msg.isMine) {
+                                callHtml = `
+                                    <div class="chat-call-card">
+                                        <div class="chat-call-title">Call invitation sent.</div>
+                                        <div class="chat-call-actions">
+                                            <button class="chat-call-action-btn join chat-call-join" data-room="${room}">Join</button>
+                                        </div>
+                                    </div>
+                                `;
+                            } else {
+                                callHtml = `
+                                    <div class="chat-call-card">
+                                        <div class="chat-call-title">Incoming call from ${senderLabel}</div>
+                                        <div class="chat-call-actions">
+                                            <button class="chat-call-action-btn join chat-call-join" data-room="${room}" data-sender-id="${msg.senderId}">Join</button>
+                                            <button class="chat-call-action-btn decline chat-call-decline" data-room="${room}" data-sender-id="${msg.senderId}">Decline</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        } else if (callSignal.type === 'accept') {
+                            callHtml = `
+                                <div class="chat-call-card">
+                                    <div class="chat-call-title">Call accepted.</div>
+                                    <div class="chat-call-actions">
+                                        <button class="chat-call-action-btn join chat-call-join" data-room="${room}">Join</button>
+                                    </div>
+                                </div>
+                            `;
+                        } else if (callSignal.type === 'decline') {
+                            callHtml = '<div class="chat-call-card"><div class="chat-call-title">Call declined.</div></div>';
+                        }
+                    }
+
+                    const status = msg.isMine ? deliveryBadge(msg.deliveryState || (msg.isRead ? 'seen' : 'sent')) : '';
+                    const editedTag = msg.isEdited ? ' • ' + escapeHtml(chatLabels.edited) : '';
+                    const metaTail = (status ? ' • ' + status : '') + editedTag;
+                    const canEdit = msg.isMine && !msg.isDeleted && !attachment && !callSignal;
+                    const actionHtml = canEdit
+                        ? `<div class="chat-message-actions">
+                               <button class="chat-action-btn chat-action-edit" data-message-id="${msg.id}" data-message-text="${escapeHtml(msg.message || '')}" title="${escapeHtml(chatLabels.edit)}">✎</button>
+                               <button class="chat-action-btn chat-action-delete" data-message-id="${msg.id}" title="${escapeHtml(chatLabels.delete)}">🗑</button>
+                           </div>
+                           <div class="chat-inline-editor" data-message-id="${msg.id}" style="display:none;">
+                               <input class="chat-inline-input" type="text" maxlength="1000" value="${escapeHtml(msg.message || '')}" />
+                               <button class="chat-inline-btn chat-action-save-edit" type="button" title="Save">✓</button>
+                               <button class="chat-inline-btn chat-action-cancel-edit" type="button" title="Cancel">✕</button>
+                           </div>`
+                        : '';
+
+                    return `
+                        <div class="chat-message ${sideClass}">
+                            ${callHtml || `<div class="${contentClass}">${content}</div>`}
+                            ${attachmentHtml}
+                            <div class="chat-message-meta">${senderLabel} • ${timeLabel}${metaTail}</div>
+                            ${actionHtml}
+                        </div>
+                    `;
+                }).join('');
+
+                $chatMessages.html(html);
+                $chatMessages.scrollTop($chatMessages[0].scrollHeight);
+            }
+
+            function loadChatMessages() {
+                const queryData = {};
+                if (chatIsAdmin && activeChatUserId > 0) {
+                    queryData.userId = activeChatUserId;
+                }
+
+                $.ajax({
+                    url: '{{ path('app_chat_messages') }}',
+                    type: 'GET',
+                    data: queryData,
+                    success: function(response) {
+                        renderAdminConversations(response || {});
+                        renderUserCallAdmins(response || {});
+                        renderChatMessages(response.messages || []);
+                        refreshBadge();
+                    },
+                    error: function() {
+                        $chatStatus.text('Unable to load chat messages right now.');
+                    }
+                });
+            }
+
+            function openChatModal() {
+                $chatStatus.text('');
+                $chatModal.addClass('show');
+                if (!chatIsAdmin) {
+                    $chatAdminRow.hide();
+                }
+                loadChatMessages();
+                if (chatPoller) {
+                    clearInterval(chatPoller);
+                }
+                chatPoller = setInterval(loadChatMessages, 5000);
+                setTimeout(function() {
+                    $chatInput.trigger('focus');
+                }, 50);
+            }
+
+            function closeChatModal() {
+                $chatModal.removeClass('show');
+                if (chatPoller) {
+                    clearInterval(chatPoller);
+                    chatPoller = null;
+                }
+            }
+
+            window.showChatPopup = openChatModal;
+
+            $('#chatCloseBtn').on('click', closeChatModal);
+            $chatCallBtn.on('click', openSupportCall);
+
+            $chatUserCallStartBtn.on('click', function () {
+                const adminId = Number($chatUserCallAdminSelect.val() || 0);
+                if (adminId <= 0) {
+                    $chatStatus.text('Choose an admin first.');
+                    return;
+                }
+
+                const room = buildSupportCallRoom();
+                sendCallSignal(
+                    { type: 'invite', room: room, fromName: chatCallerName },
+                    { adminId: adminId }
+                ).done(function () {
+                    $chatUserCallPicker.hide();
+                    $chatStatus.text('Call invitation sent to selected admin.');
+                    loadChatMessages();
+                }).fail(function (xhr) {
+                    const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                    $chatStatus.text(payload && payload.error ? payload.error : 'Unable to send call invitation.');
+                });
+            });
+
+            $chatUserCallCancelBtn.on('click', function () {
+                $chatUserCallPicker.hide();
+            });
+
+            $(document).on('click', '.chat-call-join', function () {
+                const room = String($(this).data('room') || '').trim();
+                const senderId = Number($(this).data('senderId') || 0);
+                if (!room) {
+                    return;
+                }
+
+                const meetingUrl = 'https://meet.jit.si/' + encodeURIComponent(room);
+
+                if (senderId <= 0) {
+                    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+                    return;
+                }
+
+                const options = chatIsAdmin ? { userId: senderId } : { adminId: senderId };
+
+                sendCallSignal(
+                    { type: 'accept', room: room, fromName: chatCallerName },
+                    options
+                ).always(function () {
+                    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+                    loadChatMessages();
+                });
+            });
+
+            $(document).on('click', '.chat-call-decline', function () {
+                const room = String($(this).data('room') || '').trim();
+                const senderId = Number($(this).data('senderId') || 0);
+                if (!room || senderId <= 0) {
+                    return;
+                }
+
+                const options = chatIsAdmin ? { userId: senderId } : { adminId: senderId };
+                sendCallSignal(
+                    { type: 'decline', room: room, fromName: chatCallerName },
+                    options
+                ).always(function () {
+                    loadChatMessages();
+                });
+            });
+
+            $(document).on('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeChatModal();
+                }
+            });
+
+            $('#chatSendBtn').on('click', function() {
+                const text = ($chatInput.val() || '').trim();
+                if (!text && !pendingAttachmentFile) {
+                    return;
+                }
+
+                if (chatIsAdmin && activeChatUserId <= 0) {
+                    $chatStatus.text('Choose a user conversation first.');
+                    return;
+                }
+
+                const payload = new FormData();
+                payload.append('message', text);
+                if (chatIsAdmin && activeChatUserId > 0) {
+                    payload.append('userId', String(activeChatUserId));
+                }
+
+                if (pendingAttachmentFile) {
+                    payload.append('attachment', pendingAttachmentFile);
+                }
+
+                $chatStatus.text('');
+                $.ajax({
+                    url: '{{ path('app_chat_send') }}',
+                    type: 'POST',
+                    data: payload,
+                    processData: false,
+                    contentType: false,
+                    success: function() {
+                        $chatInput.val('');
+                        clearSelectedAttachment();
+                        $chatStatus.text('');
+                        loadChatMessages();
+                    },
+                    error: function(xhr) {
+                        const fallback = 'Unable to send message now.';
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : fallback);
+                    }
+                });
+            });
+
+            $chatInput.on('keydown', function(event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    $('#chatSendBtn').trigger('click');
+                }
+            });
+
+            $chatAttachBtn.on('click', function () {
+                $chatAttachmentInput.trigger('click');
+            });
+
+            $chatAttachmentInput.on('change', function () {
+                const file = this.files && this.files[0] ? this.files[0] : null;
+                pendingAttachmentFile = file;
+                if (file) {
+                    $chatStatus.text('');
+                    $chatSelectedFileName.text(chatLabels.attachmentSelected + ': ' + file.name);
+                    $chatSelectedFile.show();
+                } else {
+                    clearSelectedAttachment();
+                }
+            });
+
+            $chatSelectedFileClear.on('click', function () {
+                clearSelectedAttachment();
+            });
+
+            $(document).on('click', '.chat-action-edit', function () {
+                const messageId = Number($(this).data('messageId') || 0);
+                if (messageId <= 0) {
+                    return;
+                }
+
+                const $message = $(this).closest('.chat-message');
+                const $content = $message.find('.chat-message-content').first();
+                const $actions = $message.find('.chat-message-actions').first();
+                const $editor = $message.find('.chat-inline-editor').first();
+                const $input = $editor.find('.chat-inline-input').first();
+
+                $chatMessages.find('.chat-inline-editor').hide();
+                $chatMessages.find('.chat-message-content').show();
+                $chatMessages.find('.chat-message-actions').show();
+
+                $content.hide();
+                $actions.hide();
+                $editor.show();
+                $input.trigger('focus');
+                const rawValue = String($input.val() || '');
+                $input[0].setSelectionRange(rawValue.length, rawValue.length);
+            });
+
+            $(document).on('click', '.chat-action-cancel-edit', function () {
+                const $message = $(this).closest('.chat-message');
+                $message.find('.chat-inline-editor').hide();
+                $message.find('.chat-message-content').show();
+                $message.find('.chat-message-actions').show();
+            });
+
+            $(document).on('click', '.chat-action-save-edit', function () {
+                const $editor = $(this).closest('.chat-inline-editor');
+                const messageId = Number($editor.data('messageId') || 0);
+                const trimmed = String($editor.find('.chat-inline-input').val() || '').trim();
+
+                if (messageId <= 0 || trimmed === '') {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ path('app_chat_edit') }}',
+                    type: 'POST',
+                    data: { id: messageId, message: trimmed },
+                    success: function () {
+                        lastMessagesSignature = '';
+                        loadChatMessages();
+                    },
+                    error: function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : chatLabels.editFailed);
+                    }
+                });
+            });
+
+            $(document).on('keydown', '.chat-inline-input', function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    $(this).closest('.chat-inline-editor').find('.chat-action-save-edit').trigger('click');
+                }
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    $(this).closest('.chat-inline-editor').find('.chat-action-cancel-edit').trigger('click');
+                }
+            });
+
+            $(document).on('click', '.chat-action-delete', function () {
+                const messageId = Number($(this).data('messageId') || 0);
+                if (messageId <= 0) {
+                    return;
+                }
+
+                if (!window.confirm(chatLabels.deleteConfirm)) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ path('app_chat_delete') }}',
+                    type: 'POST',
+                    data: { id: messageId },
+                    success: function () {
+                        lastMessagesSignature = '';
+                        loadChatMessages();
+                    },
+                    error: function (xhr) {
+                        const payload = xhr && xhr.responseJSON ? xhr.responseJSON : null;
+                        $chatStatus.text(payload && payload.error ? payload.error : chatLabels.deleteFailed);
+                    }
+                });
+            });
+
+            $chatAdminSelect.on('change', function () {
+                const selected = Number($(this).val() || 0);
+                activeChatUserId = Number.isFinite(selected) ? selected : 0;
+                lastMessagesSignature = '';
+                loadChatMessages();
+            });
+            
+            // Side menu actions
+            $('.side-menu-btn').click(function() {
+                const action = $(this).data('action');
+                if (action === 'logout') {
+                    if (typeof window.showGlobalLoader === 'function') {
+                        window.showGlobalLoader('Signing you out...');
+                    }
+                    setTimeout(function() {
+                        window.location.href = '{{ path('app_logout') }}';
+                    }, 120);
+                } else if (action === 'agency-dashboard') {
+                    window.location.href = '{{ path('agency_dashboard') }}';
+                } else if (action === 'agency-services') {
+                    window.location.href = '{{ path('agency_services_index') }}';
+                } else if (action === 'agency-reservations') {
+                    window.location.href = '{{ path('agency_reservation_index') }}';
+                } else if (action === 'ourservices') {
+                    window.location.href = '{{ path('ourservices_index') }}';
+                } else if (action === 'guide-dashboard') {
+                    window.location.href = '{{ path('app_guide_dashboard') }}';
+                } else if (action === 'face-id-enroll') {
+                    window.location.href = '{{ path('app_face_id_enroll_page') }}';
+                } else if (action === 'my-reservations') {
+                    window.location.href = '{{ path('myreservations_index') }}';
+                } else if (action === 'offers-grid') {
+                    window.location.href = '{{ path('app_agency_offer_index') }}';
+                }
+            });
+
+            window.addEventListener('pageshow', function () {
+                $('.side-menu').removeClass('open');
+                $('.menu-overlay').removeClass('show');
+                isMenuOpen = false;
+            });
+        });
+        
+        function showChatPopup() {
+            // This global function is replaced in document.ready with modal opening logic.
+        }
+    </script>
+{% endblock %}
+
+{% block body %}
+    {% set membershipTier = profile.member_premium|default('standard')|lower|trim %}
+    {% set hasPremiumCrown = membershipTier in ['premium', 'premuim', 'vip', 'vip+', 'vip plus', 'vip_plus'] %}
+
+    <!-- Menu Overlay -->
+    <div class="menu-overlay"></div>
+    
+    <!-- Side Menu -->
+    <div class="side-menu">
+        <div class="side-menu-content">
+            <div class="user-info">
+                {% if app.user %}
+                    <div class="avatar">
+                        {{ app.user.username|first|upper }}
+                    </div>
+                    <p class="user-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                    <p class="user-role">
+                        {% if 'ROLE_ADMIN' in app.user.roles %}
+                            {{ 'main.role.administrator'|trans }}
+                        {% elseif 'ROLE_GUIDE' in app.user.roles %}
+                            {{ 'main.role.guide'|trans }}
+                        {% else %}
+                            {{ 'main.role.member'|trans }}
+                        {% endif %}
+                    </p>
+                {% endif %}
+            </div>
+            
+            {% if is_granted('ROLE_ADMIN') %}
+                <button class="side-menu-btn" data-action="dashboard">🏠 {{ 'main.menu.dashboard'|trans }}</button>
+            {% endif %}
+            
+            {% if is_granted('ROLE_GUIDE') %}
+                <button class="side-menu-btn" data-action="guide-dashboard">👤 {{ 'main.menu.guide_dashboard'|trans }}</button>
+            {% endif %}
+
+            <button class="side-menu-btn" data-action="face-id-enroll">🫥 Face ID Scan</button>
+            <button class="side-menu-btn" data-action="ourservices">💼 Our Services</button>
+            <button class="side-menu-btn" data-action="my-reservations">👤 {{ 'main.menu.my_reservations'|trans }}</button>
+            
+            {% if is_granted('ROLE_AGENCY') %}
+                <hr style="border-top: 1px solid rgba(138, 205, 247, 0.2); margin: 15px 12px;">
+                <p style="font-size: 10px; font-weight: 800; color: #5a7ea3; margin: 0 0 10px 18px; text-transform: uppercase; letter-spacing: 0.5px;">Agency Management</p>
+                <button class="side-menu-btn" data-action="agency-dashboard">🏢 Agency Dashboard</button>
+                <button class="side-menu-btn" data-action="agency-services">🛎️ Manage Services</button>
+                <button class="side-menu-btn" data-action="agency-reservations">📅 All Reservations</button>
+                <button class="side-menu-btn" data-action="offers-grid">📋 {{ 'main.menu.offers_grid'|trans }}</button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-container theme-{{ visionTheme|default('default') }}{% if visionAccessibleMode|default(false) %} vision-support{% endif %}">
+        <div class="depth-background" aria-hidden="true">
+            <div class="depth-orb one"></div>
+            <div class="depth-orb two"></div>
+            <div class="depth-orb three"></div>
+        </div>
+
+        <div class="airport-background" aria-hidden="true">
+            <div class="airport-skyglow airport-layer" style="--depth: 0.06;"></div>
+            <div class="airport-clouds airport-layer" style="--depth: 0.12;"></div>
+            <div class="airport-plane plane-three airport-layer" style="--depth: 0.16;"></div>
+            <div class="airport-plane plane-two airport-layer" style="--depth: 0.2;"></div>
+            <div class="airport-plane plane-one airport-layer" style="--depth: 0.26;">
+                <svg class="airport-plane-svg" viewBox="0 0 260 90" role="presentation" focusable="false" aria-hidden="true">
+                    <path class="plane-body" d="M10 48L96 44L174 24L240 34L240 56L174 66L96 46L10 42Z"></path>
+                    <path class="plane-wing" d="M96 45L142 20L166 22L128 46Z"></path>
+                    <path class="plane-wing" d="M96 45L142 70L166 68L128 44Z"></path>
+                    <path class="plane-wing" d="M52 43L70 30L88 30L74 43Z"></path>
+                    <path class="plane-wing" d="M52 47L70 60L88 60L74 47Z"></path>
+                    <circle class="plane-window" cx="195" cy="45" r="4"></circle>
+                    <circle class="plane-light" cx="162" cy="24" r="2.4"></circle>
+                </svg>
+            </div>
+        </div>
+
+        <div class="main-content-shell">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div style="display: flex; align-items: center;">
+                    <button class="menu-toggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div class="logo">
+                        <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
+                    </div>
+                </div>
+                
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <a href="{{ path('app_settings') }}" class="profile-section" aria-label="Open profile settings" title="Settings" data-no-loader="true" data-turbo="false">
+                        <div class="profile-info">
+                            <p class="profile-name">{{ app.user.fullName|default(app.user.username) }}</p>
+                            <p class="profile-role">
+                                {% if 'ROLE_ADMIN' in app.user.roles %}
+                                    {{ 'main.role.administrator'|trans }}
+                                {% elseif 'ROLE_GUIDE' in app.user.roles %}
+                                    {{ 'main.role.guide'|trans }}
+                                {% else %}
+                                    {{ 'main.role.member'|trans }}
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="profile-avatar">
+                            <img src="{{ profile.image_url|default(asset('images/default_image.png')) }}" alt="Profile" class="profile-img" />
+                            {% if hasPremiumCrown %}
+                                <div class="premium-crown-badge" title="Premium Member">👑</div>
+                            {% endif %}
+                            <div class="online-status"></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
+                <button class="nav-tab" data-view="activities">🏞 {{ 'main.tab.activities'|trans }}</button>
+                <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
+                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
+                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+                <button class="nav-tab" data-view="post">✉️ Posts</button>
+                {% if is_granted('ROLE_ADMIN') %}
+                    <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
+                {% endif %}
+            </div>
+            
+            <!-- Content Area -->
+            <div class="content-area">
+                {% if birthdayGift and birthdayGift.showBanner %}
+                    <section class="birthday-gift-banner" aria-label="Birthday gift">
+                        <div class="birthday-gift-icon" aria-hidden="true">🎁</div>
+                        <div class="birthday-gift-content">
+                            <p class="birthday-gift-kicker">Happy Birthday {{ app.user.name|default(app.user.username) }}</p>
+                            <h2 class="birthday-gift-title">You have a birthday gift waiting for you</h2>
+                            <p class="birthday-gift-text">Collect 7 coins for your birthday and enjoy the day. This gift is available now.</p>
+                        </div>
+                        <div class="birthday-gift-action">
+                            {% if birthdayGift.canCollect %}
+                                        <form method="post" action="{{ path('app_collect_birthday_gift') }}" class="birthday-gift-form">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('birthday-gift-collect') }}">
+                                    <button type="submit" class="birthday-gift-btn">Collect this gift</button>
+                                </form>
+                            {% else %}
+                                <button type="button" class="birthday-gift-btn is-collected" disabled>Collected</button>
+                            {% endif %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                <div class="welcome-section">
+                    <h1 class="welcome-title">{{ 'main.welcome.title'|trans }}</h1>
+                    <p class="welcome-subtitle">{{ 'main.welcome.subtitle'|trans }}</p>
+                </div>
+                
+                <div class="feature-grid">
+                    <a href="{{ path('app_todo_index') }}" class="feature-card">
+                        <div class="feature-icon">🗺️</div>
+                        <div class="feature-title">{{ 'main.feature.activities.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.activities.text'|trans }}</div>
+                    </a>
+                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('shop'); return false;">
+                        <div class="feature-icon">🛒</div>
+                        <div class="feature-title">{{ 'main.feature.shop.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.shop.text'|trans }}</div>
+                    </a>
+                    <a href="#" class="feature-card" onclick="showChatPopup(); return false;">
+                        <div class="feature-icon">💬</div>
+                        <div class="feature-title">{{ 'main.feature.chat.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.chat.text'|trans }}</div>
+                    </a>
+                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('post'); return false;">
+                        <div class="feature-icon">✉️</div>
+                        <div class="feature-title">{{ 'main.feature.post.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.post.text'|trans }}</div>
+                    </a>
+                    <a href="{{ path('ourservices_index') }}" class="feature-card">
+                        <div class="feature-icon">💼</div>
+                        <div class="feature-title">{{ 'main.feature.services.title'|trans }}</div>
+                        <div class="feature-text">{{ 'main.feature.services.text'|trans }}</div>
+                    </a>
+                </div>
+
+                <div class="trust-metrics" aria-label="Community Metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">12k+</div>
+                        <div class="metric-label">{{ 'main.metrics.travelers_joined'|trans }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">3.4k</div>
+                        <div class="metric-label">{{ 'main.metrics.trips_booked'|trans }}</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">98%</div>
+                        <div class="metric-label">{{ 'main.metrics.satisfaction'|trans }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chat Button -->
+    <button class="chat-button" onclick="showChatPopup()">
+        <span>💬</span>
+        <span class="chat-badge" style="display: none;">0</span>
+    </button>
+
+    <div id="chatModal" class="chat-modal" aria-live="polite" aria-label="{{ 'main.chat.popup'|trans }}">
+        <div class="chat-modal-header">
+            <div style="flex: 1; min-width: 0;">
+                <p class="chat-modal-title">{{ 'main.chat.title'|trans }}</p>
+                <div id="chatAdminConversationRow" class="chat-admin-row" style="display: none;">
+                    <select id="chatAdminConversationSelect" class="chat-admin-select" aria-label="Select user conversation">
+                        <option value="">No user conversations</option>
+                    </select>
+                </div>
+                <div id="chatUserCallPicker" class="chat-user-call-picker" style="display:none;">
+                    <select id="chatUserCallAdminSelect" aria-label="Choose admin to call">
+                        <option value="">Choose admin</option>
+                    </select>
+                    <button id="chatUserCallStartBtn" type="button" class="chat-user-call-btn start">Call</button>
+                    <button id="chatUserCallCancelBtn" type="button" class="chat-user-call-btn cancel">Cancel</button>
+                </div>
+            </div>
+            <div class="chat-modal-actions">
+                <button id="chatCallBtn" class="chat-modal-call" type="button" title="Call Admin/User" aria-label="Call Admin/User">📞</button>
+                <button id="chatCloseBtn" class="chat-modal-close" type="button" aria-label="{{ 'main.chat.close'|trans }}">×</button>
+            </div>
+        </div>
+        <div id="chatMessages" class="chat-modal-messages">
+            <div class="chat-empty">{{ 'main.chat.loading'|trans }}</div>
+        </div>
+        <div class="chat-modal-input">
+            <button id="chatAttachBtn" class="chat-attach-btn" type="button" title="{{ 'main.chat.attach'|trans }}">+</button>
+            <input id="chatInput" class="chat-input" type="text" maxlength="1000" placeholder="{{ 'main.chat.placeholder'|trans }}" />
+            <input id="chatAttachmentInput" type="file" accept="image/*,.pdf,application/pdf" style="display:none;" />
+            <button id="chatSendBtn" class="chat-send-btn" type="button">{{ 'main.chat.send'|trans }}</button>
+        </div>
+        <div id="chatSelectedFile" class="chat-selected-file" style="display:none;">
+            <span id="chatSelectedFileName" class="chat-selected-file-name"></span>
+            <button id="chatSelectedFileClear" class="chat-selected-file-clear" type="button" title="Clear attachment">×</button>
+        </div>
+        <div id="chatStatus" class="chat-status"></div>
+    </div>
+    
+    <!-- Profile Popup -->
+    <div class="profile-popup">
+        <strong class="popup-username">{{ app.user.fullName|default(app.user.username) }}</strong>
+        <div class="popup-stats">
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.membership'|trans }}</span>
+                <span class="popup-value">{{ profile.member_premium|default('Standard') }}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.coins'|trans }}</span>
+                <span class="popup-value" data-profile-coins-value>{{ profile.coins|default(0) }}</span>
+            </div>
+            <div class="popup-row">
+                <span class="popup-label">{{ 'main.popup.rate'|trans }}</span>
+                <span class="popup-value">
+                    {% set membership = profile.member_premium|default('Standard') %}
+                    {% if membership in ['Administrator', 'VIP', 'VIP+'] %}
+                        {{ 'main.popup.rate_vip'|trans }}
+                    {% elseif membership == 'Premium' %}
+                        {{ 'main.popup.rate_premium'|trans }}
+                    {% else %}
+                        {{ 'main.popup.rate_standard'|trans }}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
+{% endblock %}

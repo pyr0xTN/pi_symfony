@@ -1,0 +1,489 @@
+/* Services & Reservations Styles for Rehletna */
+
+:root {
+    --service-primary: #0fa5a2;
+    --service-secondary: #1788b6;
+    --service-accent: #f8c12d;
+    --service-danger: #ff5e62;
+    --service-glass: rgba(255, 255, 255, 0.9);
+    --service-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode :root {
+    --service-glass: rgba(30, 41, 59, 0.9);
+    --service-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Hero Section */
+.services-hero {
+    position: relative;
+    height: 350px;
+    background: linear-gradient(135deg, var(--service-primary), var(--service-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+}
+
+.services-hero h1 {
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* AI Search Box */
+.ai-search-container {
+    margin-top: -50px;
+    position: relative;
+    z-index: 10;
+}
+
+.ai-search-box {
+    background: var(--service-glass);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: var(--service-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.ai-input-group input {
+    flex: 1;
+    height: 60px;
+    border-radius: 30px;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0 25px;
+    font-size: 1.1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.ai-input-group input:focus {
+    border-color: var(--service-primary);
+    box-shadow: 0 0 15px rgba(15, 165, 162, 0.2);
+}
+
+.btn-ai {
+    height: 60px;
+    border-radius: 30px;
+    padding: 0 40px;
+    background: linear-gradient(135deg, var(--service-primary), var(--service-secondary));
+    color: white;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.btn-ai:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Service Cards */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 4rem 0;
+}
+
+.service-card {
+    background: var(--service-glass);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--service-shadow);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.service-card:hover {
+    transform: translateY(-10px);
+}
+
+.card-img-container {
+    position: relative;
+    height: 200px;
+}
+
+.card-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    padding: 5px 15px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 700;
+    backdrop-filter: blur(5px);
+}
+
+.card-price-badge {
+    position: absolute;
+    bottom: -20px;
+    right: 20px;
+    background: var(--service-accent);
+    color: #1e293b;
+    padding: 10px 20px;
+    border-radius: 15px;
+    font-weight: 800;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.card-content {
+    padding: 2rem 1.5rem 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--vision-panel-text);
+}
+
+.card-location {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.card-desc {
+    font-size: 0.95rem;
+    color: #475569;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.card-footer {
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-book {
+    background: #1e293b;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.btn-book:hover {
+    background: var(--service-primary);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 0;
+    color: #64748b;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* AI understood label */
+.ai-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 165, 162, 0.1);
+    color: var(--service-primary);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+/* Reservation Cards */
+.reservation-card {
+    background: var(--service-glass);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: var(--service-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.reservation-card:hover {
+    transform: translateY(-5px);
+}
+
+.rc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.rc-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--vision-panel-text);
+}
+
+.status-badge {
+    padding: 5px 12px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.status-pending { background: rgba(248, 193, 45, 0.2); color: #b48a00; }
+.status-confirmed { background: rgba(15, 165, 162, 0.2); color: #0fa5a2; }
+.status-cancelled { background: rgba(255, 94, 98, 0.2); color: #ff5e62; }
+
+.rc-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rc-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.rc-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-rc {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.btn-rc-view {
+    background: var(--service-primary);
+    color: white;
+}
+
+.btn-rc-delete {
+    background: rgba(255, 94, 98, 0.1);
+    color: var(--service-danger);
+}
+
+.btn-rc-delete:hover {
+    background: var(--service-danger);
+    color: white;
+}
+
+/* Seat Map & Form Styles */
+.form-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 3rem 0;
+}
+
+.form-card {
+    background: var(--service-glass);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: var(--service-shadow);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 800px;
+}
+
+.form-title {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 2rem;
+    color: var(--vision-panel-text);
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    color: #475569;
+}
+
+.form-input {
+    width: 100%;
+    height: 50px;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.1);
+    padding: 0 15px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    border-color: var(--service-primary);
+}
+
+.seat-map-container {
+    background: rgba(0,0,0,0.02);
+    border-radius: 20px;
+    padding: 2rem;
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.plane-nose {
+    background: #1e293b;
+    color: white;
+    padding: 10px;
+    border-radius: 50px 50px 10px 10px;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: 30px repeat(3, 1fr) 20px repeat(3, 1fr);
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.seat-btn {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.seat-available {
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: var(--service-primary);
+}
+
+.seat-available:hover {
+    background: var(--service-primary);
+    color: white;
+}
+
+.seat-occupied {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.seat-selected {
+    background: var(--service-accent) !important;
+    color: #1e293b !important;
+    box-shadow: 0 0 15px var(--service-accent);
+}
+
+.seat-aisle {
+    grid-column: 5;
+}
+
+.seat-row-label {
+    font-weight: 800;
+    color: #94a3b8;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Payment Styles */
+.payment-option {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+.payment-option-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    color: var(--vision-panel-text);
+}
+
+.btn-paypal {
+    background: #ffc439;
+    color: #111;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    width: 100%;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-paypal:hover {
+    background: #f4b400;
+}
+
+.detail-price-box {
+    text-align: right;
+    background: var(--service-primary);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 15px;
+}
+
+.detail-price {
+    font-size: 2rem;
+    font-weight: 800;
+    display: block;
+}
+
+.detail-price-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    opacity: 0.8;
+}

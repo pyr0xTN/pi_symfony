@@ -1,0 +1,124 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Payment - Rehletna{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/services.css') }}">
+{% endblock %}
+
+{% block body %}
+    <section class="services-hero" style="height: 200px;">
+        <div class="container">
+            <h1>Secure Payment</h1>
+            <p class="lead text-white-50">Reservation #{{ reservation.idReservation }}</p>
+        </div>
+    </section>
+
+    <div class="form-wrapper container" style="margin-top: -60px;">
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3 class="rc-title" style="font-size: 1.5rem;">{{ reservation.idService.nom }}</h3>
+                    <p class="text-muted"><i class="fas fa-user mr-2"></i> {{ reservation.nom }}</p>
+                </div>
+                <div class="detail-price-box">
+                    <span class="detail-price">{{ amount }}</span>
+                    <span class="detail-price-label">TND</span>
+                </div>
+            </div>
+
+            <hr class="my-4" style="opacity: 0.1;">
+
+            {% for type, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ type == 'error' or type == 'danger' ? 'danger' : 'success' }} mb-4">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
+            {% if modePaiement == 'stripe' or modePaiement == 'carte' %}
+                <div class="payment-option">
+                    <h4 class="payment-option-title">💳 Pay via Credit Card (Stripe)</h4>
+                    <form id="stripeForm" action="{{ path('reservation_pay_stripe_front', { id: reservation.idReservation }) }}" method="POST">
+                        <div class="form-group">
+                            <label class="form-label">Card Details</label>
+                            <div id="card-element" style="padding: 15px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; background: white;"></div>
+                            <div id="card-errors" class="text-danger mt-2 small"></div>
+                        </div>
+                        <button type="submit" class="btn-submit mt-2">Pay {{ amount }} TND Now</button>
+                    </form>
+                </div>
+            {% endif %}
+
+            {% if modePaiement == 'paypal' %}
+                <div class="payment-option">
+                    <h4 class="payment-option-title">🅿 Pay via PayPal</h4>
+                    <form action="{{ path('reservation_paypal_create_front', { id: reservation.idReservation }) }}" method="POST">
+                        <button type="submit" class="btn-paypal">
+                            <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" alt="PayPal" style="height: 20px;">
+                            Continue with PayPal
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+
+            <div class="text-center mt-4">
+                <a href="{{ path('reservation_paypal_cancel_front', { id: reservation.idReservation }) }}" class="text-danger small" onclick="return confirm('Cancel this payment? This will also remove your pending reservation.');">
+                    ✖ Cancel and delete reservation
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if modePaiement == 'stripe' or modePaiement == 'carte' %}
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const stripe = Stripe('{{ stripe_pub_key }}');
+        const elements = stripe.elements();
+        const card = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#32325d',
+                    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                    fontSmoothing: 'antialiased',
+                    '::placeholder': { color: '#aab7c4' }
+                },
+                invalid: { color: '#fa755a', iconColor: '#fa755a' }
+            }
+        });
+        card.mount('#card-element');
+
+        const form = document.getElementById('stripeForm');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const btn = form.querySelector('button');
+            btn.disabled = true;
+            btn.innerText = 'Processing...';
+
+            const {token, error} = await stripe.createToken(card);
+
+            if (error) {
+                const errorElement = document.getElementById('card-errors');
+                errorElement.textContent = error.message;
+                btn.disabled = false;
+                btn.innerText = 'Pay {{ amount }} TND Now';
+            } else {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.setAttribute('type', 'hidden');
+                hiddenInput.setAttribute('name', 'stripeToken');
+                hiddenInput.setAttribute('value', token.id);
+                form.appendChild(hiddenInput);
+                form.submit();
+            }
+        });
+    });
+    </script>
+    {% endif %}
+{% endblock %}
