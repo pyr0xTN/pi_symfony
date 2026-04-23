@@ -72,6 +72,261 @@
             text-transform: capitalize;
         }
 
+
+
+        /* ── AI Chatbot Assistant ── */
+.ai-chat-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 32px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0fa5a2, #1788b6);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 24px rgba(15,165,162,0.45);
+    z-index: 3000;
+    transition: transform 0.2s, box-shadow 0.2s;
+    color: white;
+    font-size: 24px;
+    display: none;
+}
+.ai-chat-fab:hover { transform: scale(1.1); box-shadow: 0 8px 28px rgba(15,165,162,0.55); }
+.ai-chat-fab.visible { display: flex; }
+
+.ai-chat-fab-pulse {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(15,165,162,0.35);
+    animation: aiFabPulse 2.2s ease-out infinite;
+    pointer-events: none;
+}
+@keyframes aiFabPulse {
+    0% { transform: scale(1); opacity: 0.7; }
+    70% { transform: scale(1.55); opacity: 0; }
+    100% { transform: scale(1.55); opacity: 0; }
+}
+
+.ai-chat-window {
+    position: fixed;
+    bottom: 96px;
+    right: 32px;
+    width: 370px;
+    height: 500px;
+    border-radius: 22px;
+    background: #ffffff;
+    border: 1px solid rgba(126,152,178,0.28);
+    box-shadow: 0 16px 56px rgba(3,24,46,0.22);
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 3001;
+    transform: translateY(16px) scale(0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.24s cubic-bezier(.4,0,.2,1), opacity 0.22s ease;
+    display: none;
+}
+.ai-chat-window.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    pointer-events: all;
+    display: flex;
+}
+
+.ai-chat-header {
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #0b4e7a 0%, #0fa5a2 100%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.ai-chat-header-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.28);
+}
+.ai-chat-header-info { flex: 1; }
+.ai-chat-header-name { font-size: 14px; font-weight: 700; color: #fff; margin: 0; }
+.ai-chat-header-sub { font-size: 11px; color: rgba(255,255,255,0.72); margin: 2px 0 0; }
+.ai-chat-header-close {
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #fff;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    transition: background 0.15s;
+}
+.ai-chat-header-close:hover { background: rgba(255,255,255,0.26); }
+
+.ai-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 13px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(126,152,178,0.3) transparent;
+}
+.ai-chat-messages::-webkit-scrollbar { width: 4px; }
+.ai-chat-messages::-webkit-scrollbar-thumb { background: rgba(126,152,178,0.3); border-radius: 4px; }
+
+.ai-msg {
+    max-width: 88%;
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 9px 12px;
+    border-radius: 16px;
+    animation: aiMsgIn 0.18s ease;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+}
+@keyframes aiMsgIn { from { opacity:0; transform: translateY(7px); } to { opacity:1; transform: none; } }
+.ai-msg.from-ai {
+    background: #f4f8fc;
+    color: #1a3a52;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    border: 1px solid rgba(126,152,178,0.18);
+}
+.ai-msg.from-user {
+    background: linear-gradient(135deg, #0fa5a2, #1788b6);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+    align-self: flex-end;
+}
+.ai-msg.typing-indicator {
+    background: #f4f8fc;
+    color: #7a90a4;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    border: 1px solid rgba(126,152,178,0.18);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ai-typing-dots span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #7a90a4;
+    animation: aiDot 1.3s infinite;
+}
+.ai-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes aiDot { 0%,80%,100%{transform:scale(0.7);opacity:0.5} 40%{transform:scale(1);opacity:1} }
+
+.ai-apply-btn {
+    display: inline-block;
+    margin-top: 7px;
+    font-size: 11px;
+    padding: 4px 11px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(15,165,162,0.14);
+    color: #0b7a7a;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+    transition: background 0.15s;
+}
+.ai-apply-btn:hover { background: rgba(15,165,162,0.26); }
+
+.ai-chat-chips {
+    padding: 4px 12px 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    flex-shrink: 0;
+    border-top: 1px solid rgba(126,152,178,0.13);
+}
+.ai-chip {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 10px;
+    border-radius: 20px;
+    border: 1px solid rgba(126,152,178,0.28);
+    background: rgba(255,255,255,0.85);
+    color: #336080;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+    white-space: nowrap;
+}
+.ai-chip:hover { background: rgba(15,165,162,0.1); color: #0b7a7a; border-color: rgba(15,165,162,0.35); }
+
+.ai-chat-input-row {
+    padding: 9px 11px;
+    border-top: 1px solid rgba(126,152,178,0.15);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+.ai-chat-input {
+    flex: 1;
+    border: 1px solid rgba(126,152,178,0.32);
+    border-radius: 12px;
+    padding: 8px 11px;
+    font-size: 13px;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
+    resize: none;
+    min-height: 36px;
+    max-height: 90px;
+    background: #f7fbff;
+    color: #174a78;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.ai-chat-input:focus { border-color: #0fa5a2; }
+.ai-chat-send {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0fa5a2, #1788b6);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform 0.15s, opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(15,165,162,0.3);
+}
+.ai-chat-send:hover { transform: scale(1.08); }
+.ai-chat-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+body.dark-mode .ai-chat-window { background: #121824; border-color: rgba(255,255,255,0.08); }
+body.dark-mode .ai-msg.from-ai { background: rgba(255,255,255,0.05); color: #c8dff0; border-color: rgba(255,255,255,0.08); }
+body.dark-mode .ai-chat-input { background: rgba(255,255,255,0.05); color: #c8dff0; border-color: rgba(255,255,255,0.1); }
+body.dark-mode .ai-chip { background: rgba(255,255,255,0.06); color: #8db4d7; border-color: rgba(255,255,255,0.1); }
+body.dark-mode .ai-chat-chips { border-color: rgba(255,255,255,0.07); }
+body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
+
+
+
+
         .side-menu-btn {
             width: 100%;
             text-align: left;
@@ -414,8 +669,28 @@
 
         .activities-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 14px;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1400px) {
+            .activities-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .activities-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .activities-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .activities-banner {
@@ -437,11 +712,11 @@
             border: 1px solid rgba(126, 152, 178, 0.28);
             border-radius: 18px;
             overflow: hidden;
-            background: rgba(255, 255, 255, 0.95);
+            background: #0b1d33;
             box-shadow: 0 12px 24px rgba(10, 34, 62, 0.08);
             display: flex;
             flex-direction: column;
-            min-height: 100%;
+            min-height: 360px;
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             position: relative;
         }
@@ -452,32 +727,16 @@
             box-shadow: 0 18px 34px rgba(56, 189, 248, 0.28), 0 10px 22px rgba(10, 34, 62, 0.08);
         }
 
+        .activity-card.activity-card--clickable {
+            cursor: pointer;
+        }
+
         .activity-card.activity-card--inactive {
             opacity: 0.55;
         }
 
         .activity-card.activity-card--inactive:hover {
             opacity: 0.72;
-        }
-
-        .activity-card.activity-card--passed {
-            opacity: 1;
-            filter: none;
-        }
-
-        .activity-card.activity-card--passed:hover {
-            opacity: 1;
-        }
-
-        .activity-card.activity-card--passed .activity-image,
-        .activity-card.activity-card--passed .activity-body {
-            opacity: 0.42;
-            filter: grayscale(0.2);
-        }
-
-        .activity-card.activity-card--passed:hover .activity-image,
-        .activity-card.activity-card--passed:hover .activity-body {
-            opacity: 0.52;
         }
 
         .activity-owner-badge {
@@ -520,24 +779,6 @@
             isolation: isolate;
         }
 
-        .activity-passed-badge {
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2;
-            display: inline-flex;
-            align-items: center;
-            padding: 7px 11px;
-            border-radius: 999px;
-            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
-            color: #fff;
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
-            box-shadow: 0 10px 20px rgba(185, 28, 28, 0.30);
-        }
 
         .activity-new-badge::after {
             content: '';
@@ -592,27 +833,98 @@
             background: #b91c1c;
         }
 
+        .activity-guide-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activity-guide-icon-btn {
+            width: 30px;
+            height: 30px;
+            border: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 900;
+            line-height: 1;
+            box-shadow: 0 8px 16px rgba(10, 34, 62, 0.22);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .activity-guide-icon-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(10, 34, 62, 0.28);
+        }
+
+        .activity-guide-icon-btn.edit {
+            background: rgba(15, 165, 162, 0.95);
+        }
+
+        .activity-guide-icon-btn.edit:hover {
+            background: #0b8e8b;
+        }
+
+        .activity-guide-icon-btn.delete {
+            background: rgba(220, 38, 38, 0.94);
+        }
+
+        .activity-guide-icon-btn.delete:hover {
+            background: #b91c1c;
+        }
+
         .activity-image {
             width: 100%;
-            height: 180px;
+            height: 100%;
             object-fit: cover;
             object-position: center;
             background: #f8fbff;
         }
 
+        .activity-image-wrap {
+            position: absolute;
+            inset: 0;
+        }
+
+        .activity-image-wrap::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(2, 12, 24, 0.08) 26%, rgba(2, 12, 24, 0.72) 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
         .activity-body {
-            padding: 14px;
+            position: absolute;
+            left: 12px;
+            right: 12px;
+            bottom: 12px;
+            z-index: 3;
+            padding: 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            flex: 1;
+            gap: 8px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.24);
+            background: rgba(9, 22, 38, 0.42);
+            backdrop-filter: blur(6px);
         }
 
         .activity-title {
             margin: 0;
             font-size: 20px;
-            color: #174a78;
+            color: #ffffff;
             font-weight: 800;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
         }
 
         .activity-meta {
@@ -622,13 +934,13 @@
         }
 
         .activity-tag {
-            border: 1px solid rgba(11, 164, 161, 0.3);
-            background: rgba(11, 164, 161, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            background: rgba(255, 255, 255, 0.16);
             border-radius: 999px;
             padding: 4px 10px;
             font-size: 11px;
             font-weight: 700;
-            color: #0b8e8b;
+            color: #f2f8ff;
         }
 
         .activity-description {
@@ -653,6 +965,53 @@
             line-height: 1;
         }
 
+        .activity-top-overlays {
+            position: absolute;
+            right: 120px;
+            top: 12px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activity-weather-overlay {
+            position: static;
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            background: rgba(10, 18, 32, 0.72);
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+        }
+
+        .activity-places-overlay {
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.32);
+            background: rgba(11, 30, 53, 0.76);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+            white-space: nowrap;
+        }
+
+        .activity-places-overlay.js-open-reservations-modal {
+            cursor: pointer;
+            appearance: none;
+        }
+
+        .activity-places-overlay.js-open-reservations-modal:hover {
+            background: rgba(17, 40, 68, 0.9);
+        }
+
         .activity-weather-icon {
             width: 24px;
             height: 24px;
@@ -664,12 +1023,11 @@
         }
 
         .activity-weather-temp {
-            color: #9a5d00;
+            color: #e4be89;
             font-weight: 800;
         }
 
         .activity-foot {
-            margin-top: auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -679,7 +1037,8 @@
         .activity-price {
             font-size: 22px;
             font-weight: 800;
-            color: #0d5e8a;
+            color: #ffffff;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
         }
 
         .activity-foot-right {
@@ -711,13 +1070,27 @@
             box-shadow: 0 10px 20px rgba(11, 154, 157, 0.28);
         }
 
-        .activity-view:disabled,
-        .activity-view.activity-view--disabled {
-            background: #9ca3af;
-            box-shadow: none;
-            cursor: not-allowed;
-            transform: none;
-            opacity: 1;
+        .activities-history-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .activities-history-link svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
+
+        .activities-stats-link {
+            background: rgba(245, 158, 11, 0.16);
+            border-color: rgba(245, 158, 11, 0.34);
+            color: #fff7df;
+        }
+
+        .activities-stats-link:hover {
+            background: rgba(245, 158, 11, 0.24);
+            color: #ffffff;
         }
 
         .activity-edit,
@@ -889,6 +1262,174 @@
             border-radius: 18px;
             padding: 12px 14px;
             background: rgba(255, 255, 255, 0.92);
+        }
+
+        .activity-review-shell {
+            margin-top: 16px;
+            padding: 18px;
+            border-radius: 22px;
+            background: rgba(11, 78, 126, 0.05);
+            border: 1px solid rgba(11, 78, 126, 0.12);
+        }
+
+        .activity-review-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .activity-review-label {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #0d7f83;
+        }
+
+        .activity-review-card h4 {
+            margin: 4px 0 0;
+            font-size: 17px;
+            color: #123f5b;
+        }
+
+        .activity-review-shell {
+            background: rgba(255, 255, 255, 0.84);
+        }
+
+        .activity-review-columns {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .activity-review-card {
+            padding: 16px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 250, 253, 0.98));
+            border: 1px solid rgba(137, 156, 174, 0.16);
+            box-shadow: 0 10px 22px rgba(10, 34, 62, 0.06);
+        }
+
+        .activity-review-form {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .activity-review-input {
+            width: 100%;
+            min-height: 104px;
+            resize: vertical;
+            border-radius: 16px;
+            border: 1px solid rgba(137, 156, 174, 0.28);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 14px 15px;
+            color: #173d56;
+            font: inherit;
+            box-sizing: border-box;
+        }
+
+        .activity-review-input:focus {
+            outline: none;
+            border-color: rgba(11, 126, 161, 0.42);
+            box-shadow: 0 0 0 3px rgba(11, 126, 161, 0.12);
+        }
+
+        .activity-review-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .activity-review-status {
+            min-height: 18px;
+            font-size: 12px;
+            color: #6e7f91;
+            font-weight: 600;
+        }
+
+        .activity-review-submit {
+            border: 0;
+            border-radius: 999px;
+            padding: 11px 16px;
+            background: linear-gradient(135deg, #0fa5a2, #1d4d7c);
+            color: #ffffff;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .activity-review-submit:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        .activity-review-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .activity-review-empty {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(11, 78, 126, 0.06);
+            color: #496078;
+            font-size: 13px;
+        }
+
+        .activity-review-item {
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: rgba(245, 249, 252, 0.96);
+            border: 1px solid rgba(137, 156, 174, 0.14);
+        }
+
+        .activity-review-item-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .activity-review-item-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #123f5b;
+        }
+
+        .activity-review-item-meta {
+            font-size: 12px;
+            color: #708299;
+            margin-top: 2px;
+        }
+
+        .activity-review-delete {
+            border: 0;
+            border-radius: 999px;
+            background: rgba(217, 74, 90, 0.12);
+            color: #c53f52;
+            font-size: 12px;
+            font-weight: 800;
+            padding: 7px 10px;
+            cursor: pointer;
+        }
+
+        .activity-review-content {
+            margin: 0;
+            color: #294860;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .activity-review-lock {
+            margin: 12px 0 0;
+            color: #7a8c9b;
+            font-size: 12px;
         }
 
         .activity-guide-avatar {
@@ -1717,7 +2258,7 @@
             gap: 12px;
         }
 
-        .reservations-upload-btn {
+        .reservations-pdf-btn {
             border: 1px solid #2b4a63;
             background: #244868;
             color: #ffffff;
@@ -1729,7 +2270,7 @@
             transition: all 0.2s ease;
         }
 
-        .reservations-upload-btn:hover {
+        .reservations-pdf-btn:hover {
             background: #1d3a52;
             border-color: #34526b;
             box-shadow: 0 2px 8px rgba(8, 23, 39, 0.15);
@@ -1852,13 +2393,13 @@
             border-color: rgba(255, 255, 255, 0.12);
         }
 
-        body.dark-mode .reservations-upload-btn {
+        body.dark-mode .reservations-pdf-btn {
             color: #ffffff;
             border-color: rgba(255, 255, 255, 0.25);
             background: rgba(66, 117, 158, 0.2);
         }
 
-        body.dark-mode .reservations-upload-btn:hover {
+        body.dark-mode .reservations-pdf-btn:hover {
             background: rgba(66, 117, 158, 0.3);
             border-color: rgba(255, 255, 255, 0.35);
         }
@@ -1879,6 +2420,10 @@
             .activity-create-form {
                 grid-template-columns: 1fr;
             }
+
+            .activity-review-columns {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 {% endblock %}
@@ -1887,6 +2432,302 @@
     {{ parent() }}
     <script src="https://js.stripe.com/v3/"></script>
     <script>
+
+       // ── AI Activity Assistant Chatbot ──
+(function () {
+    var AI_ASSISTANT_URL = '{{ path('app_activities_ai_assistant_reply') }}';
+
+    var fab, chatWin, closeBtn, msgBox, inputEl, sendBtn, chipsEl;
+    var history = [];
+    var isBusy = false;
+    var chatInitialized = false;
+    var eventsBound = false;
+    var createOverlayObserver = null;
+
+    function initElements() {
+        fab      = document.getElementById('aiChatFab');
+        chatWin  = document.getElementById('aiChatWindow');
+        closeBtn = document.getElementById('aiChatClose');
+        msgBox   = document.getElementById('aiChatMessages');
+        inputEl  = document.getElementById('aiChatInput');
+        sendBtn  = document.getElementById('aiChatSend');
+        chipsEl  = document.getElementById('aiChatChips');
+        return !!(fab && chatWin && closeBtn && msgBox && inputEl && sendBtn && chipsEl);
+    }
+
+    function setFabVisibility() {
+        var createOverlay = document.querySelector('.activity-create-overlay');
+        if (!fab) {
+            return;
+        }
+
+        if (createOverlay && createOverlay.classList.contains('show')) {
+            fab.classList.add('visible');
+            return;
+        }
+
+        fab.classList.remove('visible');
+        if (chatWin) {
+            chatWin.classList.remove('open');
+        }
+    }
+
+    function syncFabVisibility() {
+        var createOverlay = document.querySelector('.activity-create-overlay');
+        setFabVisibility();
+        if (!createOverlay || !fab) {
+            return;
+        }
+
+        if (createOverlayObserver) {
+            createOverlayObserver.disconnect();
+        }
+
+        createOverlayObserver = new MutationObserver(function () {
+            setFabVisibility();
+        });
+        createOverlayObserver.observe(createOverlay, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    function addMessage(text, role) {
+        var div = document.createElement('div');
+        div.className = 'ai-msg ' + (role === 'user' ? 'from-user' : 'from-ai');
+        var applyMatch = text.match(/\[APPLY:(\w+)\]/i);
+        var cleanText  = text.replace(/\[APPLY:\w+\]/gi, '').trim();
+        div.textContent = cleanText;
+        if (applyMatch) {
+            var field = String(applyMatch[1] || '').toLowerCase();
+            var applyBtn = document.createElement('button');
+            applyBtn.className   = 'ai-apply-btn';
+            applyBtn.textContent = '⬆ Apply to ' + field + ' field';
+            applyBtn.addEventListener('click', function () {
+                applyToForm(field, cleanText);
+                applyBtn.textContent = '✓ Applied!';
+                applyBtn.disabled = true;
+            });
+            div.appendChild(document.createElement('br'));
+            div.appendChild(applyBtn);
+        }
+        msgBox.appendChild(div);
+        msgBox.scrollTop = msgBox.scrollHeight;
+        return div;
+    }
+
+    function addTyping() {
+        var div = document.createElement('div');
+        div.className = 'ai-msg typing-indicator';
+        div.id = 'aiTyping';
+        div.innerHTML = '<span>Thinking</span><span class="ai-typing-dots"><span></span><span></span><span></span></span>';
+        msgBox.appendChild(div);
+        msgBox.scrollTop = msgBox.scrollHeight;
+    }
+
+    function removeTyping() {
+        var el = document.getElementById('aiTyping');
+        if (el) el.remove();
+    }
+
+    function applyToForm(field, text) {
+        var fieldMap = {
+            title:       '#create-title',
+            description: '#create-description',
+            location:    '#create-location',
+            category:    '#create-category'
+        };
+        var normalizedField = String(field || '').toLowerCase();
+        var el = document.querySelector(fieldMap[normalizedField]);
+        if (el) {
+            el.value = text;
+            el.dispatchEvent(new Event('input'));
+            el.focus();
+            el.style.transition = 'box-shadow 0.3s';
+            el.style.boxShadow = '0 0 0 3px rgba(15,165,162,0.35)';
+            setTimeout(function () { el.style.boxShadow = ''; }, 1400);
+        }
+    }
+
+    function getFormContextValues() {
+        var title    = document.querySelector('#create-title');
+        var location = document.querySelector('#create-location');
+        var category = document.querySelector('#create-category');
+
+        return {
+            title: title && title.value ? title.value.trim() : '',
+            location: location && location.value ? location.value.trim() : '',
+            category: category && category.value ? category.value.trim() : ''
+        };
+    }
+
+    async function sendMessage(userText) {
+        if (isBusy || !userText.trim()) return;
+        isBusy = true;
+        sendBtn.disabled = true;
+        addMessage(userText, 'user');
+        history.push({ role: 'user', content: userText });
+        inputEl.value = '';
+        inputEl.style.height = '';
+        addTyping();
+        var formContext = getFormContextValues();
+        try {
+            var response = await fetch(AI_ASSISTANT_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    history: history,
+                    formContext: formContext
+                })
+            });
+
+            var data = await response.json().catch(function () { return {}; });
+            if (!response.ok || !data || data.success === false) {
+                throw new Error(data && data.message ? data.message : ('API error ' + response.status));
+            }
+
+            var reply = data.reply ? String(data.reply) : 'Sorry, I could not generate a response.';
+            removeTyping();
+            addMessage(reply, 'ai');
+            history.push({ role: 'assistant', content: reply });
+        } catch (err) {
+            removeTyping();
+            addMessage('Oops — could not reach Grok right now. (' + (err.message || '') + ')', 'ai');
+        } finally {
+            isBusy = false;
+            sendBtn.disabled = false;
+            inputEl.focus();
+        }
+    }
+
+    function initChat() {
+        if (chatInitialized) return;
+        chatInitialized = true;
+        history = [];
+        msgBox.innerHTML = '';
+        addMessage('Hi! 👋 I can help you write descriptions, suggest locations in Tunisia, recommend pricing, seasons, and more. What would you like help with?', 'ai');
+    }
+
+    function bindEvents() {
+        if (eventsBound) {
+            return;
+        }
+        eventsBound = true;
+
+        fab.addEventListener('click', function () {
+            if (!fab.classList.contains('visible')) {
+                return;
+            }
+            var isOpen = chatWin.classList.toggle('open');
+            if (isOpen) initChat();
+        });
+        closeBtn.addEventListener('click', function () {
+            chatWin.classList.remove('open');
+        });
+        chipsEl.addEventListener('click', function (e) {
+            var chip = e.target.closest('.ai-chip');
+            if (!chip) return;
+            var q = chip.getAttribute('data-q');
+            if (q) sendMessage(q);
+        });
+        sendBtn.addEventListener('click', function () {
+            sendMessage(inputEl.value.trim());
+        });
+        inputEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(inputEl.value.trim());
+            }
+        });
+        inputEl.addEventListener('input', function () {
+            this.style.height = '';
+            this.style.height = Math.min(this.scrollHeight, 90) + 'px';
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && chatWin) chatWin.classList.remove('open');
+        });
+
+        document.addEventListener('rehletna:activity-create-open', setFabVisibility);
+        document.addEventListener('rehletna:activity-create-close', setFabVisibility);
+    }
+
+    function boot() {
+        if (!initElements()) return;
+        bindEvents();
+        syncFabVisibility();
+    }
+
+    document.addEventListener('DOMContentLoaded', boot);
+    document.addEventListener('turbo:load', boot);
+    if (document.readyState !== 'loading') boot();
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         window.closeActivityModal = function () {
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
             if (activityModalOverlay) {
@@ -1905,6 +2746,7 @@
             var createModalOverlay = document.querySelector('.activity-create-overlay');
             if (createModalOverlay) {
                 createModalOverlay.classList.remove('show');
+                document.dispatchEvent(new Event('rehletna:activity-create-close'));
             }
         };
 
@@ -1925,9 +2767,206 @@
             }
         };
 
+        var reviewsApiBaseUrl = '{{ path('api_activity_reviews_list', { activityId: 'ACTIVITY_ID_PLACEHOLDER' }) }}';
+        var reviewsSaveBaseUrl = '{{ path('api_activity_reviews_save', { activityId: 'ACTIVITY_ID_PLACEHOLDER' }) }}';
+        var reviewsDeleteBaseUrl = '{{ path('api_activity_reviews_delete', { reviewId: 'REVIEW_ID_PLACEHOLDER' }) }}';
+        var currentReviewState = {
+            activityId: '',
+            reviewToken: '',
+            canSubmit: false
+        };
+
+        function buildReviewUrl(templateUrl, placeholder, value) {
+            return String(templateUrl).replace(String(placeholder), encodeURIComponent(String(value)));
+        }
+
+        function renderReviewCards(container, reviews) {
+            if (!container) {
+                return;
+            }
+
+            container.innerHTML = '';
+            if (!Array.isArray(reviews) || reviews.length === 0) {
+                var empty = document.createElement('div');
+                empty.className = 'activity-review-empty';
+                empty.textContent = 'No reviews yet. Be the first to share your experience!';
+                container.appendChild(empty);
+                return;
+            }
+
+            reviews.forEach(function (review) {
+                var card = document.createElement('div');
+                card.className = 'activity-review-item';
+
+                var head = document.createElement('div');
+                head.className = 'activity-review-item-head';
+
+                var metaWrap = document.createElement('div');
+                var title = document.createElement('div');
+                title.className = 'activity-review-item-title';
+                title.textContent = review.anonymousLabel || 'Anonymous traveler';
+
+                var meta = document.createElement('div');
+                meta.className = 'activity-review-item-meta';
+                meta.textContent = review.timeAgo || review.createdAt || '';
+
+                metaWrap.appendChild(title);
+                metaWrap.appendChild(meta);
+
+                if (review.displayName && review.displayName !== (review.anonymousLabel || 'Anonymous traveler')) {
+                    var adminName = document.createElement('div');
+                    adminName.className = 'activity-review-item-meta';
+                    adminName.textContent = review.displayName;
+                    metaWrap.appendChild(adminName);
+                }
+
+                head.appendChild(metaWrap);
+
+                if (review.canDelete) {
+                    var deleteButton = document.createElement('button');
+                    deleteButton.type = 'button';
+                    deleteButton.className = 'activity-review-delete js-delete-activity-review';
+                    deleteButton.setAttribute('data-review-id', review.id || '0');
+                    deleteButton.textContent = 'Delete';
+                    head.appendChild(deleteButton);
+                }
+
+                var content = document.createElement('p');
+                content.className = 'activity-review-content';
+                content.textContent = review.content || '';
+
+                card.appendChild(head);
+                card.appendChild(content);
+                container.appendChild(card);
+            });
+        }
+
+        function syncReviewForms(myReview, canSubmit, reviewToken, statusMessage) {
+            var form = document.querySelector('.js-activity-review-form');
+            if (!form) {
+                return;
+            }
+
+            var tokenField = form.querySelector('.js-activity-review-token');
+            var inputField = form.querySelector('.js-activity-review-input');
+            var submitButton = form.querySelector('.activity-review-submit');
+            var statusField = form.querySelector('.js-activity-review-status');
+
+            if (tokenField) {
+                tokenField.value = reviewToken || '';
+            }
+            if (inputField) {
+                inputField.value = myReview || '';
+                inputField.disabled = !canSubmit;
+                inputField.placeholder = canSubmit
+                    ? 'Write your global review for this activity...'
+                    : 'Review unlocks after the activity is completed.';
+            }
+            if (submitButton) {
+                submitButton.disabled = !canSubmit;
+            }
+            if (statusField) {
+                statusField.textContent = statusMessage !== undefined ? statusMessage : (canSubmit ? 'Review unlocked. You can write your feedback now.' : 'Complete this activity to unlock the review.');
+            }
+
+            var activityReviewLock = document.querySelector('.js-activity-review-lock');
+            if (activityReviewLock) {
+                activityReviewLock.textContent = canSubmit ? 'Review unlocked for this activity.' : 'Review unlocks after the activity is completed.';
+            }
+        }
+
+        window.loadActivityReviewPanel = async function (activityId, reviewToken) {
+            var activityReviewList = document.querySelector('.js-activity-review-list');
+
+            currentReviewState.activityId = String(activityId || '');
+            currentReviewState.reviewToken = String(reviewToken || '');
+            currentReviewState.canSubmit = false;
+            renderReviewCards(activityReviewList, []);
+            syncReviewForms('', false, currentReviewState.reviewToken, 'Loading review access...');
+
+            if (!currentReviewState.activityId) {
+                return;
+            }
+
+            try {
+                var response = await fetch(buildReviewUrl(reviewsApiBaseUrl, 'ACTIVITY_ID_PLACEHOLDER', currentReviewState.activityId), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                var data = await response.json();
+
+                if (!response.ok || !data || data.success === false) {
+                    throw new Error(data && data.message ? data.message : 'Unable to load reviews.');
+                }
+
+                currentReviewState.canSubmit = !!data.canSubmit;
+                renderReviewCards(activityReviewList, data.reviews && Array.isArray(data.reviews) ? data.reviews : []);
+                syncReviewForms(data.myReview || '', currentReviewState.canSubmit, currentReviewState.reviewToken);
+            } catch (error) {
+                renderReviewCards(activityReviewList, []);
+                syncReviewForms('', false, currentReviewState.reviewToken, 'Unable to load reviews right now.');
+            }
+        };
+
+        window.submitActivityReview = async function (form) {
+            if (!form || !currentReviewState.activityId) {
+                return;
+            }
+
+            var inputField = form.querySelector('.js-activity-review-input');
+            var tokenField = form.querySelector('.js-activity-review-token');
+            var statusField = form.querySelector('.js-activity-review-status');
+            var submitButton = form.querySelector('.activity-review-submit');
+            var content = inputField ? inputField.value.trim() : '';
+
+            if (!content) {
+                if (statusField) {
+                    statusField.textContent = 'Write a review first.';
+                }
+                return;
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+            if (statusField) {
+                statusField.textContent = 'Posting...';
+            }
+
+            try {
+                var response = await fetch(buildReviewUrl(reviewsSaveBaseUrl, 'ACTIVITY_ID_PLACEHOLDER', currentReviewState.activityId), {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json' },
+                    body: new URLSearchParams({
+                        content: content,
+                        _token: tokenField ? tokenField.value : currentReviewState.reviewToken
+                    })
+                });
+
+                var data = await response.json();
+                if (!response.ok || !data || data.success === false) {
+                    throw new Error(data && data.message ? data.message : 'Unable to save review.');
+                }
+
+                if (statusField) {
+                    statusField.textContent = data.message || 'Review posted.';
+                }
+                await window.loadActivityReviewPanel(currentReviewState.activityId, currentReviewState.reviewToken);
+            } catch (error) {
+                if (statusField) {
+                    statusField.textContent = error && error.message ? error.message : 'Unable to save review.';
+                }
+            } finally {
+                if (submitButton) {
+                    submitButton.disabled = !currentReviewState.canSubmit;
+                }
+            }
+        };
+
         window.openActivityModal = function (button) {
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
             var activityModalReserve = document.querySelector('.activity-modal-reserve');
+            var isMyActivity = button && button.dataset && button.dataset.isMyActivity === '1';
+            var forceHideReserve = button && button.dataset && button.dataset.hideReserve === '1';
             var activityModalTitle = document.querySelector('.js-activity-modal-title');
             var activityModalImage = document.querySelector('.js-activity-modal-image');
             var activityModalDescription = document.querySelector('.js-activity-modal-description');
@@ -1991,7 +3030,10 @@
                 activityModalReserve.setAttribute('data-amount', button.dataset.price || '0');
                 activityModalReserve.setAttribute('data-activity-title', button.dataset.title || 'Activity');
                 activityModalReserve.setAttribute('data-max-places', button.dataset.places || '1');
+                activityModalReserve.style.display = (isMyActivity || forceHideReserve) ? 'none' : '';
             }
+
+            window.loadActivityReviewPanel(button.dataset.activityId || '', button.dataset.reviewToken || '');
 
             activityModalOverlay.classList.add('show');
         };
@@ -2041,6 +3083,7 @@
 
             createForm.reset();
             createModalOverlay.classList.add('show');
+            document.dispatchEvent(new Event('rehletna:activity-create-open'));
         };
 
         window.closePaymentModal = function () {
@@ -2093,7 +3136,17 @@
             paymentOverlay.classList.add('show');
         };
 
-        document.addEventListener('DOMContentLoaded', function () {
+        function initializeActivitiesPage() {
+            var pageRoot = document.querySelector('.activities-module');
+            if (!pageRoot) {
+                return;
+            }
+
+            if (pageRoot.getAttribute('data-js-initialized') === '1') {
+                return;
+            }
+            pageRoot.setAttribute('data-js-initialized', '1');
+
             var menuToggle = document.querySelector('.menu-toggle');
             var sideMenu = document.querySelector('.side-menu');
             var overlay = document.querySelector('.menu-overlay');
@@ -2108,7 +3161,7 @@
             var reservationsTitle = document.querySelector('.js-reservations-title');
             var reservationsBody = document.querySelector('.js-reservations-body');
             var reservationsMessage = document.querySelector('.js-reservations-message');
-            var reservationsUploadButton = document.querySelector('.js-reservations-upload-btn');
+            var reservationsPdfButton = document.querySelector('.js-reservations-pdf-btn');
             var currentReservationsPdfUrl = '';
             var paymentOverlay = document.querySelector('.payment-overlay');
             var paymentClose = document.querySelector('.payment-close');
@@ -2272,13 +3325,18 @@
                 });
             }
 
-            if (reservationsUploadButton) {
-                reservationsUploadButton.addEventListener('click', function () {
+            if (reservationsPdfButton) {
+                reservationsPdfButton.addEventListener('click', function () {
                     if (!currentReservationsPdfUrl) {
                         showReservationsMessage('No activity selected for PDF export.');
                         return;
                     }
-                    window.location.href = currentReservationsPdfUrl;
+                    var downloadLink = document.createElement('a');
+                    downloadLink.href = currentReservationsPdfUrl;
+                    downloadLink.setAttribute('download', 'reservations.pdf');
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
+                    document.body.removeChild(downloadLink);
                 });
             }
 
@@ -2546,6 +3604,111 @@
                 });
             });
 
+            var urlParams = new URLSearchParams(window.location.search);
+            var modalActivityId = (urlParams.get('modal') || '').trim();
+            var deepLinkHandled = false;
+
+            function findDeepLinkTarget(activityId) {
+                if (!activityId) {
+                    return null;
+                }
+
+                return document.querySelector('.js-open-activity-modal[data-activity-id="' + activityId + '"]')
+                    || document.querySelector('.activity-card[data-activity-id="' + activityId + '"]')
+                    || document.querySelector('[data-activity-id="' + activityId + '"]');
+            }
+
+            function clearDeepLinkParams() {
+                urlParams.delete('modal');
+                urlParams.delete('from_reservations');
+                var cleanQuery = urlParams.toString();
+                var cleanUrl = window.location.pathname + (cleanQuery ? ('?' + cleanQuery) : '') + window.location.hash;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+
+            function openDeepLinkedActivity(activityId, hideReserve) {
+                var deepLinkTarget = findDeepLinkTarget(activityId);
+                if (!deepLinkTarget) {
+                    return false;
+                }
+
+                deepLinkHandled = true;
+
+                if (hideReserve) {
+                    deepLinkTarget.setAttribute('data-hide-reserve', '1');
+                }
+
+                openActivityModal(deepLinkTarget);
+
+                if (hideReserve) {
+                    deepLinkTarget.removeAttribute('data-hide-reserve');
+                }
+
+                clearDeepLinkParams();
+                return true;
+            }
+
+            function readDeepLinkFromStorage() {
+                try {
+                    var payload = sessionStorage.getItem('rehletna_activity_modal');
+                    if (!payload) {
+                        return null;
+                    }
+
+                    return JSON.parse(payload);
+                } catch (error) {
+                    return null;
+                }
+            }
+
+            function clearDeepLinkStorage() {
+                try {
+                    sessionStorage.removeItem('rehletna_activity_modal');
+                } catch (error) {
+                    // Ignore storage issues.
+                }
+            }
+
+            function triggerDeepLinkOpen() {
+                if (deepLinkHandled) {
+                    return;
+                }
+
+                var storagePayload = readDeepLinkFromStorage();
+                var storageActivityId = storagePayload && storagePayload.activityId ? String(storagePayload.activityId) : '';
+                var storageHideReserve = !!(storagePayload && storagePayload.hideReserve);
+                var activityIdToOpen = modalActivityId || storageActivityId;
+                var hideReserve = urlParams.get('from_reservations') === '1' || storageHideReserve;
+
+                if (!activityIdToOpen) {
+                    return;
+                }
+
+                var openedImmediately = openDeepLinkedActivity(activityIdToOpen, hideReserve);
+                if (openedImmediately) {
+                    clearDeepLinkStorage();
+                    return;
+                }
+
+                window.setTimeout(function () {
+                    if (!deepLinkHandled && openDeepLinkedActivity(activityIdToOpen, hideReserve)) {
+                        clearDeepLinkStorage();
+                    }
+                }, 180);
+            }
+
+            if (modalActivityId !== '' || readDeepLinkFromStorage()) {
+                triggerDeepLinkOpen();
+            }
+
+            window.addEventListener('pageshow', function () {
+                triggerDeepLinkOpen();
+            });
+
+            window.addEventListener('load', function () {
+                triggerDeepLinkOpen();
+            });
+
             document.querySelectorAll('.js-open-reservations-modal').forEach(function (button) {
                 button.addEventListener('click', function (event) {
                     event.preventDefault();
@@ -2555,6 +3718,15 @@
                         return;
                     }
                     openReservationsModal(reservationsUrl, button.getAttribute('data-activity-title') || 'Activity');
+                });
+            });
+
+            document.querySelectorAll('.js-guide-own-activity-open').forEach(function (card) {
+                card.addEventListener('click', function (event) {
+                    if (event.target.closest('button, a, form, input, select, textarea, label')) {
+                        return;
+                    }
+                    openActivityModal(card);
                 });
             });
 
@@ -2573,6 +3745,42 @@
                     event.preventDefault();
                     openActivityEditModal(button);
                 });
+            });
+
+            document.querySelectorAll('.js-activity-review-form').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    event.preventDefault();
+                    window.submitActivityReview(form);
+                });
+            });
+
+            document.addEventListener('click', async function (event) {
+                var deleteButton = event.target.closest('.js-delete-activity-review');
+                if (!deleteButton) {
+                    return;
+                }
+
+                var reviewId = deleteButton.getAttribute('data-review-id');
+                if (!reviewId || !window.confirm('Delete this review?')) {
+                    return;
+                }
+
+                try {
+                    deleteButton.disabled = true;
+                    var response = await fetch(buildReviewUrl(reviewsDeleteBaseUrl, 'REVIEW_ID_PLACEHOLDER', reviewId), {
+                        method: 'DELETE',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    var data = await response.json();
+                    if (!response.ok || !data || data.success === false) {
+                        throw new Error(data && data.message ? data.message : 'Unable to delete review.');
+                    }
+                    await window.loadActivityReviewPanel(currentReviewState.activityId, currentReviewState.reviewToken);
+                } catch (error) {
+                    window.alert(error && error.message ? error.message : 'Unable to delete review.');
+                } finally {
+                    deleteButton.disabled = false;
+                }
             });
 
             var addNewButton = document.querySelector('.js-open-activity-create');
@@ -2651,7 +3859,13 @@
                     }
                 });
             });
-        });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeActivitiesPage);
+        document.addEventListener('turbo:load', initializeActivitiesPage);
+        if (document.readyState !== 'loading') {
+            initializeActivitiesPage();
+        }
     </script>
 {% endblock %}
 
@@ -2737,12 +3951,16 @@
                 <div class="activities-module">
                     <div class="activities-head">
                         <div>
-                            <h2>Activities</h2>
-                            <p>{{ activities|length }} activities available</p>
+                            {% set historyMode = historyMode|default(false) %}
+                            <h2>{{ historyMode ? 'Activity history' : 'Activities' }}</h2>
+                            <p>
+                                {{ activities|length }}
+                                {{ historyMode ? 'passed activities' : 'activities available' }}
+                            </p>
                         </div>
                         <div class="activities-head-actions">
                             <span class="activities-pill">{{ activities|length }} total</span>
-                            <form class="activities-search-form" method="get" action="{{ path('app_activities') }}">
+                            <form class="activities-search-form" method="get" action="{{ historyMode ? path('app_activities_history') : path('app_activities') }}">
                                 <input
                                     type="text"
                                     name="q"
@@ -2751,32 +3969,55 @@
                                     placeholder="Search by activity name or place"
                                     aria-label="Search activities by name or place"
                                 >
-                                <button type="submit" class="activities-search-btn">Search</button>
+                                <button type="submit" class="activities-search-btn">🔍</button>
                             </form>
                             {% if is_granted('ROLE_GUIDE') %}
-                                <button
-                                    type="button"
-                                    class="activities-pill activities-filter-guide js-guide-activities-toggle"
-                                    data-filter-active="0"
-                                    aria-pressed="false"
-                                    title="Show only my activities"
-                                >
-                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M3 5h18"></path>
-                                        <path d="M6 12h12"></path>
-                                        <path d="M10 19h4"></path>
+                                <a class="activities-pill activities-stats-link" href="{{ path('app_activities_stats') }}" title="Activity statistics">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M4 19h16"></path>
+                                        <path d="M7 16V9"></path>
+                                        <path d="M12 16V5"></path>
+                                        <path d="M17 16v-6"></path>
                                     </svg>
-                                    <span>My activities</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    class="activities-pill activities-add-new js-open-activity-create"
-                                    title="Add a new activity"
-                                >
-                                    <span>+ Add new</span>
-                                </button>
+                                    <span>Stats</span>
+                                </a>
+                                {% if not historyMode %}
+                                    <button
+                                        type="button"
+                                        class="activities-pill activities-filter-guide js-guide-activities-toggle"
+                                        data-filter-active="0"
+                                        aria-pressed="false"
+                                        title="Show only my activities"
+                                    >
+                                        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M3 5h18"></path>
+                                            <path d="M6 12h12"></path>
+                                            <path d="M10 19h4"></path>
+                                        </svg>
+                                        <span>My activities</span>
+                                    </button>
+                                {% endif %}
+                                {% if not historyMode %}
+                                    <a class="activities-pill activities-history-link" href="{{ path('app_activities_history') }}" title="History">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M3 3v5h5"></path>
+                                            <path d="M3.05 13A9 9 0 1 0 6 6.3L3 8"></path>
+                                            <path d="M12 7v5l3 2"></path>
+                                        </svg>
+                                        <span>Historique</span>
+                                    </a>
+                                    <button
+                                        type="button"
+                                        class="activities-pill activities-add-new js-open-activity-create"
+                                        title="Add a new activity"
+                                    >
+                                        <span>+</span>
+                                    </button>
+                                {% else %}
+                                    <a class="activities-pill" href="{{ path('app_activities') }}">Back to activities</a>
+                                {% endif %}
                             {% endif %}
-                            <a class="activities-pill" href="{{ path('app_mainpage') }}">Back to main</a>
+                            
                         </div>
                     </div>
 
@@ -2792,8 +4033,25 @@
                             {% set status = activity.statut|default('')|lower %}
                             {% set isPassed = activity.is_passed|default(false) %}
                             {% set isMyActivity = is_granted('ROLE_GUIDE') and app.user and activity.idGuide is not null and activity.idGuide == app.user.id %}
-                            {% if canSeeInactive or status == 'actif' %}
-                            <article class="activity-card {{ status == 'inactif' ? 'activity-card--inactive' : '' }} {{ isPassed ? 'activity-card--passed' : '' }}" data-is-my-activity="{{ isMyActivity ? '1' : '0' }}" data-title="{{ activity.titre|default('')|e('html_attr') }}">
+                            {% if historyMode or canSeeInactive or status == 'actif' %}
+                            <article
+                                class="activity-card {{ status == 'inactif' ? 'activity-card--inactive' : '' }} {{ isMyActivity and not historyMode ? 'activity-card--clickable js-guide-own-activity-open' : '' }}"
+                                data-is-my-activity="{{ isMyActivity ? '1' : '0' }}"
+                                data-title="{{ activity.titre|default('')|e('html_attr') }}"
+                                data-activity-id="{{ activity.idActivite }}"
+                                data-description="{{ activity.description|default('')|e('html_attr') }}"
+                                data-location="{{ activity.lieu|default('')|e('html_attr') }}"
+                                data-category="{{ activity.categorie|default('-')|e('html_attr') }}"
+                                data-places="{{ activity.placesDisponibles|default(0) }}"
+                                data-price="{{ activity.prix|default(0) }}"
+                                data-status="{{ activity.statut|default('')|e('html_attr') }}"
+                                data-date="{{ activity.dateActivite ? activity.dateActivite|date('d M Y H:i') : '-' }}"
+                                data-duration="{{ activity.dureParJour|default(0) }}"
+                                data-image="{{ activity.image_url|default('')|e('html_attr') }}"
+                                data-guide-name="{{ activity.guide_display_name|default('Guide')|e('html_attr') }}"
+                                data-guide-image="{{ activity.guide_image_url|default('')|e('html_attr') }}"
+                                data-review-token="{{ csrf_token('activity-review-' ~ activity.idActivite)|e('html_attr') }}"
+                            >
                                 {% if is_granted('ROLE_ADMIN') %}
                                     <form
                                         method="post"
@@ -2804,83 +4062,89 @@
                                         <button type="submit" class="activity-admin-delete-btn" title="Delete activity" aria-label="Delete activity">&times;</button>
                                     </form>
                                 {% endif %}
-                                {% if isMyActivity %}
-                                    <div class="activity-owner-badge">My activity</div>
-                                {% endif %}
-                                {% if isPassed %}
-                                    <div class="activity-passed-badge">Activity passed</div>
-                                {% endif %}
-                                {% set showNewBadge = (not isPassed) and activity.is_new|default(false) and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_USER') and not is_granted('ROLE_GUIDE'))) %}
+                               
+                                {% set showNewBadge = (not historyMode) and (not isPassed) and activity.is_new|default(false) and (is_granted('ROLE_ADMIN') or (is_granted('ROLE_USER') and not is_granted('ROLE_GUIDE'))) %}
                                 {% if showNewBadge %}
                                     <div class="activity-new-badge">New</div>
                                 {% endif %}
-                                <img class="activity-image" src="{{ activity.image_url }}" alt="{{ activity.titre }}">
-                                <div class="activity-body">
-                                    <h3 class="activity-title">{{ activity.titre }}</h3>
-                                    <div class="activity-meta">
-                                        <span class="activity-tag">{{ activity.categorie|default('Activity') }}</span>
-                                        <span class="activity-tag">{{ activity.lieu }}</span>
-                                    </div>
-                                
-                                    {% if activity.weather is iterable %}
-                                        <div class="activity-weather" title="Forecast near activity date">
-                                            <img class="activity-weather-icon" src="{{ activity.weather.iconUrl|default('') }}" alt="{{ activity.weather.weatherMain|default('Weather') }}">
-                                            <span class="activity-weather-main">{{ activity.weather.weatherMain|default('Weather') }}</span>
-                                            <span class="activity-weather-temp">{{ activity.weather.formattedTemp|default('') }}</span>
+                                <div class="activity-image-wrap">
+                                    <img class="activity-image" src="{{ activity.image_url }}" alt="{{ activity.titre }}">
+                                    {% if activity.weather is iterable or is_granted('ROLE_GUIDE') or is_granted('ROLE_USER') %}
+                                        <div class="activity-top-overlays">
+                                            {% if activity.weather is iterable %}
+                                                <div class="activity-weather activity-weather-overlay" title="Forecast near activity date">
+                                                    <span class="activity-weather-main">{{ activity.weather.emoji|default('🌤️') }}</span>
+                                                    <span class="activity-weather-temp">{{ activity.weather.formattedTemp|default('') }}</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if isMyActivity and is_granted('ROLE_GUIDE') and not historyMode %}
+                                                <button
+                                                    type="button"
+                                                    class="activity-places-overlay js-open-reservations-modal"
+                                                    data-reservations-url="{{ path('app_activities_reservations_data', { id: activity.idActivite }) }}"
+                                                    data-reservations-pdf-url="{{ path('app_activities_reservations_pdf', { id: activity.idActivite }) }}"
+                                                    data-activity-title="{{ activity.titre|e('html_attr') }}"
+                                                    title="Voir les reservations de cette activite"
+                                                >{{ activity.placesDisponibles|default(0) }} places</button>
+                                            {% elseif is_granted('ROLE_GUIDE') or is_granted('ROLE_USER') %}
+                                                <span class="activity-places-overlay" title="Available places">{{ activity.placesDisponibles|default(0) }} places</span>
+                                            {% endif %}
                                         </div>
                                     {% endif %}
-                                    <div class="activity-meta">
-                                        {% if isMyActivity and is_granted('ROLE_GUIDE') %}
-                                            <button
-                                                type="button"
-                                                class="activities-badge neutral js-open-reservations-modal"
-                                                data-reservations-url="{{ path('app_activities_reservations_data', { id: activity.idActivite }) }}"
-                                                data-reservations-pdf-url="{{ path('app_activities_reservations_pdf', { id: activity.idActivite }) }}"
-                                                data-activity-title="{{ activity.titre|e('html_attr') }}"
-                                                title="Voir les reservations de cette activite"
-                                            >{{ activity.placesDisponibles }} places</button>
-                                        {% else %}
-                                            <span class="activities-badge neutral">{{ activity.placesDisponibles }} places</span>
-                                        {% endif %}
-                                        {% if is_granted('ROLE_GUIDE') or is_granted('ROLE_ADMIN') %}
-                                            <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
-                                        {% endif %}
+                                </div>
+                                {% if isMyActivity and not historyMode %}
+                                    <div class="activity-guide-actions">
+                                        <button
+                                            type="button"
+                                            class="activity-guide-icon-btn edit js-open-activity-edit"
+                                            onclick="window.openActivityEditModal(this); return false;"
+                                            data-title="{{ activity.titre|e('html_attr') }}"
+                                            data-description="{{ activity.description|e('html_attr') }}"
+                                            data-location="{{ activity.lieu|e('html_attr') }}"
+                                            data-category="{{ activity.categorie|default('')|e('html_attr') }}"
+                                            data-status="{{ activity.statut|default('Actif')|e('html_attr') }}"
+                                            data-date-input="{{ activity.dateActivite ? activity.dateActivite|date('Y-m-d\\TH:i') : '' }}"
+                                            data-duration="{{ activity.dureParJour|default(0) }}"
+                                            data-price="{{ activity.prix|default(0) }}"
+                                            data-places="{{ activity.placesDisponibles|default(0) }}"
+                                            data-edit-url="{{ path('app_activities_edit', { id: activity.idActivite }) }}"
+                                            data-token="{{ csrf_token('edit_activity_' ~ activity.idActivite) }}"
+                                            title="Edit activity"
+                                            aria-label="Edit activity"
+                                        >✎</button>
+                                        <form
+                                            method="post"
+                                            action="{{ path('app_activities_delete', { id: activity.idActivite }) }}"
+                                            class="activity-delete-form"
+                                            onsubmit="return window.confirm('Delete this activity?');"
+                                        >
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_activity_' ~ activity.idActivite) }}">
+                                            <button type="submit" class="activity-guide-icon-btn delete" title="Delete activity" aria-label="Delete activity">&times;</button>
+                                        </form>
                                     </div>
+                                {% endif %}
+                                <div class="activity-body">
+                                    <h3 class="activity-title">{{ activity.titre }}</h3>
+                                    {% if not isMyActivity %}
+                                        <div class="activity-meta">
+                                            <span class="activity-tag">{{ activity.categorie|default('Activity') }}</span>
+                                            <span class="activity-tag">{{ activity.lieu }}</span>
+                                        </div>
+
+                                        {% if is_granted('ROLE_GUIDE') or is_granted('ROLE_ADMIN') %}
+                                            <div class="activity-meta">
+                                                <span class="activities-badge {{ status == 'actif' ? 'active' : 'inactive' }}">{{ activity.statut }}</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
                                     <div class="activity-foot">
                                         <div class="activity-price">{{ activity.prix }} Dt</div>
                                         <div class="activity-foot-right">
-                                            {% if isMyActivity %}
+                                            {% if not isMyActivity %}
                                                 <button
                                                     type="button"
-                                                    class="activity-edit js-open-activity-edit"
-                                                    onclick="window.openActivityEditModal(this); return false;"
-                                                    data-title="{{ activity.titre|e('html_attr') }}"
-                                                    data-description="{{ activity.description|e('html_attr') }}"
-                                                    data-location="{{ activity.lieu|e('html_attr') }}"
-                                                    data-category="{{ activity.categorie|default('')|e('html_attr') }}"
-                                                    data-status="{{ activity.statut|default('Actif')|e('html_attr') }}"
-                                                    data-date-input="{{ activity.dateActivite ? activity.dateActivite|date('Y-m-d\\TH:i') : '' }}"
-                                                    data-duration="{{ activity.dureParJour|default(0) }}"
-                                                    data-price="{{ activity.prix|default(0) }}"
-                                                    data-places="{{ activity.placesDisponibles|default(0) }}"
-                                                    data-edit-url="{{ path('app_activities_edit', { id: activity.idActivite }) }}"
-                                                    data-token="{{ csrf_token('edit_activity_' ~ activity.idActivite) }}"
-                                                >Edit</button>
-                                                <form
-                                                    method="post"
-                                                    action="{{ path('app_activities_delete', { id: activity.idActivite }) }}"
-                                                    class="activity-delete-form"
-                                                    onsubmit="return window.confirm('Delete this activity?');"
-                                                >
-                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete_activity_' ~ activity.idActivite) }}">
-                                                    <button type="submit" class="activity-delete">Delete</button>
-                                                </form>
-                                            {% else %}
-                                                <button
-                                                    type="button"
-                                                    class="activity-view js-open-activity-modal {{ isPassed ? 'activity-view--disabled' : '' }}"
-                                                    onclick="{{ isPassed ? 'return false;' : 'window.openActivityModal(this); return false;' }}"
-                                                    {{ isPassed ? 'disabled' : '' }}
+                                                    class="activity-view js-open-activity-modal"
+                                                    onclick="window.openActivityModal(this); return false;"
                                                     data-activity-id="{{ activity.idActivite }}"
                                                     data-title="{{ activity.titre|e('html_attr') }}"
                                                     data-description="{{ activity.description|e('html_attr') }}"
@@ -2894,7 +4158,8 @@
                                                     data-image="{{ activity.image_url|e('html_attr') }}"
                                                     data-guide-name="{{ activity.guide_display_name|e('html_attr') }}"
                                                     data-guide-image="{{ activity.guide_image_url|e('html_attr') }}"
-                                                    title="{{ isPassed ? 'This activity has passed and cannot be reserved.' : 'View activity details' }}"
+                                                    data-review-token="{{ csrf_token('activity-review-' ~ activity.idActivite)|e('html_attr') }}"
+                                                    title="View activity details"
                                                 >View</button>
                                             {% endif %}
                                         </div>
@@ -2966,6 +4231,27 @@
                         </div>
                     </div>
 
+                    <section class="activity-review-shell">
+                        <article class="activity-review-card">
+                            <div class="activity-review-card-head">
+                                <div>
+                                    <span class="activity-review-label">Global Review</span>
+                                    <h4>Share your experience with all travelers</h4>
+                                </div>
+                            </div>
+                            <form class="activity-review-form js-activity-review-form">
+                                <input type="hidden" class="js-activity-review-token" value="">
+                                <textarea class="activity-review-input js-activity-review-input" rows="4" placeholder="Review unlocks after the activity is completed."></textarea>
+                                <div class="activity-review-actions">
+                                    <span class="activity-review-status js-activity-review-status"></span>
+                                    <button type="submit" class="activity-review-submit">Post Review</button>
+                                </div>
+                            </form>
+                            <div class="activity-review-list js-activity-review-list"></div>
+                        </article>
+                        <p class="activity-review-lock js-activity-review-lock"></p>
+                    </section>
+
                     <div class="activity-modal-actions">
                         <button type="button" class="activity-modal-reserve" data-activity-id="0" data-amount="0" data-activity-title="Activity">Reserver</button>
                     </div>
@@ -2973,6 +4259,31 @@
             </div>
         </div>
     </div>
+
+    {% if modalActivity is defined and modalActivity %}
+        <button
+            type="button"
+            class="js-open-activity-modal"
+            style="display: none;"
+            data-activity-id="{{ modalActivity.idActivite }}"
+            data-title="{{ modalActivity.titre|e('html_attr') }}"
+            data-description="{{ modalActivity.description|e('html_attr') }}"
+            data-location="{{ modalActivity.lieu|e('html_attr') }}"
+            data-category="{{ modalActivity.categorie|default('-')|e('html_attr') }}"
+            data-places="{{ modalActivity.placesDisponibles|default(0) }}"
+            data-price="{{ modalActivity.prix|default(0) }}"
+            data-status="{{ modalActivity.statut|e('html_attr') }}"
+            data-date="{{ modalActivity.dateActivite ? modalActivity.dateActivite|date('d M Y H:i') : '-' }}"
+            data-duration="{{ modalActivity.dureParJour|default(0) }}"
+            data-image="{{ modalActivity.image_url|e('html_attr') }}"
+            data-guide-name="{{ modalActivity.guide_display_name|e('html_attr') }}"
+            data-guide-image="{{ modalActivity.guide_image_url|e('html_attr') }}"
+            data-review-token="{{ csrf_token('activity-review-' ~ modalActivity.idActivite)|e('html_attr') }}"
+            {% if modalHideReserve %}data-hide-reserve="1"{% endif %}
+            aria-hidden="true"
+            tabindex="-1"
+        >Open activity</button>
+    {% endif %}
 
     <div class="reservations-overlay">
         <div class="reservations-modal" role="dialog" aria-modal="true" aria-labelledby="reservationsTitle">
@@ -2999,7 +4310,7 @@
                     </table>
                 </div>
                 <div class="reservations-actions">
-                    <button type="button" class="reservations-upload-btn js-reservations-upload-btn">Upload</button>
+                    <button type="button" class="reservations-pdf-btn js-reservations-pdf-btn">Download PDF</button>
                 </div>
             </div>
         </div>
@@ -3196,4 +4507,50 @@
             </form>
         </div>
     </div>
+
+
+
+
+    {# ── AI Activity Assistant Chatbot ── #}
+<button class="ai-chat-fab" id="aiChatFab" title="AI Activity Assistant" aria-label="Open AI assistant">
+    <div class="ai-chat-fab-pulse"></div>
+    🤖
+</button>
+
+<div class="ai-chat-window" id="aiChatWindow" role="dialog" aria-modal="true" aria-label="AI Activity Assistant">
+    <div class="ai-chat-header">
+        <div class="ai-chat-header-avatar">🤖</div>
+        <div class="ai-chat-header-info">
+            <p class="ai-chat-header-name">Activity AI Assistant</p>
+            <p class="ai-chat-header-sub">Powered by Grok · Helps you build your activity</p>
+        </div>
+        <button class="ai-chat-header-close" id="aiChatClose" aria-label="Close">✕</button>
+    </div>
+
+    <div class="ai-chat-messages" id="aiChatMessages"></div>
+
+    <div class="ai-chat-chips" id="aiChatChips">
+        <button class="ai-chip" data-q="Suggest a compelling description for my activity">✍️ Write description</button>
+        <button class="ai-chip" data-q="What are the best places to visit in Tunisia for outdoor activities?">📍 Best places</button>
+        <button class="ai-chip" data-q="What is the best season for outdoor activities in Tunisia?">🌤️ Best season</button>
+        <button class="ai-chip" data-q="What price should I set for a guided day activity in Tunisia?">💰 Pricing advice</button>
+        <button class="ai-chip" data-q="What categories of activities are most popular with tourists?">🏷️ Popular categories</button>
+        <button class="ai-chip" data-q="What duration is ideal for a tourism activity?">⏱️ Duration tips</button>
+    </div>
+
+    <div class="ai-chat-input-row">
+        <textarea
+            class="ai-chat-input"
+            id="aiChatInput"
+            rows="1"
+            placeholder="Ask me anything about your activity..."
+            aria-label="Chat message"
+        ></textarea>
+        <button class="ai-chat-send" id="aiChatSend" aria-label="Send">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+    </div>
+</div>
+
+
 {% endblock %}

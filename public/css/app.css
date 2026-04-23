@@ -436,7 +436,10 @@ img { max-width: 100%; height: auto; }
     border-right: 1px solid var(--border);
 }
 
-.detail-hero-container { width: 100%; }
+.detail-hero-container {
+    width: 100%;
+    position: relative;
+}
 .detail-hero-image {
     width: 100%; max-height: 450px;
     object-fit: cover; display: block;
@@ -462,6 +465,20 @@ img { max-width: 100%; height: auto; }
     padding: 3px 10px; border-radius: 12px;
     background: rgba(52, 152, 219, 0.1); color: #3498db;
     font-size: 12px; font-weight: 500;
+}
+
+.weather-badge-overlay {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 2;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(18, 21, 27, 0.72);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    backdrop-filter: blur(4px);
 }
 
 .detail-post-text {

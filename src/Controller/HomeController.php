@@ -45,11 +45,9 @@ class HomeController extends AbstractController
     {
         $currentSearch = trim((string) $request->query->get('q', ''));
         $canSeeInactive = $this->isGranted('ROLE_GUIDE');
-
-        // Auto-delete activities 48 hours after their scheduled date.
-        $connection->executeStatement(
-            'DELETE FROM activite WHERE dateActivite <= DATE_SUB(NOW(), INTERVAL 2 DAY)'
-        );
+        $modalActivityId = (int) $request->query->get('modal', 0);
+        $modalActivity = $modalActivityId > 0 ? $this->loadActivityForModal($connection, $modalActivityId) : null;
+        $modalHideReserve = $request->query->getBoolean('from_reservations');
 
         $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide, a.dateCreation,
                        u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
@@ -78,6 +76,10 @@ class HomeController extends AbstractController
             $params[] = 'actif';
             $types[] = ParameterType::STRING;
         }
+
+        // Passed activities are hidden from the regular listing.
+        // Guides can access their own passed activities in the dedicated history page.
+        $whereClauses[] = 'a.dateActivite > NOW()';
 
         if ($whereClauses !== []) {
             $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
@@ -166,10 +168,71 @@ class HomeController extends AbstractController
         return $this->render('activities/index.html.twig', [
             'activities' => $activities,
             'currentSearch' => $currentSearch,
+            'historyMode' => false,
+            'modalActivity' => $modalActivity,
+            'modalHideReserve' => $modalHideReserve,
         ]);
     }
 
-    #[Route('/activities/create-checkout-session', name: 'app_activities_create_checkout_session', methods: ['POST'])]
+    #[Route('/activities/history', name: 'app_activities_history', methods: ['GET'])]
+    #[IsGranted('ROLE_GUIDE')]
+    public function activitiesHistory(Request $request, Connection $connection): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            throw $this->createAccessDeniedException('Only guides can access activity history.');
+        }
+
+        $currentSearch = trim((string) $request->query->get('q', ''));
+
+        $sql = 'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide, a.dateCreation,
+                       u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
+                       p.image AS guide_image
+                FROM activite a
+                LEFT JOIN `user` u ON u.id = a.idGuide
+                LEFT JOIN profile p ON p.id_user = u.id
+                WHERE a.idGuide = ?
+                  AND a.dateActivite <= NOW()';
+
+        $params = [(int) $user->getId()];
+        $types = [ParameterType::INTEGER];
+
+        if ($currentSearch !== '') {
+            $sql .= ' AND (a.titre LIKE ? OR a.lieu LIKE ?)';
+            $params[] = '%' . $currentSearch . '%';
+            $params[] = '%' . $currentSearch . '%';
+            $types[] = ParameterType::STRING;
+            $types[] = ParameterType::STRING;
+        }
+
+        $sql .= ' ORDER BY a.dateActivite DESC, a.idActivite DESC';
+
+        $activities = $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
+
+        foreach ($activities as &$activity) {
+            $firstName = trim((string) ($activity['guide_name'] ?? ''));
+            $lastName = trim((string) ($activity['guide_last_name'] ?? ''));
+            $username = trim((string) ($activity['guide_username'] ?? ''));
+            $fullName = trim($firstName . ' ' . $lastName);
+
+            $activity['guide_display_name'] = $fullName !== '' ? $fullName : ($username !== '' ? $username : 'Guide');
+            $activity['guide_image_url'] = $this->imageToUrl($activity['guide_image'] ?? null);
+            $activity['image_url'] = $this->activityImageToUrl($activity['image'] ?? null);
+            $activity['is_new'] = false;
+            $activity['is_passed'] = true;
+            $activity['weather'] = null;
+            $activity['weather_fallback_text'] = null;
+        }
+        unset($activity);
+
+        return $this->render('activities/index.html.twig', [
+            'activities' => $activities,
+            'currentSearch' => $currentSearch,
+            'historyMode' => true,
+        ]);
+    }
+
+    #[Route('/activities/create-checkout-session-legacy', name: 'app_activities_create_checkout_session_legacy', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function createActivitiesCheckoutSession(Request $request): JsonResponse
     {
@@ -2618,16 +2681,141 @@ class HomeController extends AbstractController
 
     #[Route('/reservations', name: 'app_reservations')]
     #[IsGranted('ROLE_USER')]
-    public function reservations(): Response
+    public function reservations(Connection $connection): Response
     {
-        return $this->render('reservations/index.html.twig');
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            throw $this->createAccessDeniedException('You must be logged in.');
+        }
+
+        return $this->render('reservations/index.html.twig', [
+            'reservations' => $this->loadUserReservations($connection, (int) $user->getId()),
+        ]);
     }
 
     #[Route('/my-reservations', name: 'app_my_reservations')]
     #[IsGranted('ROLE_USER')]
-    public function myReservations(): Response
+    public function myReservations(Connection $connection): Response
     {
-        return $this->render('reservations/my_reservations.html.twig');
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            throw $this->createAccessDeniedException('You must be logged in.');
+        }
+
+        $reservations = $this->loadUserReservations($connection, (int) $user->getId());
+
+        return $this->render('reservations/index.html.twig', [
+            'reservations' => $reservations,
+        ]);
+    }
+
+    #[Route('/my-reservations/{reservationId}/delete', name: 'app_my_reservation_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function deleteMyReservation(int $reservationId, Request $request, Connection $connection): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            return $this->json(['success' => false, 'message' => 'Login required.'], 403);
+        }
+
+        if (!$this->isCsrfTokenValid('delete-reservation', (string) $request->request->get('_token'))) {
+            return $this->json(['success' => false, 'message' => 'Invalid request token.'], 400);
+        }
+
+        $reservation = $connection->fetchAssociative(
+            'SELECT ur.reservation_id, ur.activity_id, a.dateActivite
+             FROM user_reservation ur
+             INNER JOIN activite a ON a.idActivite = ur.activity_id
+             WHERE ur.reservation_id = ? AND ur.user_id = ?
+             LIMIT 1',
+            [$reservationId, (int) $user->getId()]
+        );
+
+        if (!is_array($reservation)) {
+            return $this->json(['success' => false, 'message' => 'Reservation not found.'], 404);
+        }
+
+        $activityDateRaw = trim((string) ($reservation['dateActivite'] ?? ''));
+        $passed = false;
+        if ($activityDateRaw !== '') {
+            try {
+                $passed = new \DateTimeImmutable($activityDateRaw) <= new \DateTimeImmutable('now');
+            } catch (\Throwable) {
+                $passed = false;
+            }
+        }
+
+        if (!$passed) {
+            return $this->json(['success' => false, 'message' => 'You can only delete reservations after the activity is completed.'], 403);
+        }
+
+        $connection->executeStatement(
+            'DELETE FROM user_reservation WHERE reservation_id = ? AND user_id = ?',
+            [$reservationId, (int) $user->getId()]
+        );
+
+        return $this->json(['success' => true, 'message' => 'Reservation deleted.']);
+    }
+
+    private function loadUserReservations(Connection $connection, int $userId): array
+    {
+        $rows = $connection->fetchAllAssociative(
+            "SELECT ur.reservation_id,
+                    ur.booked_at,
+                    a.idActivite,
+                    a.titre,
+                    a.lieu,
+                    a.prix,
+                    a.dateActivite,
+                    COALESCE(NULLIF(TRIM(CONCAT(COALESCE(u.name, ''), ' ', COALESCE(u.last_name, ''))), ''), u.username, 'Guide') AS guide_display_name
+             FROM user_reservation ur
+             INNER JOIN activite a ON a.idActivite = ur.activity_id
+             LEFT JOIN `user` u ON u.id = a.idGuide
+             WHERE ur.user_id = ?
+             ORDER BY ur.booked_at DESC",
+            [$userId]
+        );
+
+        $now = new \DateTimeImmutable('now');
+        $reservations = array_map(static function (array $row) use ($now): array {
+            $status = strtolower(trim((string) ($row['statut'] ?? '')));
+            $statusPassed = in_array($status, ['passed', 'pass', 'past', 'completed', 'complete', 'done', 'finished', 'termine', 'terminé', 'terminee', 'terminée'], true);
+            $dateRaw = trim((string) ($row['dateActivite'] ?? ''));
+            $passed = false;
+            if ($dateRaw !== '') {
+                try {
+                    $passed = new \DateTimeImmutable($dateRaw) <= $now;
+                } catch (\Throwable) {
+                    $passed = false;
+                }
+            }
+
+            $passed = $passed || $statusPassed;
+
+            return [
+                'id' => (int) ($row['reservation_id'] ?? 0),
+                'activityId' => (int) ($row['idActivite'] ?? 0),
+                'title' => (string) ($row['titre'] ?? 'Activity'),
+                'date' => (string) ($row['dateActivite'] ?? ''),
+                'location' => (string) ($row['lieu'] ?? ''),
+                'price' => (float) ($row['prix'] ?? 0),
+                'guideName' => (string) ($row['guide_display_name'] ?? 'Guide'),
+                'bookedAt' => new \DateTimeImmutable((string) ($row['booked_at'] ?? 'now')),
+                'status' => (string) ($row['statut'] ?? ''),
+                'passed' => $passed,
+                'canDelete' => $passed,
+            ];
+        }, $rows);
+
+        usort($reservations, static function (array $a, array $b): int {
+            if ($a['passed'] !== $b['passed']) {
+                return $a['passed'] ? 1 : -1;
+            }
+
+            return strcmp((string) $b['date'], (string) $a['date']);
+        });
+
+        return $reservations;
     }
 
     #[Route('/offers-grid', name: 'app_offers_grid')]
@@ -3078,5 +3266,56 @@ class HomeController extends AbstractController
         }
 
         return null;
+    }
+
+    private function loadActivityForModal(Connection $connection, int $activityId): ?array
+    {
+        $activity = $connection->fetchAssociative(
+            'SELECT a.idActivite, a.titre, a.description, a.lieu, a.dateActivite, a.dureParJour, a.prix, a.statut, a.placesDisponibles, a.categorie, a.image, a.idGuide,
+                    u.username AS guide_username, u.name AS guide_name, u.last_name AS guide_last_name,
+                    p.image AS guide_image
+             FROM activite a
+             LEFT JOIN `user` u ON u.id = a.idGuide
+             LEFT JOIN profile p ON p.id_user = u.id
+             WHERE a.idActivite = ?',
+            [$activityId]
+        );
+
+        if (!is_array($activity)) {
+            return null;
+        }
+
+        $firstName = trim((string) ($activity['guide_name'] ?? ''));
+        $lastName = trim((string) ($activity['guide_last_name'] ?? ''));
+        $username = trim((string) ($activity['guide_username'] ?? ''));
+        $fullName = trim($firstName . ' ' . $lastName);
+        $now = new \DateTimeImmutable('now');
+        $isPassed = false;
+
+        $dateActiviteRaw = $activity['dateActivite'] ?? null;
+        if (is_string($dateActiviteRaw) && trim($dateActiviteRaw) !== '') {
+            try {
+                $isPassed = new \DateTimeImmutable($dateActiviteRaw) <= $now;
+            } catch (\Exception) {
+                $isPassed = false;
+            }
+        }
+
+        return [
+            'idActivite' => (int) ($activity['idActivite'] ?? 0),
+            'titre' => (string) ($activity['titre'] ?? 'Activity'),
+            'description' => (string) ($activity['description'] ?? ''),
+            'lieu' => (string) ($activity['lieu'] ?? ''),
+            'dateActivite' => $dateActiviteRaw,
+            'dureParJour' => (int) ($activity['dureParJour'] ?? 0),
+            'prix' => (float) ($activity['prix'] ?? 0),
+            'statut' => (string) ($activity['statut'] ?? ''),
+            'placesDisponibles' => (int) ($activity['placesDisponibles'] ?? 0),
+            'categorie' => (string) ($activity['categorie'] ?? ''),
+            'image_url' => $this->activityImageToUrl($activity['image'] ?? null),
+            'guide_display_name' => $fullName !== '' ? $fullName : ($username !== '' ? $username : 'Guide'),
+            'guide_image_url' => $this->imageToUrl($activity['guide_image'] ?? null),
+            'is_passed' => $isPassed,
+        ];
     }
 }

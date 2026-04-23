@@ -269,6 +269,11 @@ class ActivitiesCheckoutController extends AbstractController
                 );
 
                 if (is_array($existingPurchase)) {
+                    $connection->executeStatement(
+                        'INSERT IGNORE INTO user_reservation (user_id, activity_id, booked_at) VALUES (?, ?, NOW())',
+                        [$currentUserId, $activityId]
+                    );
+
                     return [
                         'alreadySaved' => true,
                         'purchaseId' => (int) ($existingPurchase['idAchat'] ?? 0),
@@ -310,6 +315,11 @@ class ActivitiesCheckoutController extends AbstractController
                 $connection->executeStatement(
                     'UPDATE activite SET placesDisponibles = placesDisponibles - ? WHERE idActivite = ?',
                     [$quantity, $activityId]
+                );
+
+                $connection->executeStatement(
+                    'INSERT IGNORE INTO user_reservation (user_id, activity_id, booked_at) VALUES (?, ?, NOW())',
+                    [$currentUserId, $activityId]
                 );
 
                 return [
