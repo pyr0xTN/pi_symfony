@@ -102,4 +102,32 @@ class MessagesRepository extends ServiceEntityRepository
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function countByMessageType(): array
+    {
+        $results = $this->createQueryBuilder('m')
+            ->select('m.typeMessage, COUNT(m.id) as count')
+            ->groupBy('m.typeMessage')
+            ->getQuery()
+            ->getResult();
+
+        $stats = [];
+        foreach ($results as $r) {
+            $stats[$r['typeMessage']->value] = $r['count'];
+        }
+        return $stats;
+    }
+
+    public function getMessagesLast7Days(): array
+    {
+        $date = new \DateTime('-7 days');
+        return $this->createQueryBuilder('m')
+            ->select('SUBSTRING(m.dateEnvoi, 1, 10) as day, COUNT(m.id) as count')
+            ->where('m.dateEnvoi >= :date')
+            ->setParameter('date', $date)
+            ->groupBy('day')
+            ->orderBy('day', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
 }

@@ -1,0 +1,497 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messenger Analytics{% endblock %}
+
+{% block body %}
+
+<div class="analytics-root">
+
+    {# Decorative background blobs #}
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+
+    {# Header #}
+    <div class="analytics-header">
+        <div class="header-left">
+            <span class="header-eyebrow">Messenger</span>
+            <h1 class="header-title">📊 {{ 'main.menu.dashboard_messenger'|trans }}</h1>
+        </div>
+        <a href="{{ path('app_mainpage') }}" class="back-btn" data-turbo="false">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+            Back to Home
+        </a>
+    </div>
+
+    {# KPI Grid #}
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-users">
+            <div class="kpi-icon-wrap kpi-icon-teal">👥</div>
+            <div class="kpi-content">
+                <span class="kpi-value">{{ totalUsers }}</span>
+                <span class="kpi-label">Total Travelers</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-messages">
+            <div class="kpi-icon-wrap kpi-icon-indigo">💬</div>
+            <div class="kpi-content">
+                <span class="kpi-value">{{ totalMessages }}</span>
+                <span class="kpi-label">Messages Sent</span>
+            </div>
+        </div>
+        <div class="kpi-card kpi-groups">
+            <div class="kpi-icon-wrap kpi-icon-amber">🌍</div>
+            <div class="kpi-content">
+                <span class="kpi-value">{{ totalGroups }}</span>
+                <span class="kpi-label">Active Groups</span>
+            </div>
+        </div>
+    </div>
+
+    {# Bottom Grid: Chart + AI #}
+    <div class="bottom-grid">
+
+        {# Chart Card #}
+        <div class="chart-card">
+            <div class="card-header">
+                <h4 class="card-title">Media Distribution</h4>
+                <span class="card-badge">● Live</span>
+            </div>
+            <div class="chart-body">
+                {{ render_chart(chart) }}
+            </div>
+        </div>
+
+        {# AI Card #}
+        <div class="ai-card">
+            <div class="ai-orb ai-orb-1"></div>
+            <div class="ai-orb ai-orb-2"></div>
+            <div class="ai-content">
+                <div class="ai-badge">✦ AI ANALYTICS</div>
+                <h2 class="ai-title">Platform Vibe</h2>
+                <div class="ai-divider"></div>
+                <p class="ai-text">"{{ aiAnalysis }}"</p>
+                <div class="ai-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.analytics-root {
+    position: relative;
+    padding: 48px 52px;
+    min-height: 100vh;
+    background: #f8f7ff;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+}
+
+.bg-blob {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+.bg-blob-1 {
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(20,184,166,.13) 0%, transparent 65%);
+    top: -250px; left: -200px;
+    filter: blur(80px);
+}
+.bg-blob-2 {
+    width: 550px; height: 550px;
+    background: radial-gradient(circle, rgba(99,102,241,.10) 0%, transparent 65%);
+    bottom: -150px; right: -150px;
+    filter: blur(80px);
+}
+.bg-blob-3 {
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(251,191,36,.09) 0%, transparent 65%);
+    top: 40%; left: 55%;
+    filter: blur(60px);
+}
+
+.analytics-header,
+.kpi-grid,
+.bottom-grid { position: relative; z-index: 1; }
+
+/* ── Header ── */
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 40px;
+}
+.header-eyebrow {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #14b8a6;
+    margin-bottom: 6px;
+}
+.header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+}
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    color: #475569;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(15,23,42,.06);
+    transition: all .2s ease;
+}
+.back-btn:hover {
+    border-color: #14b8a6;
+    color: #14b8a6;
+    transform: translateX(-3px);
+    box-shadow: 0 4px 16px rgba(20,184,166,.15);
+}
+
+/* ── KPI Grid ── */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+.kpi-card {
+    background: #ffffff;
+    border: 1.5px solid #f1f5f9;
+    border-radius: 22px;
+    padding: 26px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 24px rgba(15,23,42,.05), 0 1px 2px rgba(15,23,42,.04);
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    cursor: default;
+}
+.kpi-card:hover { transform: translateY(-5px); box-shadow: 0 14px 40px rgba(15,23,42,.10); }
+.kpi-users:hover    { border-color: rgba(20,184,166,.4); }
+.kpi-messages:hover { border-color: rgba(99,102,241,.4); }
+.kpi-groups:hover   { border-color: rgba(251,191,36,.55); }
+
+.kpi-icon-wrap {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+}
+.kpi-icon-teal   { background: rgba(20,184,166,.12); }
+.kpi-icon-indigo { background: rgba(99,102,241,.10); }
+.kpi-icon-amber  { background: rgba(251,191,36,.12); }
+
+.kpi-content { display: flex; flex-direction: column; gap: 3px; }
+.kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 34px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+    letter-spacing: -.03em;
+}
+.kpi-label {
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ── Bottom Grid ── */
+.bottom-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 20px;
+}
+
+/* ── Chart Card ── */
+.chart-card {
+    background: #ffffff;
+    border: 1.5px solid #f1f5f9;
+    border-radius: 22px;
+    padding: 28px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-shadow: 0 4px 24px rgba(15,23,42,.05);
+    transition: box-shadow .25s, border-color .25s;
+}
+.chart-card:hover {
+    box-shadow: 0 10px 36px rgba(15,23,42,.09);
+    border-color: rgba(20,184,166,.3);
+}
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+.card-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #14b8a6;
+    background: rgba(20,184,166,.08);
+    border: 1.5px solid rgba(20,184,166,.2);
+    padding: 3px 11px;
+    border-radius: 20px;
+}
+.chart-body { flex: 1; }
+
+/* ── AI Card ── */
+.ai-card {
+    position: relative;
+    background:
+        radial-gradient(ellipse at 10% 80%, rgba(20,184,166,.22) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 10%, rgba(99,102,241,.18) 0%, transparent 55%),
+        #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 22px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 44px 48px;
+    box-shadow: 0 4px 24px rgba(15,23,42,.06);
+    transition: box-shadow .25s, border-color .25s;
+}
+.ai-card:hover {
+    box-shadow: 0 16px 52px rgba(20,184,166,.16);
+    border-color: rgba(20,184,166,.35);
+}
+.ai-orb {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+.ai-orb-1 {
+    width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(20,184,166,.2) 0%, transparent 70%);
+    top: -70px; left: -70px;
+    filter: blur(28px);
+}
+.ai-orb-2 {
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(99,102,241,.18) 0%, transparent 70%);
+    bottom: -50px; right: -50px;
+    filter: blur(22px);
+}
+
+.ai-content { position: relative; z-index: 1; text-align: center; max-width: 480px; }
+
+.ai-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: #0d9488;
+    background: rgba(20,184,166,.1);
+    border: 1.5px solid rgba(20,184,166,.25);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+}
+.ai-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 14px;
+    letter-spacing: -.02em;
+}
+.ai-divider {
+    width: 36px;
+    height: 3px;
+    background: linear-gradient(90deg, #14b8a6, #6366f1);
+    margin: 0 auto 20px;
+    border-radius: 3px;
+}
+.ai-text {
+    font-size: 16px;
+    line-height: 1.8;
+    font-style: italic;
+    color: #475569;
+}
+.ai-dots {
+    display: flex;
+    gap: 7px;
+    justify-content: center;
+    margin-top: 24px;
+}
+.ai-dots span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #14b8a6, #6366f1);
+    opacity: .35;
+    animation: dot-pulse 1.7s ease-in-out infinite;
+}
+.ai-dots span:nth-child(2) { animation-delay: .28s; }
+.ai-dots span:nth-child(3) { animation-delay: .56s; }
+
+@keyframes dot-pulse {
+    0%, 100% { opacity: .2; transform: scale(.9); }
+    50%       { opacity: 1;  transform: scale(1.35); }
+}
+
+/* ── Staggered entrance ── */
+.analytics-header      { animation: fadeUp .5s ease both; }
+.kpi-card:nth-child(1) { animation: fadeUp .55s .08s ease both; }
+.kpi-card:nth-child(2) { animation: fadeUp .55s .18s ease both; }
+.kpi-card:nth-child(3) { animation: fadeUp .55s .28s ease both; }
+.chart-card            { animation: fadeUp .55s .36s ease both; }
+.ai-card               { animation: fadeUp .55s .44s ease both; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+    .analytics-root { padding: 24px 20px; }
+    .bottom-grid { grid-template-columns: 1fr; }
+}
+
+/* ══════════════════════════════════════════════
+   DARK MODE — html.dark-mode
+   Style bleu profond, glassmorphism, blobs teal
+══════════════════════════════════════════════ */
+
+html.dark-mode .analytics-root {
+    background: #060f1e;
+}
+
+html.dark-mode .bg-blob-1 {
+    background: radial-gradient(circle, rgba(30,178,166,.18) 0%, transparent 70%);
+}
+html.dark-mode .bg-blob-2 {
+    background: radial-gradient(circle, rgba(13,100,180,.15) 0%, transparent 70%);
+}
+html.dark-mode .bg-blob-3 {
+    background: radial-gradient(circle, rgba(99,102,241,.08) 0%, transparent 65%);
+}
+
+/* ── Header ── */
+html.dark-mode .header-eyebrow {
+    color: #1eb2a6;
+}
+html.dark-mode .header-title {
+    color: #ffffff;
+}
+html.dark-mode .back-btn {
+    background: rgba(255,255,255,.06);
+    border-color: rgba(255,255,255,.1);
+    color: #c8d8e8;
+    box-shadow: none;
+}
+html.dark-mode .back-btn:hover {
+    background: rgba(30,178,166,.15);
+    border-color: rgba(30,178,166,.5);
+    color: #1eb2a6;
+    box-shadow: 0 4px 16px rgba(30,178,166,.15);
+}
+
+/* ── KPI Cards ── */
+html.dark-mode .kpi-card {
+    background: rgba(255,255,255,.04);
+    border-color: rgba(255,255,255,.08);
+    box-shadow: none;
+}
+html.dark-mode .kpi-card:hover {
+    box-shadow: 0 14px 40px rgba(0,0,0,.3);
+    border-color: rgba(255,255,255,.16);
+}
+html.dark-mode .kpi-users:hover    { border-color: rgba(30,178,166,.45); }
+html.dark-mode .kpi-messages:hover { border-color: rgba(13,100,180,.55); }
+html.dark-mode .kpi-groups:hover   { border-color: rgba(100,60,200,.45); }
+
+html.dark-mode .kpi-icon-teal   { background: rgba(30,178,166,.15); }
+html.dark-mode .kpi-icon-indigo { background: rgba(13,100,180,.18); }
+html.dark-mode .kpi-icon-amber  { background: rgba(100,60,200,.15); }
+
+html.dark-mode .kpi-value {
+    color: #ffffff;
+}
+html.dark-mode .kpi-label {
+    color: rgba(200,216,232,.5);
+}
+
+/* ── Chart Card ── */
+html.dark-mode .chart-card {
+    background: rgba(255,255,255,.04);
+    border-color: rgba(255,255,255,.08);
+    box-shadow: none;
+}
+html.dark-mode .chart-card:hover {
+    border-color: rgba(30,178,166,.3);
+    box-shadow: 0 10px 36px rgba(0,0,0,.25);
+}
+html.dark-mode .card-title {
+    color: #ffffff;
+}
+html.dark-mode .card-badge {
+    color: #1eb2a6;
+    background: rgba(30,178,166,.12);
+    border-color: rgba(30,178,166,.3);
+}
+
+/* ── AI Card ── */
+html.dark-mode .ai-card {
+    background: linear-gradient(135deg, #0d3a38 0%, #0d2a4a 60%, #060f1e 100%);
+    border-color: rgba(30,178,166,.25);
+    box-shadow: none;
+}
+html.dark-mode .ai-card:hover {
+    border-color: rgba(30,178,166,.5);
+    box-shadow: 0 16px 52px rgba(0,0,0,.35);
+}
+html.dark-mode .ai-orb-1 {
+    background: radial-gradient(circle, rgba(30,178,166,.25) 0%, transparent 70%);
+}
+html.dark-mode .ai-orb-2 {
+    background: radial-gradient(circle, rgba(13,100,180,.22) 0%, transparent 70%);
+}
+html.dark-mode .ai-badge {
+    color: #1eb2a6;
+    background: rgba(30,178,166,.12);
+    border-color: rgba(30,178,166,.3);
+}
+html.dark-mode .ai-title {
+    color: #ffffff;
+}
+html.dark-mode .ai-divider {
+    background: linear-gradient(90deg, #1eb2a6, transparent);
+}
+html.dark-mode .ai-text {
+    color: rgba(200,216,232,.8);
+}
+html.dark-mode .ai-dots span {
+    background: #1eb2a6;
+}
+</style>
+
+{% endblock %}

@@ -2016,6 +2016,13 @@ class HomeController extends AbstractController
     {
         return $this->render('reservations/my_reservations.html.twig');
     }
+    
+    #[Route('/dashboard-messenger', name: 'app_dashboard_messenger')]
+    #[IsGranted('ROLE_ADMIN')]
+    public function dashboardMessenger(): Response
+    {
+        return $this->render('messenger/dashboardMessenger.html.twig');
+    }
 
     #[Route('/offers-grid', name: 'app_offers_grid')]
     #[IsGranted('ROLE_AGENCY')]
