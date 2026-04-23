@@ -692,8 +692,19 @@ img { max-width: 100%; height: auto; }
     background: var(--bg-input); font-size: 13px;
     color: var(--text-primary); cursor: pointer;
     transition: all var(--transition); font-weight: 500;
+    border: 1px solid var(--border);
 }
 .cpd-tool-btn:hover { background: var(--bg-hover); }
+.cpd-tool-btn:disabled { opacity: 0.5; cursor: wait; }
+
+.unsplash-credit {
+    font-size: 11px; color: var(--text-muted);
+    padding: 4px 0; text-align: right;
+}
+.unsplash-credit a {
+    color: var(--accent); text-decoration: none;
+}
+.unsplash-credit a:hover { text-decoration: underline; }
 
 .cpd-submit-row {
     display: flex; justify-content: flex-end; gap: 12px;

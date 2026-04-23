@@ -53,11 +53,13 @@
             <div class="cpd-toolbar">
                 <span class="cpd-toolbar-label">Add to post:</span>
                 <label class="cpd-tool-btn">
-                    Photo
+                    📷 Photo
                     <input type="file" name="image" accept="image/*" style="display:none" 
                            onchange="previewImage(this)">
                 </label>
+                <button type="button" class="cpd-tool-btn" onclick="suggestImage()" id="suggestImgBtn">✨ AI Suggest</button>
             </div>
+            <div id="unsplashCredit" class="unsplash-credit" style="display:none"></div>
 
             {# ── SUBMIT ── #}
             <div class="cpd-submit-row">
@@ -71,29 +73,38 @@
 <script>
 // Location autocomplete
 let placeTimeout;
-document.getElementById('placeInput').addEventListener('input', function() {
+const placeInput = document.getElementById('placeInput');
+const placeDropdown = document.getElementById('placeDropdown');
+
+placeInput.addEventListener('input', function() {
     clearTimeout(placeTimeout);
     const q = this.value.trim();
-    if (q.length < 2) { document.getElementById('placeDropdown').style.display = 'none'; return; }
+    if (q.length < 3) { placeDropdown.style.display = 'none'; return; }
     placeTimeout = setTimeout(() => {
         fetch('/api/places/autocomplete?q=' + encodeURIComponent(q))
             .then(r => r.json())
             .then(results => {
-                const dd = document.getElementById('placeDropdown');
-                if (!results.length) { dd.style.display = 'none'; return; }
-                dd.innerHTML = results.map(p => 
-                    `<div class="cpd-place-option" onclick="selectPlace('${p.description.replace(/'/g,"\\'")}')">
+                if (!results.length) { placeDropdown.style.display = 'none'; return; }
+                placeDropdown.innerHTML = results.map(p => 
+                    `<div class="cpd-place-option" onclick="selectPlace('${p.mainText.replace(/'/g,"\\'")}')">
                         <strong>${p.mainText}</strong><span>${p.secondaryText}</span>
                     </div>`
                 ).join('');
-                dd.style.display = 'block';
+                placeDropdown.style.display = 'block';
             });
-    }, 400);
+    }, 600);
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', function(e) {
+    if (!placeInput.contains(e.target) && !placeDropdown.contains(e.target)) {
+        placeDropdown.style.display = 'none';
+    }
 });
 
 function selectPlace(name) {
-    document.getElementById('placeInput').value = name;
-    document.getElementById('placeDropdown').style.display = 'none';
+    placeInput.value = name;
+    placeDropdown.style.display = 'none';
 }
 
 function previewImage(input) {
@@ -110,6 +121,52 @@ function previewImage(input) {
 function removeImagePreview() {
     document.getElementById('imagePreview').src = '';
     document.getElementById('imagePreviewBox').style.display = 'none';
+    const credit = document.getElementById('unsplashCredit');
+    if (credit) credit.style.display = 'none';
+}
+
+// Unsplash AI image suggestion
+function suggestImage() {
+    const place = document.getElementById('placeInput').value.trim();
+    const content = document.querySelector('.cpd-textarea').value.trim();
+    const query = place || content.split(' ').slice(0, 5).join(' ');
+
+    if (!query || query.length < 2) {
+        showToast('Enter a location or some text first so I know what to search for!', 'info');
+        return;
+    }
+
+    const btn = document.getElementById('suggestImgBtn');
+    btn.textContent = '⏳ Searching...';
+    btn.disabled = true;
+
+    fetch('/api/unsplash/' + encodeURIComponent(query))
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = '✨ AI Suggest';
+            btn.disabled = false;
+
+            if (data.error || !data.url) {
+                showToast('No matching photo found. Try a different location!', 'info');
+                return;
+            }
+
+            // Show the image preview
+            document.getElementById('imagePreview').src = data.url;
+            document.getElementById('imagePreviewBox').style.display = 'block';
+
+            // Show photographer credit
+            const credit = document.getElementById('unsplashCredit');
+            credit.innerHTML = `Photo by <a href="${data.photographerUrl}?utm_source=rehletna&utm_medium=referral" target="_blank">${data.photographer}</a> on <a href="https://unsplash.com?utm_source=rehletna&utm_medium=referral" target="_blank">Unsplash</a>`;
+            credit.style.display = 'block';
+
+            showToast('Image suggestion loaded! You can still upload your own photo to replace it.', 'success');
+        })
+        .catch(() => {
+            btn.textContent = '✨ AI Suggest';
+            btn.disabled = false;
+            showToast('Could not reach the image service. Please try again.', 'error');
+        });
 }
 </script>
 {% endblock %}
