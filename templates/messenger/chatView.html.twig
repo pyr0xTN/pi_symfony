@@ -3856,67 +3856,7 @@ function formatTime(s) {
 }
 
 let currentMercureSource = null;
-/*function subscribeToConversationUpdates(convId) {
-    if (currentMercureSource) {
-        currentMercureSource.close();
-    }
 
-    const topic = `https://127.0.0.1/conversations/${convId}`;
-    const url = new URL('http://127.0.0.1:3000/.well-known/mercure');
-    url.searchParams.append('topic', topic);
-
-    currentMercureSource = new EventSource(url);
-
-    currentMercureSource.onopen = () => {
-        console.log("✅ CONNEXION ÉTABLIE avec Mercure pour la conv " + convId);
-    };
-
-    currentMercureSource.onmessage = event => {
-        console.log("📩 SIGNAL REÇU ! Données :", event.data);
-        const data = JSON.parse(event.data);
-        if (data.new_message) {
-            loadMessages(convId);
-
-            // ── Mise à jour de la sidebar ──
-            const sideItem = document.querySelector(`.conv-item[data-id="${convId}"]`);
-            if (sideItem) {
-                // 1. Mettre à jour le preview
-                if (data.content) {
-                    const preview = sideItem.querySelector('.conv-preview');
-                    if (preview) preview.textContent = data.content.substring(0, 35) + '...';
-                }
-
-                // 2. Mettre à jour l'heure
-                if (data.time) {
-                    const timeEl = sideItem.querySelector('.conv-time');
-                    if (timeEl) timeEl.textContent = data.time;
-                }
-
-                // 3. Remonter la conversation en haut
-                moveItemToTop(convId);
-
-                // 4. Badge "non lu" si c'est pas notre propre message
-                if (!data.isMine) {
-                    sideItem.classList.add('has-unread');
-                    let badge = sideItem.querySelector('.conv-unread-badge');
-                    if (!badge) {
-                        badge = document.createElement('span');
-                        badge.className = 'conv-unread-badge';
-                        sideItem.querySelector('.conv-row-bottom').appendChild(badge);
-                    }
-                    const current = parseInt(badge.textContent) || 0;
-                    badge.textContent = current + 1;
-                }
-            }
-        }
-    };
-
-    currentMercureSource.onerror = (e) => {
-        console.error("❌ ERREUR MERCURE : La connexion a été coupée.");
-    };
-}*/
-
-// Ajouter cette fonction
 function subscribeToAllConversations() {
     const items = document.querySelectorAll('.conv-item');
     

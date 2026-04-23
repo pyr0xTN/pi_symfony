@@ -1600,6 +1600,9 @@
             {% if is_granted('ROLE_AGENCY') %}
                 <button class="side-menu-btn" data-action="offers-grid">📋 {{ 'main.menu.offers_grid'|trans }}</button>
             {% endif %}
+            {% if is_granted('ROLE_ADMIN') %}
+                <button class="side-menu-btn" data-action="dashboardMessenger">📊 {{ 'main.menu.dashboard_messenger'|trans }}</button>
+            {% endif %}
         </div>
     </div>
     
