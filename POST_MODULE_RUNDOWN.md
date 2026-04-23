@@ -9,6 +9,7 @@
 - [Feature 5: Custom Toast Validation](#5--custom-toast-form-validation)
 - [Feature 6: Explore Map with Jitter](#6--explore-map-with-marker-jitter-leafletjs)
 - [Feature 7: AI Travel Assistant](#7--ai-travel-assistant-chat-groq-api)
+- [Feature 8: AI Image Suggestion](#8--ai-image-suggestion-unsplash-api)
 - [Environment Variables](#-environment-variables)
 
 ---
@@ -143,6 +144,9 @@
 | `templates/front/map.html.twig` | Leaflet map initialization + jitter formula |
 | `src/Controller/ApiController.php` (via MapController) | `GET /api/map/markers` endpoint |
 | `public/css/app.css` | `.map-view-root`, `.map-header`, `.map-popup` styling |
+| `templates/front/layout.html.twig` | Added `data-turbo="false"` to the map FAB to ensure Leaflet renders correctly |
+
+**Turbo Compatibility:** To avoid Leaflet rendering in a 0x0 container during partial page swaps, Turbo is disabled specifically for the map link, forcing a clean initialization.
 
 **Jitter formula:**
 ```js
@@ -164,6 +168,26 @@ L.marker([m.lat + jitterLat, m.lon + jitterLon])
 | `src/Controller/ApiController.php` | `POST /api/chat` and `POST /api/chat/clear` endpoints |
 | `templates/front/layout.html.twig` | Chat panel HTML with input/send button |
 | `public/js/app.js` | `sendChatMessage()`, `toggleChatPanel()` functions |
+
+---
+
+### 8. ✨ AI Image Suggestion (Unsplash API)
+
+**What it does:** Help users find perfect cover photos for their posts using AI-powered search on Unsplash.
+
+**Files involved:**
+| File | Role |
+|---|---|
+| `src/Service/UnsplashService.php` | Fetches landscape travel photos based on location/content |
+| `src/Controller/ApiController.php` | Added `GET /api/unsplash/{query}` endpoint |
+| `templates/front/create_post.html.twig` | Added "AI Suggest" button and auto-assignment logic |
+| `public/css/app.css` | Added styles for photographer attribution and loading states |
+
+**How it works:**
+1. User clicks "✨ AI Suggest" in the post toolbar.
+2. The app uses the current Location (or post content keywords) as a search query.
+3. Fetch returns a high-res travel photo from Unsplash.
+4. Photo is instantly applied to the preview with mandatory photographer attribution.
 
 ---
 
