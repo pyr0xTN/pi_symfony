@@ -253,6 +253,269 @@
 }
 .ai-apply-btn:hover { background: rgba(15,165,162,0.26); }
 
+.ai-place-hints {
+    margin-top: 8px;
+}
+
+.ai-place-hints-title {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4f6d87;
+    margin-bottom: 6px;
+}
+
+.ai-place-chip {
+    display: inline-block;
+    margin: 3px 6px 3px 0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,165,162,0.35);
+    background: rgba(15,165,162,0.12);
+    color: #0b5c75;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ai-place-chip:hover {
+    background: rgba(15,165,162,0.22);
+}
+
+.ai-place-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 20, 32, 0.62);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3500;
+    padding: 18px;
+}
+
+.ai-place-modal-overlay.show {
+    display: flex;
+}
+
+.ai-place-modal {
+    width: min(920px, 100%);
+    max-height: min(84vh, 760px);
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 18px 60px rgba(2, 24, 49, 0.25);
+    border: 1px solid rgba(126,152,178,0.28);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ai-place-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(126,152,178,0.25);
+}
+
+.ai-place-modal-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0f3557;
+}
+
+.ai-place-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(126,152,178,0.35);
+    background: #fff;
+    color: #1a486f;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.ai-place-modal-body {
+    overflow: auto;
+    padding: 16px;
+}
+
+.ai-place-modal-state {
+    margin: 0;
+    color: #5d7590;
+    font-size: 13px;
+}
+
+.ai-place-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 12px;
+}
+
+.ai-place-gallery-card {
+    display: block;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(126,152,178,0.26);
+    background: #fff;
+    text-decoration: none;
+}
+
+.ai-place-gallery-card img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+}
+
+.ai-place-gallery-caption {
+    display: block;
+    padding: 8px;
+    color: #214b73;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.ai-place-gallery-card-btn {
+    position: relative;
+    display: block;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(126,152,178,0.26);
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.ai-place-gallery-card-btn:hover {
+    border-color: rgba(15,165,162,0.5);
+    box-shadow: 0 4px 12px rgba(15,165,162,0.2);
+}
+
+.ai-place-gallery-card-btn img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+}
+
+.ai-place-gallery-card-actions {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 20, 32, 0.75);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+}
+
+.ai-place-gallery-card-btn:hover .ai-place-gallery-card-actions {
+    display: flex;
+}
+
+.ai-place-gallery-card-save-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #0fa5a2, #1788b6);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.ai-place-gallery-card-save-btn:hover {
+    transform: scale(1.05);
+}
+
+.ai-place-gallery-card-view-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.4);
+    background: transparent;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.ai-place-gallery-card-btn {
+    position: relative;
+    display: block;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(126,152,178,0.26);
+    background: #fff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-place-gallery-card-btn:hover {
+    border-color: rgba(15,165,162,0.5);
+    box-shadow: 0 4px 12px rgba(15,165,162,0.2);
+}
+
+.ai-place-gallery-card-btn img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    display: block;
+}
+
+.ai-place-gallery-card-actions {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 20, 32, 0.75);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+}
+
+.ai-place-gallery-card-btn:hover .ai-place-gallery-card-actions {
+    display: flex;
+}
+
+.ai-place-gallery-card-save-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #0fa5a2, #1788b6);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.ai-place-gallery-card-save-btn:hover {
+    transform: scale(1.05);
+}
+
+.ai-place-gallery-card-view-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.4);
+    background: transparent;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
 .ai-chat-chips {
     padding: 4px 12px 6px;
     display: flex;
@@ -323,6 +586,13 @@ body.dark-mode .ai-chat-input { background: rgba(255,255,255,0.05); color: #c8df
 body.dark-mode .ai-chip { background: rgba(255,255,255,0.06); color: #8db4d7; border-color: rgba(255,255,255,0.1); }
 body.dark-mode .ai-chat-chips { border-color: rgba(255,255,255,0.07); }
 body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
+body.dark-mode .ai-place-modal { background: #121824; border-color: rgba(255,255,255,0.08); }
+body.dark-mode .ai-place-modal-title { color: #dbe9f5; }
+body.dark-mode .ai-place-modal-head { border-bottom-color: rgba(255,255,255,0.09); }
+body.dark-mode .ai-place-modal-close { background: #151d2b; color: #dbe9f5; border-color: rgba(255,255,255,0.15); }
+body.dark-mode .ai-place-modal-state { color: #9bb2c7; }
+body.dark-mode .ai-place-gallery-card-btn { background: #151d2b; border-color: rgba(255,255,255,0.12); }
+body.dark-mode .ai-place-gallery-caption { color: #d5e5f3; }
 
 
 
@@ -1298,6 +1568,30 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         .activity-modal-value {
             color: #174a78;
             font-weight: 700;
+        }
+
+        .activity-modal-location-link {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            font: inherit;
+            color: #0b5da1;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .activity-modal-location-link:hover {
+            color: #063c69;
+        }
+
+        .activity-modal-location-link.is-disabled {
+            color: #6a8198;
+            text-decoration: none;
+            cursor: default;
+            pointer-events: none;
         }
 
         .activity-guide-box {
@@ -2479,6 +2773,295 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
     <script src="https://js.stripe.com/v3/"></script>
     <script>
 
+       // ── Global Place Gallery Helpers ──
+    var PLACE_IMAGES_URL = '{{ path('app_activities_ai_assistant_place_images') }}';
+    var placeModal, placeModalTitle, placeModalBody, placeModalClose;
+
+    function initPlaceModalElements() {
+        if (!placeModal) {
+            placeModal = document.getElementById('aiPlaceModal');
+            placeModalTitle = document.getElementById('aiPlaceModalTitle');
+            placeModalBody = document.getElementById('aiPlaceModalBody');
+            placeModalClose = document.getElementById('aiPlaceModalClose');
+        }
+    }
+
+    function extractLikelyPlaces(text) {
+        var source = String(text || '').trim();
+        if (!source) {
+            return [];
+        }
+
+        var matches = source.match(/\b[A-Z][A-Za-zÀ-ÖØ-öø-ÿ''.-]*(?:\s+(?:[A-Z][A-Za-zÀ-ÖØ-öø-ÿ''.-]*|of|de|du|des|la|le|el|al|the|and)){0,4}\b/g) || [];
+        var skip = {
+            title: true,
+            location: true,
+            description: true,
+            category: true,
+            duration: true,
+            season: true,
+            price: true,
+            activity: true,
+            guided: true,
+            experience: true,
+            day: true
+        };
+
+        var unique = [];
+        var seen = {};
+        matches.forEach(function (name) {
+            var normalized = String(name || '').trim().replace(/\s+/g, ' ');
+            var key = normalized.toLowerCase();
+            if (!normalized || seen[key] || skip[key]) {
+                return;
+            }
+            if (normalized.length < 4) {
+                return;
+            }
+            seen[key] = true;
+            unique.push(normalized);
+        });
+
+        return unique.slice(0, 6);
+    }
+
+    function closePlaceModal() {
+        if (!placeModal) {
+            return;
+        }
+        placeModal.classList.remove('show');
+        placeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderPlaceGalleryState(message, withOpenGoogleLink, placeName) {
+        if (!placeModalBody) {
+            return;
+        }
+
+        placeModalBody.innerHTML = '';
+        var state = document.createElement('p');
+        state.className = 'ai-place-modal-state';
+        state.textContent = message;
+        placeModalBody.appendChild(state);
+
+        if (withOpenGoogleLink) {
+            var link = document.createElement('a');
+            link.className = 'ai-apply-btn';
+            link.href = 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(placeName);
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.marginTop = '10px';
+            link.style.display = 'inline-block';
+            link.textContent = 'Open Google Images';
+            placeModalBody.appendChild(link);
+        }
+    }
+
+    function mimeTypeToExtension(mimeType) {
+        var type = String(mimeType || '').toLowerCase();
+        if (type.indexOf('png') !== -1) {
+            return 'png';
+        }
+        if (type.indexOf('webp') !== -1) {
+            return 'webp';
+        }
+        if (type.indexOf('gif') !== -1) {
+            return 'gif';
+        }
+        return 'jpg';
+    }
+
+    async function applyImageDataToActivityInput(imageData) {
+        var imageInput = document.getElementById('create-image');
+        if (!imageInput || !imageData) {
+            return false;
+        }
+
+        if (typeof DataTransfer === 'undefined') {
+            return false;
+        }
+
+        try {
+            var blobResponse = await fetch(imageData);
+            var blob = await blobResponse.blob();
+            var extension = mimeTypeToExtension(blob.type);
+            var fileName = 'activity_ai_' + Date.now() + '.' + extension;
+            var imageFile = new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+
+            var dataTransfer = new DataTransfer();
+            dataTransfer.items.add(imageFile);
+            imageInput.files = dataTransfer.files;
+            imageInput.dispatchEvent(new Event('change', { bubbles: true }));
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async function saveImageAsActivityCover(imageUrl) {
+        var imgUrl = String(imageUrl || '').trim();
+        if (!imgUrl) {
+            return;
+        }
+
+        var createForm = document.querySelector('.activity-create-form');
+        if (!createForm) {
+            alert('Activity form not found. Open the create activity form first.');
+            return;
+        }
+
+        try {
+            var response = await fetch('{{ path('app_activities_ai_assistant_save_image') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    imageUrl: imgUrl
+                })
+            });
+
+            var data = await response.json().catch(function () { return {}; });
+            if (!response.ok || !data || data.success === false) {
+                alert('Could not save image: ' + (data && data.message ? data.message : ('Status ' + response.status)));
+                return;
+            }
+
+            sessionStorage.setItem('activitySelectedImageData', data.imageData);
+            await applyImageDataToActivityInput(data.imageData);
+            var previewImg = document.querySelector('.activity-create-cover-preview');
+            if (previewImg) {
+                previewImg.src = data.imageData;
+            }
+
+            var existingPreview = document.querySelector('.activity-create-cover-preview-container');
+            if (!existingPreview && createForm) {
+                var previewContainer = document.createElement('div');
+                previewContainer.className = 'activity-create-cover-preview-container';
+                previewContainer.style.marginBottom = '15px';
+
+                var label = document.createElement('label');
+                label.className = 'activity-create-label';
+                label.textContent = 'Activity image';
+
+                var imgContainer = document.createElement('div');
+                imgContainer.style.borderRadius = '12px';
+                imgContainer.style.overflow = 'hidden';
+                imgContainer.style.marginTop = '8px';
+
+                var img = document.createElement('img');
+                img.className = 'activity-create-cover-preview';
+                img.src = data.imageData;
+                img.style.width = '100%';
+                img.style.height = 'auto';
+                img.style.maxHeight = '200px';
+                img.style.objectFit = 'cover';
+
+                imgContainer.appendChild(img);
+                previewContainer.appendChild(label);
+                previewContainer.appendChild(imgContainer);
+                createForm.insertBefore(previewContainer, createForm.firstChild);
+            }
+
+            alert('Image selected for Activity image field.');
+            closePlaceModal();
+        } catch (error) {
+            alert('Error saving image: ' + (error && error.message ? error.message : 'Unknown error'));
+        }
+    }
+
+    async function openPlaceGallery(placeName) {
+        var place = String(placeName || '').trim();
+        initPlaceModalElements();
+        if (!place || !placeModal || !placeModalTitle || !placeModalBody) {
+            return;
+        }
+
+        placeModalTitle.textContent = place + ' - images';
+        placeModal.classList.add('show');
+        placeModal.setAttribute('aria-hidden', 'false');
+        renderPlaceGalleryState('Loading images...', false, place);
+
+        try {
+            var response = await fetch(PLACE_IMAGES_URL + '?query=' + encodeURIComponent(place), {
+                headers: { 'Accept': 'application/json' }
+            });
+            var data = await response.json().catch(function () { return {}; });
+
+            if (!response.ok || !data || data.success === false) {
+                throw new Error(data && data.message ? data.message : ('API error ' + response.status));
+            }
+
+            var images = Array.isArray(data.images) ? data.images : [];
+            if (images.length === 0) {
+                renderPlaceGalleryState('No images found for this place.', true, place);
+                return;
+            }
+
+            placeModalBody.innerHTML = '';
+            var grid = document.createElement('div');
+            grid.className = 'ai-place-gallery';
+
+            images.forEach(function (item) {
+                var imageUrl = item && item.imageUrl ? String(item.imageUrl) : '';
+                var thumb = item && item.thumbnailUrl ? String(item.thumbnailUrl) : imageUrl;
+                if (!imageUrl || !thumb) {
+                    return;
+                }
+
+                var cardBtn = document.createElement('button');
+                cardBtn.type = 'button';
+                cardBtn.className = 'ai-place-gallery-card-btn';
+
+                var img = document.createElement('img');
+                img.src = thumb;
+                img.alt = item && item.title ? String(item.title) : (place + ' image');
+                img.loading = 'lazy';
+
+                var actions = document.createElement('div');
+                actions.className = 'ai-place-gallery-card-actions';
+
+                var saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'ai-place-gallery-card-save-btn';
+                saveBtn.textContent = '\ud83d\udcbe Save as cover';
+                saveBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveImageAsActivityCover(thumb);
+                });
+
+                var viewLink = document.createElement('a');
+                viewLink.className = 'ai-place-gallery-card-view-btn';
+                viewLink.href = imageUrl;
+                viewLink.target = '_blank';
+                viewLink.rel = 'noopener noreferrer';
+                viewLink.textContent = '\ud83d\udd0d View';
+                viewLink.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                actions.appendChild(saveBtn);
+                actions.appendChild(viewLink);
+
+                cardBtn.appendChild(img);
+                cardBtn.appendChild(actions);
+
+                var caption = document.createElement('span');
+                caption.className = 'ai-place-gallery-caption';
+                caption.textContent = item && item.title ? String(item.title) : place;
+                cardBtn.appendChild(caption);
+
+                grid.appendChild(cardBtn);
+            });
+
+            placeModalBody.appendChild(grid);
+        } catch (error) {
+            renderPlaceGalleryState('Could not load images right now. ' + (error && error.message ? error.message : ''), true, place);
+        }
+    }
+
        // ── AI Activity Assistant Chatbot ──
 (function () {
     var AI_ASSISTANT_URL = '{{ path('app_activities_ai_assistant_reply') }}';
@@ -2498,7 +3081,172 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         inputEl  = document.getElementById('aiChatInput');
         sendBtn  = document.getElementById('aiChatSend');
         chipsEl  = document.getElementById('aiChatChips');
+        initPlaceModalElements();
         return !!(fab && chatWin && closeBtn && msgBox && inputEl && sendBtn && chipsEl);
+    }
+
+    function extractLikelyPlaces(text) {
+        var source = String(text || '').trim();
+        if (!source) {
+            return [];
+        }
+
+        var matches = source.match(/\b[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’.-]*(?:\s+(?:[A-Z][A-Za-zÀ-ÖØ-öø-ÿ'’.-]*|of|de|du|des|la|le|el|al|the|and)){0,4}\b/g) || [];
+        var skip = {
+            title: true,
+            location: true,
+            description: true,
+            category: true,
+            duration: true,
+            season: true,
+            price: true,
+            activity: true,
+            guided: true,
+            experience: true
+        };
+
+        var unique = [];
+        var seen = {};
+        matches.forEach(function (name) {
+            var normalized = String(name || '').trim().replace(/\s+/g, ' ');
+            var key = normalized.toLowerCase();
+            if (!normalized || seen[key] || skip[key]) {
+                return;
+            }
+            if (normalized.length < 4) {
+                return;
+            }
+            seen[key] = true;
+            unique.push(normalized);
+        });
+
+        return unique.slice(0, 6);
+    }
+
+    function createGoogleImagesSearchUrl(placeName) {
+        return 'https://www.google.com/search?tbm=isch&q=' + encodeURIComponent(placeName);
+    }
+
+    function closePlaceModal() {
+        if (!placeModal) {
+            return;
+        }
+        placeModal.classList.remove('show');
+        placeModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderPlaceGalleryState(message, withOpenGoogleLink, placeName) {
+        if (!placeModalBody) {
+            return;
+        }
+
+        placeModalBody.innerHTML = '';
+        var state = document.createElement('p');
+        state.className = 'ai-place-modal-state';
+        state.textContent = message;
+        placeModalBody.appendChild(state);
+
+        if (withOpenGoogleLink) {
+            var link = document.createElement('a');
+            link.className = 'ai-apply-btn';
+            link.href = createGoogleImagesSearchUrl(placeName);
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.style.marginTop = '10px';
+            link.style.display = 'inline-block';
+            link.textContent = 'Open Google Images';
+            placeModalBody.appendChild(link);
+        }
+    }
+
+    async function openPlaceGallery(placeName) {
+        var place = String(placeName || '').trim();
+        if (!place || !placeModal || !placeModalTitle || !placeModalBody) {
+            return;
+        }
+
+        placeModalTitle.textContent = place + ' - images';
+        placeModal.classList.add('show');
+        placeModal.setAttribute('aria-hidden', 'false');
+        renderPlaceGalleryState('Loading images...', false, place);
+
+        try {
+            var response = await fetch(PLACE_IMAGES_URL + '?query=' + encodeURIComponent(place), {
+                headers: { 'Accept': 'application/json' }
+            });
+            var data = await response.json().catch(function () { return {}; });
+
+            if (!response.ok || !data || data.success === false) {
+                throw new Error(data && data.message ? data.message : ('API error ' + response.status));
+            }
+
+            var images = Array.isArray(data.images) ? data.images : [];
+            if (images.length === 0) {
+                renderPlaceGalleryState('No images found for this place.', true, place);
+                return;
+            }
+
+            placeModalBody.innerHTML = '';
+            var grid = document.createElement('div');
+            grid.className = 'ai-place-gallery';
+
+            images.forEach(function (item) {
+                var imageUrl = item && item.imageUrl ? String(item.imageUrl) : '';
+                var thumb = item && item.thumbnailUrl ? String(item.thumbnailUrl) : imageUrl;
+                if (!imageUrl || !thumb) {
+                    return;
+                }
+
+                var cardBtn = document.createElement('button');
+                cardBtn.type = 'button';
+                cardBtn.className = 'ai-place-gallery-card-btn';
+
+                var img = document.createElement('img');
+                img.src = thumb;
+                img.alt = item && item.title ? String(item.title) : (place + ' image');
+                img.loading = 'lazy';
+
+                var actions = document.createElement('div');
+                actions.className = 'ai-place-gallery-card-actions';
+
+                var saveBtn = document.createElement('button');
+                saveBtn.type = 'button';
+                saveBtn.className = 'ai-place-gallery-card-save-btn';
+                saveBtn.textContent = '\ud83d\udcbe Save as cover';
+                saveBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveImageAsActivityCover(thumb);
+                });
+
+                var viewLink = document.createElement('a');
+                viewLink.className = 'ai-place-gallery-card-view-btn';
+                viewLink.href = imageUrl;
+                viewLink.target = '_blank';
+                viewLink.rel = 'noopener noreferrer';
+                viewLink.textContent = '\ud83d\udd0d View';
+                viewLink.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                });
+
+                actions.appendChild(saveBtn);
+                actions.appendChild(viewLink);
+
+                cardBtn.appendChild(img);
+                cardBtn.appendChild(actions);
+
+                var caption = document.createElement('span');
+                caption.className = 'ai-place-gallery-caption';
+                caption.textContent = item && item.title ? String(item.title) : place;
+                cardBtn.appendChild(caption);
+
+                grid.appendChild(cardBtn);
+            });
+
+            placeModalBody.appendChild(grid);
+        } catch (error) {
+            renderPlaceGalleryState('Could not load images right now. ' + (error && error.message ? error.message : ''), true, place);
+        }
     }
 
     function setFabVisibility() {
@@ -2558,6 +3306,36 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                 field: match[1].toLowerCase(),
                 value: match[2]
             });
+        }
+
+        if (role === 'ai') {
+            var descriptionSuggestion = suggestions.find(function (item) {
+                return item.field === 'description' && item.value;
+            });
+            var placeCandidates = extractLikelyPlaces(descriptionSuggestion ? descriptionSuggestion.value : cleanText);
+            if (placeCandidates.length > 0) {
+                var hintsWrap = document.createElement('div');
+                hintsWrap.className = 'ai-place-hints';
+
+                var hintsTitle = document.createElement('span');
+                hintsTitle.className = 'ai-place-hints-title';
+                hintsTitle.textContent = 'Suggested places from this description:';
+                hintsWrap.appendChild(hintsTitle);
+
+                placeCandidates.forEach(function (placeName) {
+                    var chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'ai-place-chip';
+                    chip.textContent = placeName;
+                    chip.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        openPlaceGallery(placeName);
+                    });
+                    hintsWrap.appendChild(chip);
+                });
+
+                div.appendChild(hintsWrap);
+            }
         }
         
         // Add buttons for each suggestion
@@ -2695,6 +3473,16 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         closeBtn.addEventListener('click', function () {
             chatWin.classList.remove('open');
         });
+        if (placeModalClose) {
+            placeModalClose.addEventListener('click', closePlaceModal);
+        }
+        if (placeModal) {
+            placeModal.addEventListener('click', function (event) {
+                if (event.target === placeModal) {
+                    closePlaceModal();
+                }
+            });
+        }
         chipsEl.addEventListener('click', function (e) {
             var chip = e.target.closest('.ai-chip');
             if (!chip) return;
@@ -2716,6 +3504,7 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && chatWin) chatWin.classList.remove('open');
+            if (e.key === 'Escape') closePlaceModal();
         });
 
         document.addEventListener('rehletna:activity-create-open', setFabVisibility);
@@ -2806,6 +3595,16 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
             }
         };
 
+        window.openActivityLocationMap = function (locationValue) {
+            var location = String(locationValue || '').trim();
+            if (!location || location === '-') {
+                return;
+            }
+
+            var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location);
+            window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+        };
+
         window.closeActivityEditModal = function () {
             var editModalOverlay = document.querySelector('.activity-edit-overlay');
             if (editModalOverlay) {
@@ -2815,10 +3614,24 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
 
         window.closeActivityCreateModal = function () {
             var createModalOverlay = document.querySelector('.activity-create-overlay');
+            var createForm = document.querySelector('.js-activity-create-form');
             if (createModalOverlay) {
                 createModalOverlay.classList.remove('show');
                 document.dispatchEvent(new Event('rehletna:activity-create-close'));
             }
+            if (createForm) {
+                var previewContainer = createForm.querySelector('.activity-create-cover-preview-container');
+                if (previewContainer) {
+                    previewContainer.remove();
+                }
+
+                var imageInput = createForm.querySelector('#create-image');
+                if (imageInput) {
+                    imageInput.value = '';
+                }
+            }
+            sessionStorage.removeItem('activitySelectedImageData');
+            sessionStorage.removeItem('activityCoverImage');
         };
 
         window.closeReservationsModal = function () {
@@ -3033,6 +3846,55 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
             }
         };
 
+        function renderActivityDescriptionWithPlaces(element, text) {
+            if (!element) {
+                return;
+            }
+
+            element.innerHTML = '';
+            var descText = String(text || '').trim();
+            if (!descText) {
+                element.textContent = '';
+                return;
+            }
+
+            var placeCandidates = extractLikelyPlaces(descText);
+            if (placeCandidates.length === 0) {
+                element.textContent = descText;
+                return;
+            }
+
+            var textNode = document.createTextNode(descText);
+            element.appendChild(textNode);
+
+            if (placeCandidates.length > 0) {
+                var hintsWrap = document.createElement('div');
+                hintsWrap.className = 'ai-place-hints';
+                hintsWrap.style.marginTop = '12px';
+
+                var hintsTitle = document.createElement('span');
+                hintsTitle.className = 'ai-place-hints-title';
+                hintsTitle.textContent = 'Click places to see images:';
+                hintsWrap.appendChild(hintsTitle);
+
+                placeCandidates.forEach(function (placeName) {
+                    var chip = document.createElement('button');
+                    chip.type = 'button';
+                    chip.className = 'ai-place-chip';
+                    chip.textContent = placeName;
+                    chip.addEventListener('click', function (event) {
+                        event.preventDefault();
+                        if (window.openPlaceGallery) {
+                            window.openPlaceGallery(placeName);
+                        }
+                    });
+                    hintsWrap.appendChild(chip);
+                });
+
+                element.appendChild(hintsWrap);
+            }
+        }
+
         window.openActivityModal = function (button) {
             var activityModalOverlay = document.querySelector('.activity-modal-overlay');
             var activityModalReserve = document.querySelector('.activity-modal-reserve');
@@ -3065,7 +3927,8 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                 activityModalImage.alt = button.dataset.title || 'Activity';
             }
             if (activityModalDescription) {
-                activityModalDescription.textContent = button.dataset.description || '';
+                var descriptionText = button.dataset.description || '';
+                renderActivityDescriptionWithPlaces(activityModalDescription, descriptionText);
             }
             if (activityModalGuideImage) {
                 activityModalGuideImage.src = button.dataset.guideImage || '';
@@ -3076,7 +3939,20 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
             }
 
             if (activityModalFields.location) {
-                activityModalFields.location.textContent = button.dataset.location || '-';
+                var locationText = button.dataset.location || '-';
+                activityModalFields.location.textContent = locationText;
+
+                if (String(locationText).trim() && locationText !== '-') {
+                    activityModalFields.location.classList.remove('is-disabled');
+                    activityModalFields.location.setAttribute('title', 'Open on map');
+                    activityModalFields.location.onclick = function () {
+                        window.openActivityLocationMap(locationText);
+                    };
+                } else {
+                    activityModalFields.location.classList.add('is-disabled');
+                    activityModalFields.location.removeAttribute('title');
+                    activityModalFields.location.onclick = null;
+                }
             }
             if (activityModalFields.category) {
                 activityModalFields.category.textContent = button.dataset.category || '-';
@@ -3153,6 +4029,16 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
             }
 
             createForm.reset();
+            var existingPreview = createForm.querySelector('.activity-create-cover-preview-container');
+            if (existingPreview) {
+                existingPreview.remove();
+            }
+            var imageInput = createForm.querySelector('#create-image');
+            if (imageInput) {
+                imageInput.value = '';
+            }
+            sessionStorage.removeItem('activitySelectedImageData');
+            sessionStorage.removeItem('activityCoverImage');
             createModalOverlay.classList.add('show');
             document.dispatchEvent(new Event('rehletna:activity-create-open'));
         };
@@ -4277,7 +5163,7 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                     <div class="activity-modal-grid">
                         <div class="activity-modal-item">
                             <span class="activity-modal-label">Location</span>
-                            <span class="activity-modal-value js-activity-modal-location"></span>
+                            <button type="button" class="activity-modal-value activity-modal-location-link js-activity-modal-location is-disabled" title="Open on map"></button>
                         </div>
                         <div class="activity-modal-item">
                             <span class="activity-modal-label">Category</span>
@@ -4315,6 +5201,11 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                             <span class="activity-modal-label">Guide</span>
                             <p class="activity-guide-name js-activity-modal-guide-name"></p>
                         </div>
+                    </div>
+
+                    <div class="activity-modal-extra-images js-activity-modal-extra-images" style="display: none;">
+                        <span class="activity-modal-label">More Images</span>
+                        <div class="activity-modal-extra-grid js-activity-modal-extra-grid"></div>
                     </div>
 
                     <section class="activity-review-shell">
@@ -4576,6 +5467,7 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                 <div class="activity-create-field full">
                     <label class="activity-create-label" for="create-image">Activity image</label>
                     <input class="activity-create-input" id="create-image" type="file" name="image" accept="image/*">
+                    <input type="hidden" id="create-ai-images" name="ai_images" value="[]">
                 </div>
 
                 <div class="activity-create-field full">
@@ -4635,6 +5527,18 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         <button class="ai-chat-send" id="aiChatSend" aria-label="Send">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
         </button>
+    </div>
+</div>
+
+<div class="ai-place-modal-overlay" id="aiPlaceModal" aria-hidden="true">
+    <div class="ai-place-modal" role="dialog" aria-modal="true" aria-labelledby="aiPlaceModalTitle">
+        <div class="ai-place-modal-head">
+            <h3 class="ai-place-modal-title" id="aiPlaceModalTitle">Place images</h3>
+            <button type="button" class="ai-place-modal-close" id="aiPlaceModalClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="ai-place-modal-body" id="aiPlaceModalBody">
+            <p class="ai-place-modal-state">Select a suggested place to load images.</p>
+        </div>
     </div>
 </div>
 

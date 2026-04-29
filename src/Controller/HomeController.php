@@ -391,6 +391,29 @@ class HomeController extends AbstractController
         $places = (int) $request->request->get('places', 0);
         $image = trim((string) $request->request->get('image', ''));
         $uploadedImage = $request->files->get('image');
+        $aiImagesRaw = trim((string) $request->request->get('ai_images', ''));
+        $aiImages = [];
+
+        if ($aiImagesRaw !== '') {
+            $decodedAiImages = json_decode($aiImagesRaw, true);
+            if (is_array($decodedAiImages)) {
+                foreach ($decodedAiImages as $candidateUrl) {
+                    $url = trim((string) $candidateUrl);
+                    if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+                        continue;
+                    }
+                    if (!str_starts_with($url, 'http://') && !str_starts_with($url, 'https://')) {
+                        continue;
+                    }
+                    if (!in_array($url, $aiImages, true)) {
+                        $aiImages[] = $url;
+                    }
+                    if (count($aiImages) >= 12) {
+                        break;
+                    }
+                }
+            }
+        }
 
         if ($title === '' || $description === '' || $location === '') {
             $this->addFlash('error', 'Title, description and location are required.');
@@ -442,6 +465,10 @@ class HomeController extends AbstractController
                 $this->addFlash('error', 'Unable to upload activity image.');
                 return $this->redirectToRoute('app_activities');
             }
+        }
+
+        if ($aiImages !== []) {
+            $description .= "\n[AI_IMAGES]" . implode('|', $aiImages) . "[/AI_IMAGES]";
         }
 
         $connection->executeStatement(
