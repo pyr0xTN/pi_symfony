@@ -126,8 +126,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Ajouter le Vol</button>
                 {# Auto-fill from external flight API — handled via a separate route or JS fetch #}
-                <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
-                <a href="javascript:void(0);" data-turbo="false" class="btn-submit" id="btnGenDesc">✨ Générer Description IA</a>
+               <a type="button" class="btn-submit" id=btnAutoFill >⚡ Auto remplissage</a>
                 <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
             </div>
 

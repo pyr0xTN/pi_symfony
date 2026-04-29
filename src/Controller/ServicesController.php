@@ -29,7 +29,7 @@ class ServicesController extends AbstractController
         $pagination = $this->paginator->paginate(
             $qb,
             $request->query->getInt('page', 1),
-            8 // items per page
+            2 // items per page
         );
 
         // For charts, we need all services (not just the paged ones)

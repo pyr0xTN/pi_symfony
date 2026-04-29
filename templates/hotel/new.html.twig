@@ -105,8 +105,7 @@
             {# Buttons #}
             <div class="form-actions">
                 <button type="submit" class="btn-submit">✔ Ajouter Hôtel</button>
-                <button type="button" class="btn-submit" id="btnAutoFill">⚡ Auto remplissage</button>
-                <a href="javascript:void(0);" data-turbo="false" class="btn-submit" id="btnGenDesc">✨ Générer Description IA</a>
+                <a type="button" class="btn-submit" href={{path("hotel_autofill")}}  id="btnAutoFill">⚡ Auto remplissage</a>
                 <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
             </div>
 
@@ -156,57 +155,6 @@
                 });
             }
 
-            // ── AI Description Logic ──
-            const btnGenDesc = document.getElementById('btnGenDesc');
-            const descInput  = document.getElementById('{{ form.description.vars.id }}');
-            const nomInput   = document.getElementById('{{ form.nom.vars.id }}');
-
-            if (btnGenDesc && descInput && nomInput && !btnGenDesc.dataset.bound) {
-                btnGenDesc.dataset.bound = 'true';
-                btnGenDesc.addEventListener('click', async function (e) {
-                    e.preventDefault();
-                    const nomHotel = nomInput.value.trim();
-
-                    if (!nomHotel) {
-                        alert('Veuillez d\'abord saisir un nom d\'hôtel avant de générer la description.');
-                        nomInput.focus();
-                        return;
-                    }
-
-                    btnGenDesc.disabled = true;
-                    btnGenDesc.textContent = '⏳ Génération...';
-
-                    try {
-                        const res = await fetch('{{ path("api_gemini_generate") }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                name: nomHotel,
-                                type: 'hotel'
-                            })
-                        });
-
-                        const data = await res.json();
-                        
-                        if (data.error) {
-                            alert('Erreur IA : ' + data.error);
-                        } else if (data.description) {
-                            descInput.value = data.description;
-                            descInput.classList.add('flash-highlight'); // Optional highlight
-                            setTimeout(() => descInput.classList.remove('flash-highlight'), 1000);
-                        }
-                    } catch (err) {
-                        console.error('Erreur génération IA:', err);
-                        alert('Erreur réseau lors de la génération avec l\'IA.');
-                    } finally {
-                        btnGenDesc.disabled = false;
-                        btnGenDesc.textContent = '✨ Générer par IA';
-                    }
-                });
-            }
 
             // ── Autofill Logic ──
             const btnAutoFill = document.getElementById('btnAutoFill');
