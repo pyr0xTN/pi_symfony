@@ -739,6 +739,52 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
             opacity: 0.72;
         }
 
+        .activities-pagination {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .activities-pagination-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(12, 158, 184, 0.22);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(244, 250, 255, 0.92));
+            color: #0f5d4a;
+            text-decoration: none;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(7, 57, 107, 0.08);
+        }
+
+        .activities-pagination-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(7, 57, 107, 0.12);
+        }
+
+        .activities-pagination-info {
+            font-weight: 700;
+            color: #5b7087;
+        }
+
+        body.dark-mode .activities-pagination-btn,
+        html.dark-mode .activities-pagination-btn {
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.96), rgba(28, 28, 28, 0.92));
+            color: #cfefff;
+            border-color: rgba(255,255,255,0.16);
+        }
+
+        body.dark-mode .activities-pagination-info,
+        html.dark-mode .activities-pagination-info {
+            color: #a9c0d8;
+        }
+
         .activity-owner-badge {
             position: absolute;
             top: 12px;
@@ -2492,22 +2538,47 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
     function addMessage(text, role) {
         var div = document.createElement('div');
         div.className = 'ai-msg ' + (role === 'user' ? 'from-user' : 'from-ai');
-        var applyMatch = text.match(/\[APPLY:(\w+)\]/i);
-        var cleanText  = text.replace(/\[APPLY:\w+\]/gi, '').trim();
-        div.textContent = cleanText;
-        if (applyMatch) {
-            var field = String(applyMatch[1] || '').toLowerCase();
-            var applyBtn = document.createElement('button');
-            applyBtn.className   = 'ai-apply-btn';
-            applyBtn.textContent = '⬆ Apply to ' + field + ' field';
-            applyBtn.addEventListener('click', function () {
-                applyToForm(field, cleanText);
-                applyBtn.textContent = '✓ Applied!';
-                applyBtn.disabled = true;
+        
+        // Remove old [APPLY:fieldname] markers for backward compatibility
+        var cleanText = text.replace(/\[APPLY:\w+\]/gi, '').trim();
+        
+        // Create text container
+        var textSpan = document.createElement('span');
+        textSpan.textContent = cleanText;
+        div.appendChild(textSpan);
+        
+        // Parse for inline suggestions: Location suggestion: "...", Title suggestion: "...", etc.
+        // Pattern matches: (Location|Title|Description|Category|Price|Duration|Season) suggestion[s]?: ["']([^"']+)["']
+        var suggestionRegex = /(?:^|\s)(Location|Title|Description|Category|Price|Duration|Season)\s+suggestions?:?\s+["']([^"']+)["']/gi;
+        var match;
+        var suggestions = [];
+        
+        while ((match = suggestionRegex.exec(cleanText)) !== null) {
+            suggestions.push({
+                field: match[1].toLowerCase(),
+                value: match[2]
             });
-            div.appendChild(document.createElement('br'));
-            div.appendChild(applyBtn);
         }
+        
+        // Add buttons for each suggestion
+        if (suggestions.length > 0) {
+            div.appendChild(document.createElement('br'));
+            suggestions.forEach(function(suggestion) {
+                var applyBtn = document.createElement('button');
+                applyBtn.className = 'ai-apply-btn';
+                applyBtn.type = 'button';
+                applyBtn.textContent = '⬆ Apply "' + suggestion.value + '" to ' + suggestion.field;
+                applyBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    applyToForm(suggestion.field, suggestion.value);
+                    applyBtn.textContent = '✓ Applied!';
+                    applyBtn.disabled = true;
+                });
+                div.appendChild(applyBtn);
+                div.appendChild(document.createElement('br'));
+            });
+        }
+        
         msgBox.appendChild(div);
         msgBox.scrollTop = msgBox.scrollHeight;
         return div;
@@ -2605,7 +2676,7 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
         chatInitialized = true;
         history = [];
         msgBox.innerHTML = '';
-        addMessage('Hi! 👋 I can help you write descriptions, suggest locations in Tunisia, recommend pricing, seasons, and more. What would you like help with?', 'ai');
+        addMessage('Hi! 👋 I can help you write descriptions, suggest destinations worldwide, recommend pricing, seasons, and more. Click "apply" buttons in my suggestions to fill your form. What would you like help with?', 'ai');
     }
 
     function bindEvents() {
@@ -4171,6 +4242,21 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
                             <div class="activities-empty">No activities found with that name.</div>
                         {% endfor %}
                     </div>
+
+                    {% if totalPages|default(1) > 1 %}
+                        <div class="activities-pagination" aria-label="Activities pagination">
+                            {% if page|default(1) > 1 %}
+                                <a class="activities-pagination-btn" href="{{ path('app_activities', {'page': page - 1, 'q': currentSearch}) }}">← Previous</a>
+                            {% endif %}
+
+                            <span class="activities-pagination-info">Page {{ page|default(1) }} of {{ totalPages }}</span>
+
+                            {% if page|default(1) < totalPages %}
+                                <a class="activities-pagination-btn" href="{{ path('app_activities', {'page': page + 1, 'q': currentSearch}) }}">Next →</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
                     <div class="activities-empty js-activities-empty-filter" style="display: none;">No activities match.</div>
                 </div>
             </div>
@@ -4530,12 +4616,12 @@ body.dark-mode .ai-chat-input-row { border-color: rgba(255,255,255,0.07); }
     <div class="ai-chat-messages" id="aiChatMessages"></div>
 
     <div class="ai-chat-chips" id="aiChatChips">
-        <button class="ai-chip" data-q="Suggest a compelling description for my activity">✍️ Write description</button>
-        <button class="ai-chip" data-q="What are the best places to visit in Tunisia for outdoor activities?">📍 Best places</button>
-        <button class="ai-chip" data-q="What is the best season for outdoor activities in Tunisia?">🌤️ Best season</button>
-        <button class="ai-chip" data-q="What price should I set for a guided day activity in Tunisia?">💰 Pricing advice</button>
+        <button class="ai-chip" data-q="Suggest a compelling title and description for my activity">✍️ Write description</button>
+        <button class="ai-chip" data-q="What are the best destinations worldwide for outdoor activities I could offer?">📍 Best places</button>
+        <button class="ai-chip" data-q="What is the best season for my activity?">🌤️ Best season</button>
+        <button class="ai-chip" data-q="What price should I set for my activity?">💰 Pricing advice</button>
         <button class="ai-chip" data-q="What categories of activities are most popular with tourists?">🏷️ Popular categories</button>
-        <button class="ai-chip" data-q="What duration is ideal for a tourism activity?">⏱️ Duration tips</button>
+        <button class="ai-chip" data-q="What duration is ideal for my activity?">⏱️ Duration tips</button>
     </div>
 
     <div class="ai-chat-input-row">

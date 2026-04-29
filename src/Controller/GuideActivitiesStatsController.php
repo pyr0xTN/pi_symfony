@@ -49,17 +49,23 @@ class GuideActivitiesStatsController extends AbstractController
         $activities = $connection->fetchAllAssociative(
             'SELECT a.idActivite,
                     a.titre,
-                    a.statut,
+                    a.description,
+                    a.lieu,
+                    a.categorie,
                     a.dateCreation,
                     a.dateActivite,
+                    a.dureParJour,
                     a.prix,
+                    a.placesDisponibles,
+                    a.image,
+                    a.statut,
                     COALESCE(COUNT(ach.idAchat), 0) AS reservations_count,
                     COALESCE(SUM(ach.nbPlaces), 0) AS booked_places,
                     COALESCE(SUM(ach.montantTotal), 0) AS revenue_total
              FROM activite a
              LEFT JOIN achat ach ON ach.idActivite = a.idActivite
              WHERE a.idGuide = ?
-             GROUP BY a.idActivite, a.titre, a.statut, a.dateCreation, a.dateActivite, a.prix
+             GROUP BY a.idActivite, a.titre, a.description, a.lieu, a.categorie, a.dateCreation, a.dateActivite, a.dureParJour, a.prix, a.placesDisponibles, a.image, a.statut
              ORDER BY a.dateCreation DESC, a.idActivite DESC',
             [(int) $user->getId()]
         );
@@ -117,6 +123,14 @@ class GuideActivitiesStatsController extends AbstractController
                     'revenue' => $revenue,
                     'statut' => (string) ($activity['statut'] ?? ''),
                     'dateCreation' => (string) ($activity['dateCreation'] ?? ''),
+                    'description' => (string) ($activity['description'] ?? ''),
+                    'location' => (string) ($activity['lieu'] ?? ''),
+                    'category' => (string) ($activity['categorie'] ?? ''),
+                    'dateActivity' => (string) ($activity['dateActivite'] ?? ''),
+                    'duration' => (string) ($activity['dureParJour'] ?? ''),
+                    'price' => (float) ($activity['prix'] ?? 0),
+                    'placesAvailable' => (int) ($activity['placesDisponibles'] ?? 0),
+                    'imageUrl' => $this->activityImageToUrl($activity['image'] ?? null),
                 ];
             }
 
@@ -190,5 +204,38 @@ class GuideActivitiesStatsController extends AbstractController
             6, 7, 8 => 'summer',
             default => 'autumn',
         };
+    }
+
+    private function activityImageToUrl(mixed $image): string
+    {
+        $default = '/images/defaultact.jpg';
+        if (empty($image)) {
+            return $default;
+        }
+
+        $imagePath = trim((string) $image);
+        if ($imagePath === '') {
+            return $default;
+        }
+
+        if (str_starts_with($imagePath, 'http://') || str_starts_with($imagePath, 'https://') || str_starts_with($imagePath, '/') || str_starts_with($imagePath, 'data:')) {
+            return $imagePath;
+        }
+
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $relativeCandidates = [
+            '/uploads/images/' . ltrim($imagePath, '/\\'),
+            '/uploads/images/' . basename($imagePath),
+            '/' . ltrim($imagePath, '/\\'),
+            '/' . basename($imagePath),
+        ];
+
+        foreach ($relativeCandidates as $candidate) {
+            if (is_file($projectDir . '/public' . $candidate)) {
+                return $candidate;
+            }
+        }
+
+        return $default;
     }
 }

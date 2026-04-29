@@ -176,6 +176,24 @@
             cursor: not-allowed;
         }
 
+        .google-login-btn {
+            border: 1px solid rgba(15, 89, 145, 0.18);
+            border-radius: 11px;
+            background: #ffffff;
+            color: #234565;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 18px rgba(7, 57, 107, 0.1);
+        }
+
+        .google-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 22px rgba(7, 57, 107, 0.14);
+            border-color: rgba(15, 89, 145, 0.28);
+            color: #1e3d5a;
+        }
+
         .validation-message {
             min-height: 18px;
             margin-top: 6px;
@@ -561,6 +579,19 @@
             color: white;
             border: none;
         }
+
+        #faceIdLoginBtn {
+            color: #ffffff;
+            border: 1px solid rgba(10, 160, 159, 0.34);
+            background: linear-gradient(135deg, #0ca7a4 0%, #0a6888 100%);
+            box-shadow: 0 8px 18px rgba(6, 92, 127, 0.24);
+        }
+
+        #faceIdLoginBtn:hover {
+            color: #ffffff;
+            border-color: rgba(252, 186, 48, 0.62);
+            background: linear-gradient(135deg, #0a9997 0%, #095b79 100%);
+        }
         
         .qr-btn:hover {
             color: white;
@@ -630,6 +661,39 @@
             overflow: hidden;
             aspect-ratio: 1 / 1;
             position: relative;
+        }
+
+        .qr-scan-frame {
+            position: absolute;
+            inset: 12%;
+            border: 2px solid rgba(252, 186, 48, 0.8);
+            border-radius: 14px;
+            box-shadow: 0 0 0 1px rgba(10, 160, 159, 0.35), inset 0 0 20px rgba(10, 160, 159, 0.18);
+            pointer-events: none;
+        }
+
+        .qr-scan-line {
+            position: absolute;
+            left: 14%;
+            right: 14%;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(252, 186, 48, 0.25), rgba(252, 186, 48, 1), rgba(252, 186, 48, 0.25));
+            box-shadow: 0 0 12px rgba(252, 186, 48, 0.75), 0 0 26px rgba(10, 160, 159, 0.42);
+            pointer-events: none;
+            animation: qrScanUpDown 2.1s ease-in-out infinite;
+        }
+
+        @keyframes qrScanUpDown {
+            0% {
+                top: 16%;
+            }
+            50% {
+                top: 84%;
+            }
+            100% {
+                top: 16%;
+            }
         }
 
         .qr-scanner-video {
@@ -964,6 +1028,10 @@
                         <button type="button" class="btn biometric-btn w-100 mb-4">
                             <i class="fas fa-fingerprint me-2"></i>Login with Fingerprint
                         </button>
+
+                        <a href="{{ path('app_login_google') }}" class="btn google-login-btn w-100 mb-4" data-no-loader="true">
+                            <i class="fab fa-google me-2"></i>Login with Gmail
+                        </a>
                         
                         <div class="divider mb-4">
                             <span>OR</span>
@@ -1039,8 +1107,10 @@
             </div>
             <div class="qr-scanner-video-wrap">
                 <video id="qrScannerVideo" class="qr-scanner-video" autoplay playsinline muted></video>
+                <div class="qr-scan-frame" aria-hidden="true"></div>
+                <div class="qr-scan-line" aria-hidden="true"></div>
             </div>
-            <p id="qrScannerStatus" class="qr-scanner-status">Point your camera at a QR code containing email and password.</p>
+            <p id="qrScannerStatus" class="qr-scanner-status">Point your camera at your QR code. We will log you in automatically after scan.</p>
         </div>
     </div>
 
@@ -1141,6 +1211,7 @@
             const faceScannerStatus = document.getElementById('faceScannerStatus');
             let qrScannerStream = null;
             let qrScannerFrameId = null;
+            let qrLoginInProgress = false;
             const qrScannerCanvas = document.createElement('canvas');
             const qrScannerContext = qrScannerCanvas.getContext('2d', { willReadFrequently: true });
             let faceScannerStream = null;
@@ -1367,9 +1438,14 @@
                     const parsed = JSON.parse(text);
                     const email = String(parsed.email || parsed._username || '').trim();
                     const password = String(parsed.password || parsed._password || '').trim();
+                    const passwordHash = String(parsed.password_hash || parsed.hash || parsed.passwordhash || '').trim();
 
                     if (email && password) {
                         return { email, password };
+                    }
+
+                    if (email && passwordHash) {
+                        return { email, password: '', hasHashOnly: true, passwordHash };
                     }
                 } catch (error) {
                     // Not JSON, continue with key:value parser.
@@ -1400,7 +1476,12 @@
                 }
 
                 if (email && (data.password_hash || data.hash || data.passwordhash)) {
-                    return { email, password: '', hasHashOnly: true };
+                    return {
+                        email,
+                        password: '',
+                        hasHashOnly: true,
+                        passwordHash: String(data.password_hash || data.hash || data.passwordhash || '').trim(),
+                    };
                 }
 
                 return null;
@@ -1417,6 +1498,8 @@
                     window.cancelAnimationFrame(qrScannerFrameId);
                     qrScannerFrameId = null;
                 }
+
+                qrLoginInProgress = false;
 
                 if (qrScannerVideo) {
                     qrScannerVideo.pause();
@@ -1455,6 +1538,50 @@
                 form.requestSubmit();
             };
 
+            const submitQrHashLogin = async (credentials) => {
+                if (!credentials || !credentials.email || !credentials.passwordHash || qrLoginInProgress) {
+                    return;
+                }
+
+                qrLoginInProgress = true;
+                setScannerStatus('QR detected. Verifying credentials...');
+
+                try {
+                    const response = await fetch('{{ path('app_login_qr_hash') }}', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            email: credentials.email,
+                            password_hash: credentials.passwordHash
+                        })
+                    });
+
+                    let payload = null;
+                    try {
+                        payload = await response.json();
+                    } catch (error) {
+                        payload = null;
+                    }
+
+                    if (payload && payload.success && payload.redirectUrl) {
+                        closeQrScanner();
+                        showPageLoader('QR verified. Signing you in...');
+                        window.location.assign(payload.redirectUrl);
+                        return;
+                    }
+
+                    setScannerStatus(payload && payload.message ? payload.message : 'QR verification failed. Please try again.');
+                    qrLoginInProgress = false;
+                } catch (error) {
+                    setScannerStatus('Unable to verify QR right now. Please try again.');
+                    qrLoginInProgress = false;
+                }
+            };
+
             const scanQrFrame = () => {
                 if (!qrScannerVideo || !qrScannerContext) {
                     return;
@@ -1479,9 +1606,13 @@
                             }
 
                             if (credentials && credentials.hasHashOnly) {
-                                setScannerStatus('QR contains email and password hash only. Use a QR with real password.');
+                                submitQrHashLogin({
+                                    email: credentials.email,
+                                    passwordHash: String(credentials.passwordHash || '')
+                                });
+                                return;
                             } else {
-                                setScannerStatus('QR format invalid. Expected email and password values.');
+                                setScannerStatus('QR format invalid. Expected email with password or password_hash.');
                             }
                         }
                     }
@@ -1506,7 +1637,7 @@
                 }
 
                 try {
-                    setScannerStatus('Point your camera at a QR code containing email and password.');
+                    setScannerStatus('Point your camera at your QR code...');
                     qrScannerModal.classList.add('open');
                     qrScannerModal.setAttribute('aria-hidden', 'false');
 
@@ -1706,7 +1837,8 @@
 
             if (faceIdLoginBtn) {
                 faceIdLoginBtn.addEventListener('click', () => {
-                    openFaceScanner();
+                    showPageLoader('Opening Face ID scanner...');
+                    window.location.assign('{{ path('app_login_face_id_page') }}');
                 });
             }
 

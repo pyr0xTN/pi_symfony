@@ -56,12 +56,22 @@
             display: grid;
             grid-template-columns: 260px minmax(0, 1fr);
             min-height: calc(100vh - 86px);
+            align-items: stretch;
         }
 
         .dash-sidebar {
             background: #2f445a;
             color: #fff;
             padding: 28px 14px;
+            position: sticky;
+            top: 86px;
+            min-height: calc(100vh - 86px);
+            height: calc(100vh - 86px);
+            max-height: calc(100vh - 86px);
+            overflow-y: auto;
+            align-self: start;
+            display: flex;
+            flex-direction: column;
         }
 
         .admin-avatar {
@@ -118,6 +128,7 @@
 
         .admin-content {
             padding: 24px;
+            min-height: calc(100vh - 86px);
         }
 
         .hero {
@@ -513,6 +524,7 @@
             display: flex;
             flex-direction: column;
             min-height: 290px;
+            cursor: pointer;
         }
 
         .product-card:hover {
@@ -654,6 +666,189 @@
             font-style: italic;
         }
 
+        .product-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(9, 24, 40, 0.62);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            z-index: 2400;
+        }
+
+        .product-modal-overlay.show {
+            display: flex;
+        }
+
+        .product-modal {
+            width: min(720px, 100%);
+            max-height: calc(100vh - 36px);
+            overflow: auto;
+            border-radius: 24px;
+            border: 1px solid #cfddeb;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f8fd 100%);
+            box-shadow: 0 28px 60px rgba(0, 0, 0, 0.26);
+        }
+
+        .product-modal-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid #e5edf4;
+        }
+
+        .product-modal-head h3 {
+            margin: 0;
+            color: #194575;
+            font-size: 24px;
+        }
+
+        .product-modal-close {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 10px;
+            background: rgba(11, 164, 161, 0.12);
+            color: #0b8e8b;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .product-modal-body {
+            padding: 18px;
+            display: grid;
+            gap: 16px;
+        }
+
+        .product-modal-media {
+            border-radius: 18px;
+            border: 1px solid #d9e6f1;
+            background: #ffffff;
+            overflow: hidden;
+            display: grid;
+            place-items: center;
+            min-height: 240px;
+        }
+
+        .product-modal-media img {
+            width: 100%;
+            height: 280px;
+            object-fit: contain;
+        }
+
+        .product-modal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .product-modal-field {
+            border: 1px solid #d9e6f1;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+        .product-modal-field small {
+            display: block;
+            color: #6f8398;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .product-modal-field strong,
+        .product-modal-description {
+            color: #194575;
+        }
+
+        .product-modal-description {
+            border: 1px solid #d9e6f1;
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        body.dark-mode .product-modal {
+            border-color: #2a374b;
+            background: linear-gradient(180deg, #182232 0%, #101827 100%);
+        }
+
+        body.dark-mode .product-modal-head {
+            border-bottom-color: #2a374b;
+        }
+
+        body.dark-mode .product-modal-head h3,
+        body.dark-mode .product-modal-field strong,
+        body.dark-mode .product-modal-description {
+            color: #d8e2ef;
+        }
+
+        body.dark-mode .product-modal-field,
+        body.dark-mode .product-modal-description,
+        body.dark-mode .product-modal-media {
+            background: #121c2b;
+            border-color: #2a374b;
+        }
+
+        body.dark-mode .product-modal-field small {
+            color: #8fa5bd;
+        }
+
+        .products-pagination {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .products-page-btn {
+            min-width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid #bfd6e8;
+            background: #ffffff;
+            color: #194575;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 0 10px;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+        }
+
+        .products-page-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(16, 48, 76, 0.12);
+        }
+
+        .products-page-btn.is-active {
+            border-color: transparent;
+            background: linear-gradient(135deg, #0ba4a1, #1788b6);
+            color: #ffffff;
+            box-shadow: 0 10px 18px rgba(11, 164, 161, 0.22);
+        }
+
+        body.dark-mode .products-page-btn {
+            background: #182232;
+            border-color: #2a374b;
+            color: #d8e2ef;
+        }
+
+        body.dark-mode .products-page-btn.is-active {
+            border-color: transparent;
+            background: linear-gradient(135deg, #0b8e8b, #1d4d7c);
+            color: #ffffff;
+        }
+
         @media (max-width: 1024px) {
             .dashboard-layout {
                 grid-template-columns: 1fr;
@@ -661,6 +856,10 @@
 
             .dash-sidebar {
                 display: none;
+                min-height: 0;
+                height: auto;
+                max-height: none;
+                overflow-y: visible;
             }
 
             .admin-content {
@@ -758,6 +957,7 @@
                             <p>{{ 'admin.shop.add_product_subtitle'|trans }}</p>
                         </div>
                         <form method="post" enctype="multipart/form-data" class="shop-form">
+                            <input type="hidden" name="action" value="create">
                             <input type="hidden" name="_token" value="{{ csrf_token('shop-product-create') }}">
 
                             <div class="form-surface">
@@ -795,6 +995,26 @@
 
                             <button type="submit" class="submit-btn">{{ 'admin.shop.add_product'|trans }}</button>
                         </form>
+                        <form method="post" class="shop-form" style="margin-top:18px;">
+                            <input type="hidden" name="action" value="import_amazon">
+                            <input type="hidden" name="_token" value="{{ csrf_token('shop-amazon-import') }}">
+
+                            <div class="form-surface">
+                                <div class="shop-form-grid">
+                                    <div class="field full">
+                                        <label for="amazon_url">Amazon Search URL</label>
+                                        <input id="amazon_url" type="url" name="amazon_url" placeholder="https://www.amazon.fr/..." required>
+                                    </div>
+
+                                    <div class="field">
+                                        <label for="import_limit">Max products</label>
+                                        <input id="import_limit" type="number" min="1" max="30" name="limit" value="12" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="submit-btn" style="margin-top:12px;">Import from Amazon URL</button>
+                        </form>
                         <div class="view-actions">
                             <button id="openProductsBtn" type="button" class="switch-btn">{{ 'admin.shop.see_products'|trans }}</button>
                         </div>
@@ -805,6 +1025,11 @@
                     <section class="panel products-card single-view-panel">
                         <div class="products-header">
                             <h2>{{ 'admin.shop.products'|trans }}</h2>
+                            <form method="post" data-no-loader="true" data-turbo="false" onsubmit="return confirm('Remove duplicate products and keep only the first one for each name?');">
+                                <input type="hidden" name="action" value="deduplicate">
+                                <input type="hidden" name="_token" value="{{ csrf_token('shop-product-deduplicate') }}">
+                                <button type="submit" class="switch-btn">Clean duplicate products</button>
+                            </form>
                         </div>
                         <div class="products-note">{{ 'admin.shop.products_note'|trans }}</div>
 
@@ -813,7 +1038,7 @@
                         {% else %}
                             <div class="products-grid">
                                 {% for product in products %}
-                                    <article class="product-card">
+                                    <article class="product-card" data-product-name="{{ product.name|e('html_attr') }}" data-product-description="{{ (product.description|default('admin.shop.no_description'|trans))|e('html_attr') }}" data-product-price="{{ product.price_coins }}" data-product-quantity="{{ product.quantity }}" data-product-category="{{ (product.category|default('admin.shop.uncategorized'|trans))|e('html_attr') }}" data-product-image="{{ product.image_url|default('/images/default_image.png')|e('html_attr') }}">
                                         <form method="post" action="{{ path('app_admin_shop_delete', { id: product.id }) }}" class="product-delete-form" data-no-loader="true" data-turbo="false" onsubmit="return confirm('Delete this product?');">
                                             <input type="hidden" name="_token" value="{{ csrf_token('shop-product-delete-' ~ product.id) }}">
                                             <button type="submit" class="product-delete-btn" aria-label="Delete product" title="Delete product">&times;</button>
@@ -839,6 +1064,9 @@
                                     </article>
                                 {% endfor %}
                             </div>
+                            {% if products|length > 12 %}
+                                <div class="products-pagination" data-items-per-page="12" aria-label="Products pagination"></div>
+                            {% endif %}
                         {% endif %}
                         <div class="view-actions">
                             <button id="backToAddBtn" type="button" class="switch-btn">{{ 'admin.shop.back_add_product'|trans }}</button>
@@ -849,15 +1077,135 @@
         </div>
     </div>
 
+    <div class="product-modal-overlay" id="productModalOverlay" aria-hidden="true">
+        <div class="product-modal" role="dialog" aria-modal="true" aria-labelledby="productModalTitle">
+            <div class="product-modal-head">
+                <h3 id="productModalTitle">Product details</h3>
+                <button type="button" class="product-modal-close" id="productModalClose" aria-label="Close product details">×</button>
+            </div>
+            <div class="product-modal-body">
+                <div class="product-modal-media">
+                    <img id="productModalImage" src="" alt="">
+                </div>
+                <div class="product-modal-grid">
+                    <div class="product-modal-field">
+                        <small>Name</small>
+                        <strong id="productModalName"></strong>
+                    </div>
+                    <div class="product-modal-field">
+                        <small>Price</small>
+                        <strong id="productModalPrice"></strong>
+                    </div>
+                    <div class="product-modal-field">
+                        <small>Quantity</small>
+                        <strong id="productModalQuantity"></strong>
+                    </div>
+                    <div class="product-modal-field">
+                        <small>Category</small>
+                        <strong id="productModalCategory"></strong>
+                    </div>
+                </div>
+                <div class="product-modal-description" id="productModalDescription"></div>
+            </div>
+        </div>
+    </div>
+
     <script>
         (function () {
             const addView = document.getElementById('addProductView');
             const productsView = document.getElementById('productsView');
             const openProductsBtn = document.getElementById('openProductsBtn');
             const backToAddBtn = document.getElementById('backToAddBtn');
+            const productsGrid = productsView ? productsView.querySelector('.products-grid') : null;
+            const productCards = productsGrid ? Array.from(productsGrid.querySelectorAll('.product-card')) : [];
+            const pagination = productsView ? productsView.querySelector('.products-pagination') : null;
+            const productModalOverlay = document.getElementById('productModalOverlay');
+            const productModalClose = document.getElementById('productModalClose');
+            const productModalTitle = document.getElementById('productModalTitle');
+            const productModalImage = document.getElementById('productModalImage');
+            const productModalName = document.getElementById('productModalName');
+            const productModalPrice = document.getElementById('productModalPrice');
+            const productModalQuantity = document.getElementById('productModalQuantity');
+            const productModalCategory = document.getElementById('productModalCategory');
+            const productModalDescription = document.getElementById('productModalDescription');
+            const itemsPerPage = pagination ? Math.max(1, Number(pagination.dataset.itemsPerPage || 12)) : 12;
+            let currentPage = 1;
 
             if (!addView || !productsView || !openProductsBtn || !backToAddBtn) {
                 return;
+            }
+
+            function renderProductsPagination() {
+                if (!pagination || !productCards.length) {
+                    return;
+                }
+
+                const totalPages = Math.ceil(productCards.length / itemsPerPage);
+                if (totalPages <= 1) {
+                    pagination.innerHTML = '';
+                    pagination.style.display = 'none';
+                    productCards.forEach((card) => {
+                        card.style.display = '';
+                    });
+                    return;
+                }
+
+                currentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+                productCards.forEach((card, index) => {
+                    const page = Math.floor(index / itemsPerPage) + 1;
+                    card.style.display = page === currentPage ? '' : 'none';
+                });
+
+                pagination.style.display = 'flex';
+                pagination.innerHTML = '';
+
+                for (let page = 1; page <= totalPages; page += 1) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'products-page-btn' + (page === currentPage ? ' is-active' : '');
+                    button.textContent = String(page);
+                    button.addEventListener('click', function () {
+                        currentPage = page;
+                        renderProductsPagination();
+                        productsView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    });
+                    pagination.appendChild(button);
+                }
+            }
+
+            function openProductModal(card) {
+                if (!productModalOverlay) {
+                    return;
+                }
+
+                const name = card.dataset.productName || '';
+                const description = card.dataset.productDescription || '';
+                const price = card.dataset.productPrice || '';
+                const quantity = card.dataset.productQuantity || '';
+                const category = card.dataset.productCategory || '';
+                const imageUrl = card.dataset.productImage || '';
+
+                productModalTitle.textContent = name;
+                productModalImage.src = imageUrl;
+                productModalImage.alt = name;
+                productModalName.textContent = name;
+                productModalPrice.textContent = price + ' {{ 'admin.shop.coins'|trans|e('js') }}';
+                productModalQuantity.textContent = quantity;
+                productModalCategory.textContent = category;
+                productModalDescription.textContent = description;
+
+                productModalOverlay.classList.add('show');
+                productModalOverlay.setAttribute('aria-hidden', 'false');
+            }
+
+            function closeProductModal() {
+                if (!productModalOverlay) {
+                    return;
+                }
+
+                productModalOverlay.classList.remove('show');
+                productModalOverlay.setAttribute('aria-hidden', 'true');
             }
 
             function showAddView() {
@@ -868,10 +1216,40 @@
             function showProductsView() {
                 addView.classList.remove('active');
                 productsView.classList.add('active');
+                currentPage = 1;
+                renderProductsPagination();
             }
 
             openProductsBtn.addEventListener('click', showProductsView);
             backToAddBtn.addEventListener('click', showAddView);
+
+            if (productModalOverlay && productModalClose) {
+                productModalOverlay.addEventListener('click', function (event) {
+                    if (event.target === productModalOverlay) {
+                        closeProductModal();
+                    }
+                });
+
+                productModalClose.addEventListener('click', closeProductModal);
+
+                document.addEventListener('keydown', function (event) {
+                    if (event.key === 'Escape') {
+                        closeProductModal();
+                    }
+                });
+            }
+
+            productCards.forEach(function (card) {
+                card.addEventListener('click', function (event) {
+                    if (event.target.closest('.product-delete-form')) {
+                        return;
+                    }
+
+                    openProductModal(card);
+                });
+            });
+
+            renderProductsPagination();
         })();
     </script>
 {% endblock %}

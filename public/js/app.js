@@ -214,6 +214,23 @@ function toggleChatPanel() {
     }
 }
 
+function startSupportCall() {
+    const panel = document.getElementById('chatPanel');
+    const messages = document.getElementById('chatMessages');
+    const room = panel?.dataset?.callRoom || 'rehletna-admin-support';
+    const meetingUrl = 'https://meet.jit.si/' + encodeURIComponent(room);
+
+    window.open(meetingUrl, '_blank', 'noopener,noreferrer');
+
+    if (messages) {
+        messages.insertAdjacentHTML(
+            'beforeend',
+            `<div class="chat-msg assistant"><p>Call room opened. Share this with admin if needed: <a href="${meetingUrl}" target="_blank" rel="noopener noreferrer">${meetingUrl}</a></p></div>`
+        );
+        messages.scrollTop = messages.scrollHeight;
+    }
+}
+
 function sendChatMessage() {
     const input = document.getElementById('chatInput');
     const messages = document.getElementById('chatMessages');

@@ -254,6 +254,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->date;
     }
 
+    public function getDateDisplay(): string
+    {
+        if (!$this->date instanceof \DateTimeInterface) {
+            return '';
+        }
+
+        return $this->date->format('Y-m-d');
+    }
+
     public function setDate(\DateTimeInterface $date): static
     {
         $this->date = $date;
@@ -320,6 +329,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->two_factor_expiry;
     }
 
+    public function getTwoFactorExpiryDisplay(): string
+    {
+        if (!$this->two_factor_expiry instanceof \DateTimeInterface) {
+            return '';
+        }
+
+        return $this->two_factor_expiry->format('Y-m-d H:i:s');
+    }
+
     public function setTwoFactorExpiry(?\DateTimeInterface $two_factor_expiry): static
     {
         $this->two_factor_expiry = $two_factor_expiry;
@@ -357,6 +375,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->fingerprint_slot_id = $fingerprint_slot_id;
         return $this;
+    }
+
+    public function getBlockedDisplay(): string
+    {
+        return $this->isBlocked() ? 'Yes' : 'No';
+    }
+
+    public function getTwoFactorEnabledDisplay(): string
+    {
+        return $this->isTwoFactorEnabled() ? 'Enabled' : 'Disabled';
     }
 
     // ========== COLLECTION GETTERS ==========
