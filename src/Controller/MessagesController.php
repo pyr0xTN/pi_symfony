@@ -157,14 +157,16 @@ class MessagesController extends AbstractController
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sauvegarde du fichier.']);
         }
-
+        /** @var User $user */
+        $user = $this->getUser();
         $message = new Messages();
         $message->setTypeMessage($type);
         $message->setUrlFichier($newFilename);
         $message->setContenu($file->getClientOriginalName()); // On garde le nom original comme contenu
         $message->setDateEnvoi(new \DateTime());
-        $message->setIdExpediteur($this->getUser());
-        $message->setLu(false);        // Le message n'est pas encore lu
+
+        $message->setIdExpediteur($user);
+        $message->setLu(false); // Le message n'est pas encore lu
         $message->setIsDeleted(false);
 
         $conversation = $em->getRepository(Conversation::class)->find($conversationId);
@@ -220,7 +222,7 @@ class MessagesController extends AbstractController
                 'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
                 'time' => $dateTimeFormatter->formatDiff($msg->getDateEnvoi()),
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
-                'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
+                'isMine' => $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu(),
                 'isDeleted' => $msg->isDeleted(),
                 'edited' => $msg->isEdited(),
@@ -256,9 +258,6 @@ class MessagesController extends AbstractController
     {
         /** @var User $user */
         $user = $this->getUser();
-        if (!$user) {
-            return new JsonResponse(['error' => 'Not authenticated'], 401);
-        }
         $repo->markAllAsRead($id, $user->getId());
         return $this->json(['ok' => true]);
     }
@@ -269,12 +268,14 @@ class MessagesController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $content = $data['content'] ?? ''; // C'est le JSON envoyé par le JS
 
+        /** @var User $user */
+        $user = $this->getUser();
         $message = new Messages();
         // (Utilise ton code habituel pour l'ID, les dates, l'expéditeur, etc.)
         $message->setContenu($content);
         $message->setTypeMessage(TypeMessage::LOCATION);
         $message->setIdConversation($conversation);
-        $message->setIdExpediteur($this->getUser());
+        $message->setIdExpediteur($user);
         $message->setLu(false);
         $message->setIsDeleted(false);
         $message->setDateEnvoi(new \DateTime());
