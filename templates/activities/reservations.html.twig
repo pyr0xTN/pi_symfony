@@ -1,0 +1,50 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Reservations - {{ activity.titre }}{% endblock %}
+
+{% block body %}
+    <div style="max-width: 980px; margin: 32px auto; padding: 0 16px;">
+        <h1 style="margin-bottom: 6px;">Reservations for "{{ activity.titre }}"</h1>
+        <p style="margin-bottom: 20px; color: #5f6d7a;">Activity ID: {{ activity.idActivite }}</p>
+
+        {% if reservations is empty %}
+            <div style="padding: 14px 16px; border: 1px solid #d8e1ea; border-radius: 12px; background: #f8fbfe;">
+                No reservations yet for this activity.
+            </div>
+        {% else %}
+            <div style="overflow-x: auto; border: 1px solid #d8e1ea; border-radius: 12px; background: #fff;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 760px;">
+                    <thead>
+                        <tr style="background: #f6f9fc; text-align: left;">
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Reservation ID</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Client</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Email</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Places</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Amount</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Status</th>
+                            <th style="padding: 12px; border-bottom: 1px solid #e6edf3;">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for reservation in reservations %}
+                            <tr>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">#{{ reservation.idAchat }}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">
+                                    {{ reservation.name }} {{ reservation.last_name }}
+                                    {% if reservation.username %}
+                                        <small style="color: #6b7280;">({{ reservation.username }})</small>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">{{ reservation.email }}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">{{ reservation.nbPlaces }}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">{{ reservation.montantTotal }} DT</td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">{{ reservation.statut }}</td>
+                                <td style="padding: 12px; border-bottom: 1px solid #f0f4f8;">{{ reservation.dateAchat ? reservation.dateAchat|date('Y-m-d H:i') : '-' }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

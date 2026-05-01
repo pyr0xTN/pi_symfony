@@ -1,0 +1,677 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Activity statistics - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap');
+
+        .stats-shell {
+            min-height: 100vh;
+            padding: 28px;
+            background:
+                radial-gradient(1200px 520px at 10% 0%, rgba(15, 165, 162, 0.20), transparent 58%),
+                radial-gradient(900px 420px at 100% 10%, rgba(252, 186, 48, 0.18), transparent 54%),
+                linear-gradient(180deg, #f3f9ff 0%, #edf5fb 100%);
+            font-family: 'Sora', 'Segoe UI', sans-serif;
+        }
+
+        .stats-hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            align-items: flex-start;
+            padding: 28px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, #0a3558 0%, #0e6782 52%, #0fa5a2 100%);
+            color: #fff;
+            box-shadow: 0 24px 46px rgba(8, 44, 78, 0.22);
+        }
+
+        .stats-hero h1 {
+            margin: 0;
+            font-size: clamp(2rem, 3.8vw, 3.2rem);
+            line-height: 1.02;
+            letter-spacing: -1px;
+        }
+
+        .stats-hero p {
+            margin: 10px 0 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .stats-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(320px, 0.82fr);
+            gap: 18px;
+            margin-top: 18px;
+            align-items: start;
+            animation: fadeUp 0.55s ease both;
+            overflow: hidden;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            transition: transform 0.55s ease, opacity 0.55s ease;
+        }
+
+        .stats-column {
+            display: grid;
+            gap: 18px;
+            min-width: 0;
+            transition: transform 0.55s ease, opacity 0.55s ease;
+        }
+
+        .stats-column.primary {
+            transform: translateX(-18px);
+            opacity: 0;
+        }
+
+        .stats-column.secondary {
+            position: sticky;
+            top: 18px;
+            transform: translateX(18px) scale(0.985);
+            opacity: 0;
+        }
+
+        .stats-shell.is-ready .stats-column.primary,
+        .stats-shell.is-ready .stats-column.secondary {
+            transform: none;
+            opacity: 1;
+        }
+
+        .stats-card {
+            border-radius: 24px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(111, 143, 177, 0.16);
+            box-shadow: 0 14px 28px rgba(9, 49, 89, 0.08);
+        }
+
+        .stats-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #7a8c9e;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .stats-value {
+            font-size: 34px;
+            font-weight: 800;
+            line-height: 1;
+            color: #123e66;
+        }
+
+        .stats-note {
+            margin-top: 10px;
+            color: #567089;
+            font-size: 13px;
+        }
+
+        .stats-panel {
+            border-radius: 26px;
+            padding: 22px;
+            background: #ffffff;
+            box-shadow: 0 14px 28px rgba(9, 49, 89, 0.08);
+            border: 1px solid rgba(111, 143, 177, 0.14);
+        }
+
+        .stats-popup {
+            background:
+                radial-gradient(120% 120% at 0% 0%, rgba(15, 165, 162, 0.10), transparent 50%),
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(246, 250, 253, 0.98) 100%);
+            box-shadow: 0 26px 48px rgba(8, 44, 78, 0.14), 0 2px 0 rgba(255, 255, 255, 0.85) inset;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(111, 143, 177, 0.18);
+            animation: popupIn 0.72s cubic-bezier(0.2, 0.85, 0.2, 1) both;
+        }
+
+        .stats-panel h2 {
+            margin: 0;
+            color: #143f67;
+            font-size: 22px;
+        }
+
+        .stats-panel-subtitle {
+            margin: 8px 0 0;
+            color: #61758a;
+            font-size: 14px;
+        }
+
+        .curve-card {
+            overflow: hidden;
+        }
+
+        .curve-chart {
+            margin-top: 18px;
+            width: 100%;
+            border-radius: 22px;
+            background:
+                linear-gradient(180deg, rgba(15, 165, 162, 0.05), rgba(15, 165, 162, 0.00)),
+                #f8fcff;
+            border: 1px solid rgba(111, 143, 177, 0.14);
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .curve-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .curve-legend-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #f5f9fd;
+            border: 1px solid rgba(111, 143, 177, 0.16);
+            color: #3f5870;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .legend-dot.line {
+            background: #0fa5a2;
+        }
+
+        .legend-dot.dark {
+            background: #174a78;
+        }
+
+        .circle-stack {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .circle-card {
+            border-radius: 22px;
+            padding: 16px 14px 18px;
+            background: linear-gradient(180deg, #fbfeff 0%, #f3f8fd 100%);
+            border: 1px solid rgba(111, 143, 177, 0.14);
+            text-align: center;
+        }
+
+        .circle-svg {
+            width: 110px;
+            height: 110px;
+            display: block;
+            margin: 2px auto 10px;
+            overflow: visible;
+        }
+
+        .circle-track {
+            fill: none;
+            stroke: rgba(15, 165, 162, 0.10);
+            stroke-width: 12;
+        }
+
+        .circle-progress {
+            fill: none;
+            stroke: #0fa5a2;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.6s ease;
+        }
+
+        .circle-progress.alt {
+            stroke: #1d4d7c;
+        }
+
+        .circle-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: #123e66;
+            line-height: 1;
+        }
+
+        .circle-label {
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #4a6178;
+        }
+
+        .circle-subtext {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #70879b;
+        }
+
+        .season-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .monthly-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        .season-row,
+        .month-row {
+            border-radius: 18px;
+            padding: 14px 16px;
+            background: linear-gradient(180deg, #f9fcff 0%, #f1f7fc 100%);
+            border: 1px solid rgba(111, 143, 177, 0.14);
+        }
+
+        .season-head,
+        .month-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .season-name,
+        .month-name {
+            color: #123e66;
+            font-weight: 800;
+        }
+
+        .season-range,
+        .month-meta {
+            color: #627588;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .progress-track {
+            margin-top: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(16, 121, 150, 0.10);
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+        }
+
+        .highlight-card {
+            margin-top: 18px;
+            padding: 20px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(15, 165, 162, 0.12), rgba(23, 136, 182, 0.14));
+            border: 1px solid rgba(15, 165, 162, 0.16);
+        }
+
+        .highlight-title {
+            margin: 0;
+            color: #0f5478;
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .highlight-value {
+            margin-top: 8px;
+            font-size: 28px;
+            font-weight: 800;
+            color: #123e66;
+        }
+
+        .activity-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+            overflow: hidden;
+            border-radius: 18px;
+        }
+
+        .activity-table th,
+        .activity-table td {
+            padding: 14px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(111, 143, 177, 0.14);
+            color: #214766;
+        }
+
+        .activity-table th {
+            background: #f4f9fd;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #5d7288;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .badge.active {
+            color: #0b7a5a;
+            background: rgba(16, 185, 129, 0.14);
+        }
+
+        .badge.inactive {
+            color: #8f4b16;
+            background: rgba(245, 158, 11, 0.14);
+        }
+
+        .empty-state {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px dashed rgba(111, 143, 177, 0.28);
+            background: rgba(244, 249, 253, 0.8);
+            color: #5d7288;
+            font-weight: 600;
+        }
+
+        .top-activity-card {
+            margin-top: 18px;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes popupIn {
+            from {
+                opacity: 0;
+                transform: translateX(26px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @media (max-width: 1100px) {
+            .stats-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-column.secondary {
+                position: static;
+                transform: none;
+            }
+
+            .stats-column.primary {
+                transform: none;
+            }
+
+            .circle-stack {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .stats-shell {
+                padding: 14px;
+            }
+
+            .stats-hero,
+            .stats-panel {
+                padding: 18px;
+            }
+
+            .stats-grid,
+            .circle-stack {
+                grid-template-columns: 1fr;
+            }
+
+            .activity-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="stats-shell">
+        <section class="stats-hero">
+            <div>
+                <h1>Activity statistics</h1>
+                <p>Track how your activities perform, where your reservations come from, and which season gives you the strongest response when you post new activities.</p>
+            </div>
+            <div class="hero-actions">
+                <a class="hero-pill" href="{{ path('app_activities') }}">← Back to activities</a>
+            </div>
+        </section>
+
+        {% set monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+        {% set maxMonthlyCreation = monthlyCreation|reduce((carry, item) => item > carry ? item : carry, 0) %}
+        {% set chartPoints = [] %}
+        {% for month, count in monthlyCreation %}
+            {% set x = 30 + (loop.index0 * 54) %}
+            {% set y = 160 - (maxMonthlyCreation > 0 ? ((count / maxMonthlyCreation) * 122) : 0) %}
+            {% set chartPoints = chartPoints|merge([x ~ ',' ~ y]) %}
+        {% endfor %}
+        {% set activeRate = totalActivities > 0 ? (activeActivities / totalActivities) : 0 %}
+        {% set seasonStrength = bestSeason and maxSeasonAverage > 0 ? (bestSeason.averageReservations / maxSeasonAverage) : 0 %}
+        {% set reservationFill = totalBookedPlaces > 0 ? (totalReservations / totalBookedPlaces) : 0 %}
+        {% set reservationFill = reservationFill > 1 ? 1 : reservationFill %}
+        {% set circleCircumference = 314.16 %}
+
+        <div class="stats-layout">
+            <div class="stats-column primary">
+                <section class="stats-grid">
+                    <div class="stats-card">
+                        <div class="stats-label">Total activities</div>
+                        <div class="stats-value">{{ totalActivities }}</div>
+                        <div class="stats-note">All activities posted by your account.</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-label">Active activities</div>
+                        <div class="stats-value">{{ activeActivities }}</div>
+                        <div class="stats-note">Visible and bookable right now.</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-label">Reservations</div>
+                        <div class="stats-value">{{ totalReservations }}</div>
+                        <div class="stats-note">Total confirmed reservations across your activities.</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-label">Revenue</div>
+                        <div class="stats-value">{{ totalRevenue|number_format(2, '.', ',') }} DT</div>
+                        <div class="stats-note">Based on the total amount of linked reservations.</div>
+                    </div>
+                </section>
+
+                <section class="stats-panel top-activity-card">
+                    <h2>Top activity</h2>
+                    <p class="stats-panel-subtitle">Your activity with the highest reservation volume.</p>
+
+                    {% if topActivity %}
+                        <table class="activity-table">
+                            <thead>
+                                <tr>
+                                    <th>Activity</th>
+                                    <th>Status</th>
+                                    <th>Reservations</th>
+                                    <th>Booked places</th>
+                                    <th>Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ topActivity.titre }}</td>
+                                    <td><span class="badge {{ topActivity.statut|lower == 'actif' ? 'active' : 'inactive' }}">{{ topActivity.statut }}</span></td>
+                                    <td>{{ topActivity.reservationsCount }}</td>
+                                    <td>{{ topActivity.bookedPlaces }}</td>
+                                    <td>{{ topActivity.revenue|number_format(2, '.', ',') }} DT</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="empty-state">No activities yet. Once you publish some, your top performer will appear here.</div>
+                    {% endif %}
+                </section>
+            </div>
+
+            <div class="stats-column secondary">
+                <section class="stats-panel stats-popup curve-card">
+                    <h2>Posting curve</h2>
+                    <p class="stats-panel-subtitle">Monthly activity creation shown as a smooth line.</p>
+
+                    <svg class="curve-chart" viewBox="0 0 620 220" role="img" aria-label="Monthly posting curve">
+                        <defs>
+                            <linearGradient id="curveFill" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0fa5a2" stop-opacity="0.34"/>
+                                <stop offset="100%" stop-color="#0fa5a2" stop-opacity="0.02"/>
+                            </linearGradient>
+                        </defs>
+                        {% for tick in [0, 1, 2, 3] %}
+                            {% set y = 40 + (tick * 42) %}
+                            <line x1="24" y1="{{ y }}" x2="592" y2="{{ y }}" stroke="rgba(111, 143, 177, 0.12)" stroke-width="1" />
+                        {% endfor %}
+                        <path d="M 30 160 L {{ chartPoints|join(' L ') }} L 570 160 L 30 160 Z" fill="url(#curveFill)" opacity="0.75"></path>
+                        <polyline points="{{ chartPoints|join(' ') }}" fill="none" stroke="#0fa5a2" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                        {% for point in chartPoints %}
+                            {% set coords = point|split(',') %}
+                            <circle cx="{{ coords[0] }}" cy="{{ coords[1] }}" r="4.5" fill="#ffffff" stroke="#0fa5a2" stroke-width="3"></circle>
+                        {% endfor %}
+                        {% for month, count in monthlyCreation %}
+                            {% set x = 30 + (loop.index0 * 54) %}
+                            <text x="{{ x }}" y="200" text-anchor="middle" font-size="10" fill="#6a8198" font-weight="700">{{ monthNames[month - 1] }}</text>
+                        {% endfor %}
+                    </svg>
+
+                    <div class="curve-legend">
+                        <span class="curve-legend-pill"><span class="legend-dot line"></span> Posted activities</span>
+                        <span class="curve-legend-pill"><span class="legend-dot dark"></span> Peak month line</span>
+                    </div>
+                </section>
+
+                <section class="stats-panel stats-popup">
+                    <h2>Circular stats</h2>
+                    <p class="stats-panel-subtitle">The circles show the strongest ratios in your activity performance.</p>
+
+                    <div class="circle-stack">
+                        <div class="circle-card">
+                            <svg class="circle-svg" viewBox="0 0 120 120" aria-hidden="true">
+                                <circle class="circle-track" cx="60" cy="60" r="50"></circle>
+                                <circle class="circle-progress" cx="60" cy="60" r="50" stroke-dasharray="{{ circleCircumference }}" stroke-dashoffset="{{ circleCircumference * (1 - activeRate) }}"></circle>
+                            </svg>
+                            <div class="circle-value">{{ (activeRate * 100)|round(0) }}%</div>
+                            <div class="circle-label">Active rate</div>
+                            <div class="circle-subtext">{{ activeActivities }} active / {{ totalActivities }} total</div>
+                        </div>
+
+                        <div class="circle-card">
+                            <svg class="circle-svg" viewBox="0 0 120 120" aria-hidden="true">
+                                <circle class="circle-track" cx="60" cy="60" r="50"></circle>
+                                <circle class="circle-progress alt" cx="60" cy="60" r="50" stroke-dasharray="{{ circleCircumference }}" stroke-dashoffset="{{ circleCircumference * (1 - seasonStrength) }}"></circle>
+                            </svg>
+                            <div class="circle-value">{{ (seasonStrength * 100)|round(0) }}%</div>
+                            <div class="circle-label">Best season power</div>
+                            <div class="circle-subtext">Compared with the strongest season</div>
+                        </div>
+
+                        <div class="circle-card">
+                            <svg class="circle-svg" viewBox="0 0 120 120" aria-hidden="true">
+                                <circle class="circle-track" cx="60" cy="60" r="50"></circle>
+                                <circle class="circle-progress" cx="60" cy="60" r="50" stroke-dasharray="{{ circleCircumference }}" stroke-dashoffset="{{ circleCircumference * (1 - reservationFill) }}"></circle>
+                            </svg>
+                            <div class="circle-value">{{ (reservationFill * 100)|round(0) }}%</div>
+                            <div class="circle-label">Place fill ratio</div>
+                            <div class="circle-subtext">Reservations vs booked places</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="stats-panel stats-popup">
+                    <h2>Best season to post</h2>
+                    <p class="stats-panel-subtitle">This ranking is based on average reservations generated by the activities you posted in each season.</p>
+
+                    {% if bestSeason %}
+                        <div class="highlight-card">
+                            <div class="highlight-title">Recommended season</div>
+                            <div class="highlight-value">{{ bestSeason.label }} ({{ bestSeason.range }})</div>
+                            <div class="stats-note">Average reservations per posted activity: {{ bestSeason.averageReservations|number_format(1, '.', ',') }}</div>
+                        </div>
+                    {% endif %}
+
+                    <div class="season-list">
+                        {% for season in seasonStats|filter((value) => value.activityCount > 0) %}
+                            <div class="season-row">
+                                <div class="season-head">
+                                    <div>
+                                        <div class="season-name">{{ season.label }}</div>
+                                        <div class="season-range">{{ season.range }}</div>
+                                    </div>
+                                    <div class="season-range">{{ season.activityCount }} activities</div>
+                                </div>
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ maxSeasonAverage > 0 ? ((season.averageReservations / maxSeasonAverage) * 100) : 0 }}%;"></div>
+                                </div>
+                                <div class="stats-note">{{ season.reservationCount }} reservations, {{ season.bookedPlaces }} booked places, {{ season.averageReservations|number_format(1, '.', ',') }} average reservations per activity</div>
+                            </div>
+                        {% else %}
+                            <div class="empty-state">No seasonal data yet. Post activities first and the season ranking will appear here.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <script>
+            window.requestAnimationFrame(function () {
+                document.querySelector('.stats-shell')?.classList.add('is-ready');
+            });
+        </script>
+    </div>
+{% endblock %}

@@ -33,6 +33,10 @@
             opacity: 0.9;
             --parallax-x: 0px;
             --parallax-y: 0px;
+            --airport-map-route: rgba(36, 146, 198, 0.5);
+            --airport-map-point: #1d8fbb;
+            --airport-map-point-ring: rgba(29, 143, 187, 0.2);
+            --airport-map-label: #10395a;
         }
 
         .depth-background {
@@ -46,7 +50,6 @@
         .depth-orb {
             position: absolute;
             border-radius: 50%;
-            filter: blur(8px);
             opacity: 0.42;
             animation: depthFloat 16s ease-in-out infinite alternate;
         }
@@ -108,6 +111,180 @@
                 radial-gradient(190px 42px at 80% 12%, rgba(231, 248, 255, 0.4), rgba(231, 248, 255, 0) 72%);
             opacity: 0.72;
             animation: cloudDrift 60s linear infinite;
+        }
+
+        .airport-map {
+            position: absolute;
+            inset: 0;
+            border-radius: 0;
+            background: rgba(76, 151, 201, 0.22);
+            box-shadow: inset 0 0 0 1px rgba(30, 93, 136, 0.26), 0 10px 24px rgba(8, 54, 90, 0.08);
+            overflow: hidden;
+        }
+
+        .airport-map.has-real-map::before {
+            display: none;
+        }
+
+        .airport-map.has-real-map::after {
+            opacity: 0.06;
+        }
+
+        .airport-map-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .airport-map-sphere {
+            fill: #3f90cd;
+        }
+
+        .airport-map-graticule {
+            fill: none;
+            stroke: #1f5f8e;
+            stroke-width: 0.9;
+            opacity: 0.65;
+        }
+
+        .airport-map-country {
+            fill: #f3f5f6;
+        }
+
+        .airport-map-borders {
+            fill: none;
+            stroke: #cdd4d8;
+            stroke-width: 0.55;
+            opacity: 0.9;
+        }
+
+        .airport-map-radar-layer {
+            pointer-events: none;
+        }
+
+        .airport-flight-marker {
+            transition: transform 20s linear, opacity 0.18s ease;
+        }
+
+        .airport-flight-marker circle {
+            fill: #39ff14;
+            stroke: rgba(0, 0, 0, 0.95);
+            stroke-width: 1.2;
+            filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.75));
+        }
+
+        .flight-trail {
+            fill: none;
+            stroke: rgba(57, 255, 20, 0.78);
+            stroke-width: 1.2;
+            opacity: 0.72;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 6px rgba(57, 255, 20, 0.2));
+        }
+
+        .flight-plane-path {
+            fill: rgba(57, 255, 20, 0.98);
+            stroke: rgba(0, 0, 0, 0.96);
+            stroke-width: 1.1;
+            filter: drop-shadow(0 0 5px rgba(57, 255, 20, 0.45));
+        }
+
+        .airport-flight-marker text {
+            fill: #39ff14;
+            font-weight: 800;
+            font-size: 11px;
+            opacity: 0.98;
+            paint-order: stroke;
+            stroke: rgba(0, 0, 0, 0.95);
+            stroke-width: 3px;
+            stroke-linejoin: round;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+
+        .airport-map::before,
+        .airport-map::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .airport-map::before {
+            background: url('{{ asset('images/world-map-2d.svg') }}') center/cover no-repeat;
+            opacity: 0.96;
+            filter: none;
+        }
+
+        .airport-map::after {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+            opacity: 1;
+        }
+
+        .airport-routes {
+            position: absolute;
+            inset: 0;
+            border-radius: 0;
+            background:
+                radial-gradient(128% 160% at 20% 118%, transparent 0 58.24%, var(--airport-map-route) 58.3% 58.55%, transparent 58.65%),
+                radial-gradient(146% 155% at 64% 112%, transparent 0 61.26%, var(--airport-map-route) 61.32% 61.58%, transparent 61.68%),
+                radial-gradient(130% 164% at 92% 106%, transparent 0 54.2%, var(--airport-map-route) 54.26% 54.54%, transparent 54.64%);
+            opacity: 0.26;
+        }
+
+        .airport-point {
+            position: absolute;
+            width: 9px;
+            height: 9px;
+            border-radius: 999px;
+            background: var(--airport-map-point);
+            box-shadow: 0 0 0 5px var(--airport-map-point-ring), 0 2px 7px rgba(10, 69, 98, 0.25);
+            animation: airportPointPulse 3.4s ease-in-out infinite;
+        }
+
+        .airport-point::after {
+            content: '';
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            right: -7px;
+            top: -6px;
+            border-top: 1.5px solid var(--airport-map-point);
+            border-right: 1.5px solid var(--airport-map-point);
+            border-radius: 1px;
+            transform: rotate(35deg);
+            opacity: 0.9;
+        }
+
+        .airport-point-label {
+            display: none;
+        }
+
+        .airport-point.point-tunis {
+            left: 52%;
+            top: 47%;
+            animation-delay: -0.2s;
+        }
+
+        .airport-point.point-paris {
+            left: 48%;
+            top: 34%;
+            animation-delay: -0.9s;
+        }
+
+        .airport-point.point-dubai {
+            left: 59%;
+            top: 48%;
+            animation-delay: -1.5s;
+        }
+
+        .airport-point.point-istanbul {
+            left: 54%;
+            top: 39%;
+            animation-delay: -2.1s;
         }
 
         .airport-terminal {
@@ -311,6 +488,18 @@
             100% { opacity: 0; }
         }
 
+        @keyframes airportPointPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 5px var(--airport-map-point-ring), 0 2px 7px rgba(10, 69, 98, 0.25);
+            }
+            50% {
+                transform: scale(1.08);
+                box-shadow: 0 0 0 8px transparent, 0 2px 7px rgba(10, 69, 98, 0.25);
+            }
+        }
+
         @keyframes depthFloat {
             0% {
                 transform: translate3d(0, 0, 0) scale(1);
@@ -447,7 +636,6 @@
             right: 0;
             bottom: 0;
             background: rgba(3, 30, 58, 0.40);
-            backdrop-filter: blur(2px);
             z-index: 999;
         }
 
@@ -457,7 +645,6 @@
 
         .top-bar {
             background: var(--vision-top-bar-background, rgba(255, 255, 255, 0.90));
-            backdrop-filter: blur(10px);
             padding: 16px 28px;
             box-shadow: 0 8px 24px rgba(10, 46, 88, 0.08);
             display: flex;
@@ -669,11 +856,62 @@
 
         body.dark-mode .airport-background {
             opacity: 0.72;
+            --airport-map-route: rgba(124, 214, 255, 0.62);
+            --airport-map-point: #8bdfff;
+            --airport-map-point-ring: rgba(139, 223, 255, 0.22);
+            --airport-map-label: #dff4ff;
+        }
+
+        body.dark-mode .airport-map {
+            background: rgba(0, 0, 0, 0.55);
+            box-shadow: inset 0 0 0 1px rgba(101, 185, 230, 0.34), 0 12px 30px rgba(0, 0, 0, 0.24);
+        }
+
+        body.dark-mode .airport-map.has-real-map::after {
+            opacity: 0.04;
+        }
+
+        body.dark-mode .airport-map-sphere {
+            fill: #000000;
+        }
+
+        body.dark-mode .airport-map-graticule {
+            stroke: #173f62;
+            opacity: 0.72;
+        }
+
+        body.dark-mode .airport-map-country {
+            fill: #edf1f4;
+        }
+
+        body.dark-mode .airport-map-borders {
+            stroke: #bfc8cf;
+            opacity: 0.88;
+        }
+
+        body.dark-mode .airport-flight-marker circle {
+            fill: #ffe27c;
+            stroke: rgba(0, 0, 0, 0.65);
+            filter: drop-shadow(0 0 10px rgba(255, 226, 124, 0.9));
+        }
+
+        body.dark-mode .airport-flight-marker text {
+            fill: #f0f7ff;
+            opacity: 0.52;
+            stroke: rgba(0, 0, 0, 0.85);
+        }
+
+        body.dark-mode .airport-map::before {
+            filter: brightness(0.82) contrast(1.05);
+            opacity: 0.94;
+        }
+
+        body.dark-mode .airport-map::after {
+            opacity: 0.85;
         }
 
         body.dark-mode .depth-orb {
             opacity: 0.28;
-            filter: blur(12px);
         }
 
         body.dark-mode .depth-orb.one {
@@ -691,7 +929,7 @@
 
         body.dark-mode .airport-clouds {
             opacity: 0.34;
-            filter: saturate(0.8) blur(0.4px);
+            filter: saturate(0.8);
         }
 
         body.dark-mode .airport-terminal {
@@ -748,19 +986,25 @@
         }
 
         body.dark-mode .nav-tab {
-            background: rgba(255, 255, 255, 0.05) !important;
-            color: #b8d4f1 !important;
-            border-color: rgba(255, 255, 255, 0.1) !important;
+            background: rgba(255, 255, 255, 0.12) !important;
+            color: #f4fbff !important;
+            border: 1px solid rgba(163, 221, 255, 0.24) !important;
+            padding: 12px 20px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
         }
 
         body.dark-mode .nav-tab:hover {
-            background: rgba(10, 160, 159, 0.2) !important;
-            color: #0FA5A2 !important;
+            background: rgba(10, 160, 159, 0.32) !important;
+            color: #ffffff !important;
+            border-color: rgba(131, 236, 232, 0.42) !important;
+            box-shadow: 0 0 0 1px rgba(131, 236, 232, 0.22), 0 8px 20px rgba(8, 77, 107, 0.28);
         }
 
         body.dark-mode .nav-tab.active {
-            background: rgba(10, 160, 159, 0.3) !important;
-            color: #0FA5A2 !important;
+            background: linear-gradient(135deg, rgba(15, 165, 162, 0.95), rgba(23, 136, 182, 0.96)) !important;
+            color: #ffffff !important;
+            border-color: rgba(157, 240, 255, 0.55) !important;
+            box-shadow: 0 0 0 1px rgba(157, 240, 255, 0.25), 0 0 18px rgba(87, 214, 255, 0.22), 0 10px 22px rgba(8, 77, 107, 0.35);
         }
 
         body.dark-mode .profile-section {
@@ -843,6 +1087,32 @@
 
         body.dark-mode .welcome-subtitle {
             color: #a8c5e0 !important;
+        }
+
+        body.dark-mode .welcome-icon {
+            border-color: rgba(124, 214, 255, 0.36);
+            background: linear-gradient(145deg, rgba(22, 101, 150, 0.42), rgba(13, 67, 106, 0.34));
+            color: #e5f7ff;
+        }
+
+        body.dark-mode .welcome-gradient-line {
+            background: linear-gradient(90deg, rgba(110, 222, 255, 0.12), rgba(123, 244, 224, 0.92), rgba(255, 201, 110, 0.9), rgba(110, 222, 255, 0.12));
+        }
+
+        body.dark-mode .welcome-kicker {
+            background: rgba(15, 165, 162, 0.18);
+            border-color: rgba(15, 165, 162, 0.34);
+            color: #d8feff;
+        }
+
+        body.dark-mode .welcome-cta-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(122, 200, 245, 0.24);
+            color: #e3f2fb;
+        }
+
+        body.dark-mode .welcome-cta {
+            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.34);
         }
 
         body.dark-mode .feature-card {
@@ -1016,27 +1286,28 @@
 
         .welcome-section {
             margin-bottom: 24px;
-            padding: 28px;
-            border-radius: 24px;
+            padding: 34px 34px 30px;
+            border-radius: 28px;
             background:
-                radial-gradient(320px 130px at 10% 0%, rgba(10, 160, 159, 0.16), transparent 78%),
-                radial-gradient(380px 150px at 92% 100%, rgba(252, 186, 48, 0.15), transparent 82%),
-                linear-gradient(120deg, rgba(255, 255, 255, 0.52) 0%, rgba(246, 252, 255, 0.36) 100%);
-            border: 1px solid rgba(138, 205, 247, 0.36);
-            box-shadow: 0 16px 34px rgba(7, 57, 107, 0.13), inset 0 1px 0 rgba(255, 255, 255, 0.62);
-            backdrop-filter: blur(10px) saturate(120%);
-            -webkit-backdrop-filter: blur(10px) saturate(120%);
+                radial-gradient(320px 130px at 10% 0%, rgba(10, 160, 159, 0.14), transparent 78%),
+                radial-gradient(380px 150px at 92% 100%, rgba(252, 186, 48, 0.12), transparent 82%),
+                linear-gradient(120deg, rgba(255, 255, 255, 0.36) 0%, rgba(246, 252, 255, 0.30) 100%);
+            border: 1px solid rgba(138, 205, 247, 0.18);
+            box-shadow: 0 14px 30px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.36);
+            backdrop-filter: blur(6px) saturate(118%);
+            -webkit-backdrop-filter: blur(6px) saturate(118%);
             text-align: left;
             position: relative;
             overflow: hidden;
+            animation: welcomeIntro 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .welcome-section::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(110deg, rgba(255, 255, 255, 0.46) 0%, rgba(255, 255, 255, 0.06) 38%, rgba(255, 255, 255, 0.22) 62%, rgba(255, 255, 255, 0.06) 100%);
-            opacity: 0.7;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.02) 38%, rgba(255, 255, 255, 0.10) 62%, rgba(255, 255, 255, 0.02) 100%);
+            opacity: 0.32;
             pointer-events: none;
         }
 
@@ -1044,9 +1315,63 @@
             font-size: clamp(2rem, 3.8vw, 3rem);
             font-weight: 800;
             color: #133f6a;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             line-height: 1.06;
             letter-spacing: -1px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-logo {
+            display: none;
+        }
+
+        .welcome-cinematic-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            border: 1px solid rgba(74, 175, 220, 0.32);
+            background: linear-gradient(145deg, rgba(28, 179, 206, 0.20), rgba(34, 95, 158, 0.16));
+            box-shadow: 0 10px 22px rgba(8, 77, 107, 0.18);
+        }
+
+        .welcome-gradient-line {
+            height: 4px;
+            width: min(440px, 65vw);
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(18, 136, 180, 0.12), rgba(0, 205, 187, 0.9), rgba(255, 186, 68, 0.88), rgba(18, 136, 180, 0.12));
+            background-size: 220% 100%;
+            animation: welcomeLineShift 3.2s ease-in-out infinite alternate;
+            box-shadow: 0 0 14px rgba(67, 204, 255, 0.24);
+        }
+
+        .welcome-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+            background: rgba(15, 165, 162, 0.12);
+            border: 1px solid rgba(15, 165, 162, 0.22);
+            color: #0f6f88;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
             position: relative;
             z-index: 1;
         }
@@ -1054,9 +1379,71 @@
         .welcome-subtitle {
             font-size: 16px;
             color: #4f657c;
-            margin-bottom: 0;
+            margin-bottom: 16px;
             position: relative;
             z-index: 1;
+            max-width: 760px;
+        }
+
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .welcome-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 14px;
+            border: 0;
+            background: linear-gradient(135deg, #0FA5A2 0%, #1D4D7C 100%);
+            color: #ffffff;
+            font-weight: 800;
+            box-shadow: 0 12px 24px rgba(7, 57, 107, 0.24);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+
+        .welcome-cta:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 30px rgba(7, 57, 107, 0.30);
+            filter: brightness(1.04);
+        }
+
+        .welcome-cta-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 16px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.62);
+            border: 1px solid rgba(118, 194, 233, 0.34);
+            color: #16547c;
+            font-weight: 700;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        @keyframes welcomeIntro {
+            from {
+                opacity: 0;
+                transform: translateY(10px) scale(0.985);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes welcomeLineShift {
+            from {
+                background-position: 0% 50%;
+            }
+            to {
+                background-position: 100% 50%;
+            }
         }
 
         .birthday-gift-banner {
@@ -1208,8 +1595,6 @@
                 linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(243, 250, 255, 0.32));
             border: 1px solid rgba(132, 201, 242, 0.36);
             box-shadow: 0 10px 24px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.62);
-            backdrop-filter: blur(9px) saturate(118%);
-            -webkit-backdrop-filter: blur(9px) saturate(118%);
             position: relative;
             overflow: hidden;
         }
@@ -1263,8 +1648,6 @@
             text-decoration: none;
             display: block;
             box-shadow: 0 10px 22px rgba(7, 57, 107, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(9px) saturate(118%);
-            -webkit-backdrop-filter: blur(9px) saturate(118%);
             position: relative;
             overflow: hidden;
         }
@@ -1906,6 +2289,21 @@
                 opacity: 0.7;
             }
 
+            .airport-map,
+            .airport-routes {
+                inset: 0;
+                border-radius: 0;
+            }
+
+            .airport-point-label {
+                font-size: 10px;
+                left: 12px;
+            }
+
+            .airport-point.point-dubai {
+                display: none;
+            }
+
             .airport-terminal {
                 display: none;
             }
@@ -2010,9 +2408,12 @@
     {{ parent() }}
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
     <script>
         $(document).ready(function() {
             initializeAirportParallax();
+            initializeRealAtlasMap();
 
             function updateProfileCoinsValue(coins) {
                 const $coinsValue = $('[data-profile-coins-value]');
@@ -2101,6 +2502,389 @@
                 });
 
                 animate();
+            }
+
+            function initializeRealAtlasMap() {
+                const airportMap = document.querySelector('.airport-map');
+                if (!airportMap || airportMap.dataset.realMapInitialized === '1') {
+                    return;
+                }
+
+                if (typeof window.d3 === 'undefined' || typeof window.topojson === 'undefined') {
+                    return;
+                }
+
+                airportMap.dataset.realMapInitialized = '1';
+
+                const atlasUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+                const renderAtlas = function(worldData) {
+                    const width = Math.max(320, Math.round(airportMap.clientWidth));
+                    const height = Math.max(180, Math.round(airportMap.clientHeight));
+
+                    const existing = airportMap.querySelector('.airport-map-svg');
+                    if (existing) {
+                        existing.remove();
+                    }
+
+                    const countries = window.topojson.feature(worldData, worldData.objects.countries).features;
+                    const borders = window.topojson.mesh(worldData, worldData.objects.countries, function(a, b) { return a !== b; });
+
+                    const projection = window.d3.geoEquirectangular().fitExtent(
+                        [[8, 8], [width - 8, height - 8]],
+                        { type: 'Sphere' }
+                    );
+                    const path = window.d3.geoPath(projection);
+
+                    const svg = window.d3.select(airportMap)
+                        .append('svg')
+                        .attr('class', 'airport-map-svg')
+                        .attr('viewBox', '0 0 ' + width + ' ' + height)
+                        .attr('preserveAspectRatio', 'none')
+                        .attr('aria-hidden', 'true');
+
+                    // expose projection and svg for radar layer (used by client-side radar polling)
+                    window.__airportProjection = projection;
+                    window.__airportMapSVG = svg;
+
+                    svg.append('path')
+                        .datum({ type: 'Sphere' })
+                        .attr('class', 'airport-map-sphere')
+                        .attr('d', path);
+
+                    svg.append('path')
+                        .datum(window.d3.geoGraticule10())
+                        .attr('class', 'airport-map-graticule')
+                        .attr('d', path);
+
+                    svg.append('g')
+                        .selectAll('path')
+                        .data(countries)
+                        .join('path')
+                        .attr('class', 'airport-map-country')
+                        .attr('d', path);
+
+                    svg.append('path')
+                        .datum(borders)
+                        .attr('class', 'airport-map-borders')
+                        .attr('d', path);
+
+                    // add a dedicated radar layer group for flights on top of the map
+                    const radarLayer = svg.append('g')
+                        .attr('class', 'airport-map-radar-layer')
+                        .attr('aria-hidden', 'true');
+
+                    window.__airportRadarLayer = radarLayer;
+
+                    airportMap.classList.add('has-real-map');
+                };
+
+                window.fetch(atlasUrl)
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('Unable to load world atlas');
+                        }
+                        return response.json();
+                    })
+                    .then(function(worldData) {
+                        renderAtlas(worldData);
+
+                        let resizeTimer = null;
+                        window.addEventListener('resize', function() {
+                            window.clearTimeout(resizeTimer);
+                            resizeTimer = window.setTimeout(function() {
+                                renderAtlas(worldData);
+                            }, 180);
+                        });
+                    })
+                    .catch(function() {
+                        airportMap.dataset.realMapInitialized = '0';
+                    });
+
+                    // Initialize client-side radar layer (polls /api/radar/flights)
+                    function initializeRadarLayer() {
+                        const airportMapEl = document.querySelector('.airport-map');
+                        if (!airportMapEl) return;
+
+                        // Prevent duplicate poll loops if this initializer runs more than once.
+                        if (window.__airportRadarLoopStarted) {
+                            return;
+                        }
+                        window.__airportRadarLoopStarted = true;
+
+                        const pollInterval = 5000; // ms (live refresh cadence)
+
+                        // history store for flight trails: keyed by flight id -> array of [lon, lat]
+                        window.__airportRadarHistory = window.__airportRadarHistory || {};
+                        const TRAIL_LENGTH = 12;
+                        const PIXEL_MAX = 38; // approx 0.5cm visual trail cap
+                        // line generator produces pixel-space path from projected points
+                        const lineGen = d3.line().x(d => d[0]).y(d => d[1]).curve(d3.curveCatmullRom.alpha(0.85));
+
+                        function getFlightId(d) {
+                            return d.icao24 || d.callsign || `${d.latitude}-${d.longitude}`;
+                        }
+
+                        function getMapBounds() {
+                            const proj = window.__airportProjection;
+                            if (!proj || typeof proj.invert !== 'function') return null;
+
+                            const airportMapEl = document.querySelector('.airport-map');
+                            if (!airportMapEl) return null;
+
+                            const width = Math.max(320, Math.round(airportMapEl.clientWidth));
+                            const height = Math.max(180, Math.round(airportMapEl.clientHeight));
+                            const topLeft = proj.invert([0, 0]);
+                            const bottomRight = proj.invert([width, height]);
+                            if (!topLeft || !bottomRight) return null;
+
+                            return {
+                                minLat: Math.min(topLeft[1], bottomRight[1]),
+                                maxLat: Math.max(topLeft[1], bottomRight[1]),
+                                minLon: Math.min(topLeft[0], bottomRight[0]),
+                                maxLon: Math.max(topLeft[0], bottomRight[0]),
+                            };
+                        }
+
+                        function clamp(value, min, max) {
+                            return Math.max(min, Math.min(max, value));
+                        }
+
+                        function createSeededRandom(seed) {
+                            let t = seed >>> 0;
+                            return function() {
+                                t += 0x6D2B79F5;
+                                let r = Math.imul(t ^ (t >>> 15), t | 1);
+                                r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+                                return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+                            };
+                        }
+
+                        function pickHourlyFlights(list, hourBucket, maxCount) {
+                            const items = (list || []).slice();
+                            if (items.length <= maxCount) {
+                                return items;
+                            }
+
+                            const seed = (hourBucket ^ (items.length << 5) ^ 0x9E3779B9) >>> 0;
+                            const rand = createSeededRandom(seed);
+
+                            for (let i = items.length - 1; i > 0; i -= 1) {
+                                const j = Math.floor(rand() * (i + 1));
+                                const tmp = items[i];
+                                items[i] = items[j];
+                                items[j] = tmp;
+                            }
+
+                            return items.slice(0, maxCount);
+                        }
+
+                        function stampLiveFlight(d) {
+                            d._motion = {
+                                longitude: Number(d.longitude || 0),
+                                latitude: Number(d.latitude || 0),
+                                velocity: Number(d.velocity || d.speed || 0),
+                                heading: Number(d.true_track || d.dir || 0),
+                                updatedAt: Date.now(),
+                            };
+                            return d;
+                        }
+
+                        function getLiveFlightPoint(d, nowMs) {
+                            const motion = d._motion || {};
+                            const lon = Number(motion.longitude ?? d.longitude ?? 0);
+                            const lat = Number(motion.latitude ?? d.latitude ?? 0);
+                            const velocity = Number(motion.velocity ?? d.velocity ?? d.speed ?? 0);
+                            const heading = Number(motion.heading ?? d.true_track ?? d.dir ?? 0);
+                            const updatedAt = Number(motion.updatedAt ?? Date.now());
+                            const elapsedSeconds = Math.max(0, (nowMs - updatedAt) / 1000);
+                            const travelSeconds = Math.min(elapsedSeconds, pollInterval / 1000);
+
+                            if (!velocity || !heading) {
+                                return [lon, lat];
+                            }
+
+                            const speedKmPerSecond = (velocity * 1.852) / 3600;
+                            const distanceKm = speedKmPerSecond * travelSeconds;
+                            const headingRad = heading * Math.PI / 180;
+                            const latDelta = (distanceKm * Math.cos(headingRad)) / 111.32;
+                            const lonScale = Math.max(0.15, Math.cos(lat * Math.PI / 180));
+                            const lonDelta = (distanceKm * Math.sin(headingRad)) / (111.32 * lonScale);
+
+                            const bounds = getMapBounds();
+                            const nextLon = lon + lonDelta;
+                            const nextLat = lat + latDelta;
+
+                            if (!bounds) {
+                                return [nextLon, nextLat];
+                            }
+
+                            return [
+                                clamp(nextLon, bounds.minLon, bounds.maxLon),
+                                clamp(nextLat, bounds.minLat, bounds.maxLat),
+                            ];
+                        }
+
+                        function renderLiveFlightPositions(nowMs) {
+                            const svg = window.__airportMapSVG;
+                            const radarLayer = window.__airportRadarLayer;
+                            const proj = window.__airportProjection;
+                            if (!svg || !proj || !radarLayer) return;
+
+                            radarLayer.selectAll('g.flight').each(function(d) {
+                                if (!d || d.latitude == null || d.longitude == null) return;
+
+                                const $g = d3.select(this);
+                                const id = getFlightId(d);
+                                const [lon, lat] = getLiveFlightPoint(d, nowMs);
+                                const pt = proj([lon, lat]);
+                                if (!pt) return;
+
+                                const heading = d.true_track || d.dir || 0;
+                                $g.attr('transform', 'translate(' + pt[0] + ',' + pt[1] + ')')
+                                    .attr('data-heading', heading);
+
+                                const hist = window.__airportRadarHistory[id] || [];
+                                hist.push([lon, lat]);
+                                if (hist.length > 12) hist.splice(0, hist.length - 12);
+                                window.__airportRadarHistory[id] = hist;
+
+                                const ptsRaw = hist.map(function(p) { const pp = proj([p[0], p[1]]); return pp; }).filter(Boolean);
+                                const ptsPx = ptsRaw.filter(function(p) { return Math.hypot(p[0] - pt[0], p[1] - pt[1]) <= PIXEL_MAX; });
+                                if (ptsPx.length >= 2) {
+                                    const rel = ptsPx.map(function(p) { return [p[0] - pt[0], p[1] - pt[1]]; });
+                                    $g.select('path.flight-trail').attr('d', lineGen(rel)).style('display', null);
+                                } else {
+                                    $g.select('path.flight-trail').attr('d', null).style('display', 'none');
+                                }
+
+                                $g.select('path.flight-plane-path')
+                                    .attr('transform', 'rotate(' + heading + ')')
+                                    .style('display', null);
+
+                                $g.select('circle.flight-dot').style('display', 'none');
+                            });
+                        }
+
+                        function getBBoxQuery() {
+                            const width = Math.max(320, Math.round(airportMapEl.clientWidth));
+                            const height = Math.max(180, Math.round(airportMapEl.clientHeight));
+                            const proj = window.__airportProjection;
+                            if (!proj || typeof proj.invert !== 'function') return null;
+                            const topLeft = proj.invert([0, 0]); // [lon, lat]
+                            const bottomRight = proj.invert([width, height]);
+                            if (!topLeft || !bottomRight) return null;
+                            const minLat = Math.min(topLeft[1], bottomRight[1]);
+                            const maxLat = Math.max(topLeft[1], bottomRight[1]);
+                            const minLon = Math.min(topLeft[0], bottomRight[0]);
+                            const maxLon = Math.max(topLeft[0], bottomRight[0]);
+                            return [minLat, maxLat, minLon, maxLon].join(',');
+                        }
+
+                        async function fetchAndRender() {
+                            const bbox = getBBoxQuery();
+                            if (!bbox) return;
+                            try {
+                                const url = '{{ path('api_radar_flights') }}' + '?bbox=' + encodeURIComponent(bbox) + '&count=500';
+                                const res = await fetch(url, { cache: 'no-store' });
+                                if (!res.ok) return;
+                                const payload = await res.json();
+                                const flights = payload.flights || [];
+                                const svg = window.__airportMapSVG;
+                                const radarLayer = window.__airportRadarLayer;
+                                const proj = window.__airportProjection;
+                                if (!svg || !proj || !radarLayer) return;
+
+
+                                // Prefer recent flights (last hour). If too few, fall back to all flights.
+                                const nowSec = Math.floor(Date.now() / 1000);
+                                const recentFlights = (flights || []).filter(function(f) {
+                                    const last = parseInt(f.last_contact || f.time_position || 0, 10) || 0;
+                                    return last > 0 && (nowSec - last) <= 3600;
+                                });
+                                const sourceFlights = ((recentFlights.length >= 80 ? recentFlights : (flights || []))).slice(0, 500);
+                                const hourBucket = Math.floor(Date.now() / 3600000);
+
+                                // Keep one stable random set of 100 IDs for the full hour.
+                                const sampleState = window.__airportHourlySampleState || { hourBucket: -1, ids: [] };
+                                if (sampleState.hourBucket !== hourBucket) {
+                                    const sampled = pickHourlyFlights(sourceFlights, hourBucket, 100);
+                                    sampleState.hourBucket = hourBucket;
+                                    sampleState.ids = sampled.map(getFlightId);
+                                    window.__airportHourlySampleState = sampleState;
+
+                                    // Drop previous hour graphics immediately.
+                                    if (window.__airportRadarLayer) {
+                                        window.__airportRadarLayer.selectAll('g.flight').remove();
+                                    }
+                                }
+
+                                const selectedIds = new Set(sampleState.ids);
+                                const visibleFlights = sourceFlights.filter(function(f) {
+                                    return selectedIds.has(getFlightId(f));
+                                }).slice(0, 100).map(stampLiveFlight);
+
+                                const groups = radarLayer.selectAll('g.flight').data(visibleFlights, getFlightId);
+
+                                const enter = groups.enter().append('g').attr('class', 'airport-flight-marker flight');
+                                // trail path
+                                enter.append('path').attr('class', 'flight-trail').attr('d', null);
+                                // plane icon (small path) — will be rotated by heading
+                                // compact aircraft shape (nose points right)
+                                const planePath = 'M-10,0 L-3,-2 L1,-8 L3,-8 L4,-2 L10,-2 L12,-4 L13,-3 L11,0 L13,3 L12,4 L10,2 L4,2 L3,8 L1,8 L-3,2 L-10,0 Z';
+                                // small dot for simplified markers
+                                enter.append('circle').attr('class', 'flight-dot').attr('r', 2).style('display', 'none');
+                                enter.append('path').attr('class', 'flight-plane-path').attr('d', planePath).attr('transform', 'translate(0,0)');
+                                enter.append('text').attr('class', 'flight-label').attr('font-size', 11).attr('x', 16).attr('y', -8).attr('text-anchor', 'start');
+
+                                const merged = groups.merge(enter);
+                                merged.select('text').each(function(d) {
+                                    const label = d3.select(this);
+                                    label.selectAll('tspan').remove();
+
+                                    const callsign = (d.flight_icao || d.callsign || d.flight_iata || 'FLIGHT').toString().trim();
+                                    label.append('tspan').attr('x', 16).attr('dy', 0).text(callsign);
+                                });
+                                renderLiveFlightPositions(performance.now());
+                                merged.raise();
+
+                                groups.exit().remove();
+
+                                // Hard safety cap: never allow more than 100 rendered flights in DOM.
+                                radarLayer.selectAll('g.flight').filter(function(d, i) {
+                                    return i >= 100;
+                                }).remove();
+
+                                // Remove history for flights no longer displayed to avoid stale memory growth.
+                                const visibleIds = new Set(visibleFlights.map(getFlightId));
+                                Object.keys(window.__airportRadarHistory).forEach(function(id) {
+                                    if (!visibleIds.has(id)) {
+                                        delete window.__airportRadarHistory[id];
+                                    }
+                                });
+
+                                if (!window.__airportRadarAnimationStarted) {
+                                    window.__airportRadarAnimationStarted = true;
+                                    (function animateRadar() {
+                                        renderLiveFlightPositions(performance.now());
+                                        window.requestAnimationFrame(animateRadar);
+                                    })();
+                                }
+                            } catch (e) {
+                                console.warn('Radar layer error', e);
+                            }
+                        }
+
+                        // Poll loop
+                        (function pollLoop() {
+                            fetchAndRender().finally(() => setTimeout(pollLoop, pollInterval));
+                        })();
+
+                        window.addEventListener('resize', function() { setTimeout(fetchAndRender, 400); });
+                    }
+
+                    // start radar after atlas may initialize; safe to call repeatedly
+                    setTimeout(initializeRadarLayer, 1200);
             }
 
             // Menu toggle
@@ -3286,21 +4070,10 @@
         </div>
 
         <div class="airport-background" aria-hidden="true">
-            <div class="airport-skyglow airport-layer" style="--depth: 0.06;"></div>
-            <div class="airport-clouds airport-layer" style="--depth: 0.12;"></div>
-            <div class="airport-plane plane-three airport-layer" style="--depth: 0.16;"></div>
-            <div class="airport-plane plane-two airport-layer" style="--depth: 0.2;"></div>
-            <div class="airport-plane plane-one airport-layer" style="--depth: 0.26;">
-                <svg class="airport-plane-svg" viewBox="0 0 260 90" role="presentation" focusable="false" aria-hidden="true">
-                    <path class="plane-body" d="M10 48L96 44L174 24L240 34L240 56L174 66L96 46L10 42Z"></path>
-                    <path class="plane-wing" d="M96 45L142 20L166 22L128 46Z"></path>
-                    <path class="plane-wing" d="M96 45L142 70L166 68L128 44Z"></path>
-                    <path class="plane-wing" d="M52 43L70 30L88 30L74 43Z"></path>
-                    <path class="plane-wing" d="M52 47L70 60L88 60L74 47Z"></path>
-                    <circle class="plane-window" cx="195" cy="45" r="4"></circle>
-                    <circle class="plane-light" cx="162" cy="24" r="2.4"></circle>
-                </svg>
-            </div>
+            <div class="airport-skyglow airport-layer" style="--depth: 0.05;"></div>
+            <div class="airport-map airport-layer" style="--depth: 0.08;"></div>
+            <div class="airport-routes airport-layer" style="--depth: 0.12;"></div>
+            <div class="airport-point point-newyork airport-layer" style="--depth: 0.16;"></div>
         </div>
 
         <div class="main-content-shell">
@@ -3354,7 +4127,7 @@
                     <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>
                 {% endif %}
             </div>
-            
+
             <!-- Content Area -->
             <div class="content-area">
                 {% if birthdayGift and birthdayGift.showBanner %}
@@ -3378,53 +4151,6 @@
                     </section>
                 {% endif %}
 
-                <div class="welcome-section">
-                    <h1 class="welcome-title">{{ 'main.welcome.title'|trans }}</h1>
-                    <p class="welcome-subtitle">{{ 'main.welcome.subtitle'|trans }}</p>
-                </div>
-                
-                <div class="feature-grid">
-                    <a href="{{ path('app_todo_index') }}" class="feature-card">
-                        <div class="feature-icon">🗺️</div>
-                        <div class="feature-title">{{ 'main.feature.activities.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.activities.text'|trans }}</div>
-                    </a>
-                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('shop'); return false;">
-                        <div class="feature-icon">🛒</div>
-                        <div class="feature-title">{{ 'main.feature.shop.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.shop.text'|trans }}</div>
-                    </a>
-                    <a href="#" class="feature-card" onclick="showChatPopup(); return false;">
-                        <div class="feature-icon">💬</div>
-                        <div class="feature-title">{{ 'main.feature.chat.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.chat.text'|trans }}</div>
-                    </a>
-                    <a href="#" class="feature-card" onclick="window.loadMainpageModule('post'); return false;">
-                        <div class="feature-icon">✉️</div>
-                        <div class="feature-title">{{ 'main.feature.post.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.post.text'|trans }}</div>
-                    </a>
-                    <a href="{{ path('app_services') }}" class="feature-card">
-                        <div class="feature-icon">💼</div>
-                        <div class="feature-title">{{ 'main.feature.services.title'|trans }}</div>
-                        <div class="feature-text">{{ 'main.feature.services.text'|trans }}</div>
-                    </a>
-                </div>
-
-                <div class="trust-metrics" aria-label="Community Metrics">
-                    <div class="metric-card">
-                        <div class="metric-value">12k+</div>
-                        <div class="metric-label">{{ 'main.metrics.travelers_joined'|trans }}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">3.4k</div>
-                        <div class="metric-label">{{ 'main.metrics.trips_booked'|trans }}</div>
-                    </div>
-                    <div class="metric-card">
-                        <div class="metric-value">98%</div>
-                        <div class="metric-label">{{ 'main.metrics.satisfaction'|trans }}</div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

@@ -90,7 +90,7 @@ class SecurityController extends AbstractController
         return $this->redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
     }
 
-    #[Route(path: '/connect/google/check', name: 'connect_google_check', methods: ['GET'])]
+    #[Route('/connect/google/check', name: 'connect_google_check', methods: ['GET'])]
     public function loginWithGoogleCallback(
         Request $request,
         HttpClientInterface $httpClient,
@@ -533,7 +533,7 @@ class SecurityController extends AbstractController
                     continue;
                 }
 
-                $similarity = $this->computeEmbeddingSimilarity($probeEmbedding, $storedEmbedding);
+                $similarity = $this->compareEmbeddingsViaApi($httpClient, $faceApiUrl, $probeEmbedding, $storedEmbedding);
                 if ($similarity !== null) {
                     $embeddingComparisons++;
                 }
@@ -566,13 +566,17 @@ class SecurityController extends AbstractController
 
         $singleEnrolledUser = count($userRows) === 1;
         $usingEmbedding = true;
-        $matchThreshold = $singleEnrolledUser ? 0.93 : 0.90;
-        $ambiguityGap = 0.08;
+        // Stricter thresholds reduce false-positive logins on similar faces/backgrounds.
+        $matchThreshold = $singleEnrolledUser ? 0.95 : 0.93;
+        // Only treat as ambiguous when both candidates are genuinely strong and too close.
+        $ambiguityGap = 0.06;
+        $ambiguitySecondFloor = max(0.0, $matchThreshold - 0.02);
         $debug = $debugEnabled ? [
             'bestSimilarity' => round($bestSimilarity, 4),
             'secondBestSimilarity' => round($secondBestSimilarity, 4),
             'matchThreshold' => $matchThreshold,
             'ambiguityGap' => $ambiguityGap,
+            'ambiguitySecondFloor' => round($ambiguitySecondFloor, 4),
             'usingEmbedding' => $usingEmbedding,
             'probeEmbeddingUnavailable' => false,
             'probeNoFaceDetected' => $probeNoFaceDetected,
@@ -615,7 +619,10 @@ class SecurityController extends AbstractController
             return $this->json($payload, Response::HTTP_UNAUTHORIZED);
         }
 
-        if ($secondBestSimilarity > 0.0 && ($bestSimilarity - $secondBestSimilarity) < $ambiguityGap) {
+        $isAmbiguous = $secondBestSimilarity >= $ambiguitySecondFloor
+            && ($bestSimilarity - $secondBestSimilarity) < $ambiguityGap;
+
+        if ($isAmbiguous) {
             $payload = [
                 'success' => false,
                 'message' => 'Face match is ambiguous. Please retry with better lighting and angle.',
@@ -951,6 +958,42 @@ class SecurityController extends AbstractController
             return $embedding;
         } catch (\Throwable $exception) {
             throw new \RuntimeException('Face extract request failed.', 0, $exception);
+        }
+    }
+
+    private function compareEmbeddingsViaApi(
+        HttpClientInterface $httpClient,
+        string $apiBaseUrl,
+        array $probeEmbedding,
+        array $storedEmbedding
+    ): ?float {
+        if ($probeEmbedding === [] || $storedEmbedding === [] || count($probeEmbedding) !== count($storedEmbedding)) {
+            return null;
+        }
+
+        try {
+            $response = $httpClient->request('POST', $apiBaseUrl . '/compare', [
+                'json' => [
+                    'probe_embedding' => $probeEmbedding,
+                    'stored_embedding' => $storedEmbedding,
+                ],
+                'headers' => ['Accept' => 'application/json'],
+                'timeout' => 10.0,
+            ]);
+
+            if ($response->getStatusCode() >= 400) {
+                throw new \RuntimeException('Face compare request failed.');
+            }
+
+            $data = $response->toArray(false);
+            if (!array_key_exists('similarity', $data)) {
+                return null;
+            }
+
+            $similarity = (float) $data['similarity'];
+            return max(0.0, min(1.0, $similarity));
+        } catch (\Throwable $exception) {
+            throw new \RuntimeException('Face compare request failed.', 0, $exception);
         }
     }
 
