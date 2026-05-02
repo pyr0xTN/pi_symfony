@@ -13,38 +13,66 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Knp\Component\Pager\PaginatorInterface;
+use App\Repository\ActualiteRepository;
 
 final class OfferController extends AbstractController
 {
     #[Route('/offers', name: 'app_offer_index')]
-    public function index(Request $request, OfferRepository $offerRepository): Response
-    {
-        $filters = [
-            'q' => trim((string) $request->query->get('q', '')),
-            'location' => trim((string) $request->query->get('location', '')),
-            'type' => trim((string) $request->query->get('type', '')),
-            'minPrice' => trim((string) $request->query->get('minPrice', '')),
-            'maxPrice' => trim((string) $request->query->get('maxPrice', '')),
-        ];
+public function index(Request $request, OfferRepository $offerRepository, PaginatorInterface $paginator, ActualiteRepository $actualiteRepo): Response
+{
+    $filters = [
+        'q'        => trim((string) $request->query->get('q', '')),
+        'location' => trim((string) $request->query->get('location', '')),
+        'type'     => trim((string) $request->query->get('type', '')),
+        'minPrice' => trim((string) $request->query->get('minPrice', '')),
+        'maxPrice' => trim((string) $request->query->get('maxPrice', '')),
+    ];
 
-        $offers = $offerRepository->findActiveWithFilters($filters);
+    $offers = $paginator->paginate(
+        $offerRepository->findActiveWithFiltersQuery($filters),
+        $request->query->getInt('page', 1),
+        8
+    );
 
-        return $this->render('offer/index.html.twig', [
-            'offers' => $offers,
-            'filters' => $filters,
-        ]);
-    }
+    $topDestinations = $offerRepository->findTopDestinations(6);
+        $banners = $actualiteRepo->findActiveBanners();
+
+
+    return $this->render('offer/index.html.twig', [
+        'offers'          => $offers,
+        'filters'         => $filters,
+        'topDestinations' => $topDestinations,
+        'banners'         => $banners,
+
+    ]);
+}
 
     #[Route('/offers/{id}', name: 'app_offer_show', requirements: ['id' => '\d+'])]
-    public function show(Offer $offer, ServiceRepository $serviceRepository): Response
-    {
-        $serviceDetails = $serviceRepository->findDetailsByOfferId($offer->getId());
+public function show(Offer $offer, ServiceRepository $serviceRepository): Response
+{
+    $serviceDetails = $serviceRepository->findDetailsByOfferId($offer->getId());
 
-        return $this->render('offer/show.html.twig', [
-            'offer' => $offer,
-            'serviceDetails' => $serviceDetails,
-        ]);
+    // Calculate remaining capacity
+    $bookedSpots = 0;
+    foreach ($offer->getReservations() as $r) {
+        if ($r->getStatus() === 'CONFIRMED') {
+            $bookedSpots += $r->getNumberOfPersons();
+        }
     }
+    $capacity          = $offer->getCapacity() ?? 0;
+    $remainingCapacity = max(0, $capacity - $bookedSpots);
+    $percentageFull    = $capacity > 0 ? round(($bookedSpots / $capacity) * 100) : 0;
+
+    return $this->render('offer/show.html.twig', [
+        'offer'             => $offer,
+        'serviceDetails'    => $serviceDetails,
+        'remainingCapacity' => $remainingCapacity,
+        'bookedSpots'       => $bookedSpots,
+        'capacity'          => $capacity,
+        'percentageFull'    => $percentageFull,
+    ]);
+}
 
     #[Route('/agency/offers', name: 'app_agency_offer_index')]
     public function myOffers(OfferRepository $offerRepository): Response
