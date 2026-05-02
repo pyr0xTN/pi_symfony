@@ -26,6 +26,9 @@ class Profile
     #[ORM\Column]
     private ?int $coins = 0;
 
+    #[ORM\Column(name: 'birthday_gift_year', type: 'integer', nullable: true)]
+    private ?int $birthdayGiftYear = null;
+
     #[ORM\OneToOne(targetEntity: User::class, inversedBy: 'profile')]
     #[ORM\JoinColumn(name: 'id_user', referencedColumnName: 'id', nullable: false)]
     private ?User $user = null;
@@ -84,6 +87,17 @@ class Profile
     public function setCoins(int $coins): static
     {
         $this->coins = $coins;
+        return $this;
+    }
+
+    public function getBirthdayGiftYear(): ?int
+    {
+        return $this->birthdayGiftYear;
+    }
+
+    public function setBirthdayGiftYear(?int $birthdayGiftYear): static
+    {
+        $this->birthdayGiftYear = $birthdayGiftYear;
         return $this;
     }
 

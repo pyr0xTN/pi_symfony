@@ -8,6 +8,7 @@ use App\Repository\ConversationRepository;
 use App\Repository\MessagesRepository;
 use App\Repository\ParticipantConversationRepository;
 use App\Repository\UserRepository;
+use App\BirthdayRewardBundle\Service\BirthdayRewardService;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\ParameterType;
@@ -15,15 +16,25 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class HomeController extends AbstractController
 {
+    private const CHAT_EDIT_MARKER = "\n[edited]";
+    private const CHAT_DELETED_MARKER = '[deleted]';
+    private const CHAT_ATTACHMENT_PREFIX = '[attachment]:';
+    private const CHAT_CALL_PREFIX = '[call]:';
+    private const CHAT_OFFLINE_AUTO_REPLY = 'We got your message. We will reply as soon as possible.';
+    private const CHAT_OFFLINE_AUTO_REPLY_SENDER = 'rehltna.tn';
+
     #[Route('/', name: 'app_home')]
     #[Route('/home', name: 'app_home_home')]
     public function index(Request $request, TokenStorageInterface $tokenStorage): Response
@@ -141,7 +152,7 @@ class HomeController extends AbstractController
 
     #[Route('/panel/2fa/send-credentials-qr', name: 'app_panel_send_credentials_qr', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function sendCredentialsQr(MailerInterface $mailer): JsonResponse
+    public function sendCredentialsQr(MailerInterface $mailer, Request $request): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User || $user->getId() === null) {
@@ -156,7 +167,17 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Missing credentials payload'], Response::HTTP_BAD_REQUEST);
         }
 
-        $qrPayload = sprintf("email: %s\npassword_hash: %s", $emailAddress, $passwordHash);
+        $publicUrl = trim((string) ($_ENV['APP_PUBLIC_URL'] ?? $_SERVER['APP_PUBLIC_URL'] ?? getenv('APP_PUBLIC_URL') ?: ''));
+        if ($publicUrl === '') {
+            $publicUrl = rtrim($request->getSchemeAndHttpHost(), '/') . '/';
+        }
+
+        $qrPayload = sprintf(
+            "email: %s\npassword_hash: %s\nsite_url: %s",
+            $emailAddress,
+            $passwordHash,
+            $publicUrl
+        );
         $qrImageUrl = 'https://quickchart.io/qr?size=320&margin=2&text=' . rawurlencode($qrPayload);
 
         try {
@@ -166,12 +187,31 @@ class HomeController extends AbstractController
                 ->subject('Your Rehletna QR Code (Email + Password Hash)')
                 ->text(
                     "Hello " . $displayName . ",\n\n"
+                    . "Scan this QR code to sign in with your email and password hash.\n\n"
+                    . $qrPayload . "\n\n"
+                    . "If you did not request this email, please secure your account immediately."
                         . "A quick scan helps you sign in faster with less typing.\n\n"
                         . $qrPayload . "\n\n"
                         . "If you did not request this email, please secure your account immediately."
                 )
                 ->html(sprintf(
                     '<div style="font-family:Segoe UI,Arial,sans-serif;background:linear-gradient(160deg,#eef6ff,#f7fbff);padding:28px 14px;">'
+                    . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
+                    . '<div style="background:linear-gradient(135deg,#0e5f97,#1a86c8);padding:18px 22px;color:#ffffff;">'
+                    . '<div style="font-size:12px;letter-spacing:0.4px;opacity:.9;text-transform:uppercase;">Rehletna Security</div>'
+                    . '<h2 style="margin:8px 0 0;font-size:24px;line-height:1.2;">Your Login QR Code</h2>'
+                    . '</div>'
+                    . '<div style="padding:22px;color:#1f3f5f;">'
+                    . '<p style="margin:0 0 12px;font-size:15px;line-height:1.7;">Hello <strong>%s</strong>,</p>'
+                    . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#456b90;">Scan this code to sign in with your email and password hash.</p>'
+                    . '<div style="text-align:center;margin:12px 0 8px;padding:14px;border:1px solid #dce9f6;border-radius:14px;background:#f8fbff;">'
+                    . '<img src="%s" alt="Credentials QR Code" width="260" height="260" style="max-width:100%%;border:1px solid #cfe1f3;border-radius:12px;padding:10px;background:#fff;">'
+                    . '<div style="margin-top:10px;font-size:12px;color:#54779a;">Contains: email + password_hash + site_url</div>'
+                    . '</div>'
+                    . '<div style="margin-top:16px;padding:10px 12px;border-radius:10px;background:#fff4f4;border:1px solid #f3d2d2;color:#9b3d3d;font-size:12px;line-height:1.6;">If you did not request this email, change your password immediately.</div>'
+                    . '</div>'
+                    . '</div>'
+                    . '</div>',
                         . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
                         . '<div style="background:linear-gradient(135deg,#0e5f97,#1a86c8);padding:18px 22px;color:#ffffff;">'
                         . '<div style="font-size:12px;letter-spacing:0.4px;opacity:.9;text-transform:uppercase;">Rehletna Security</div>'
@@ -205,7 +245,7 @@ class HomeController extends AbstractController
 
     #[Route('/panel/face-id/capture', name: 'app_panel_capture_face_id', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function captureFaceId(Request $request, Connection $connection): JsonResponse
+    public function captureFaceId(Request $request, Connection $connection, HttpClientInterface $httpClient, SessionInterface $session): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User || $user->getId() === null) {
@@ -217,7 +257,10 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Invalid payload'], Response::HTTP_BAD_REQUEST);
         }
 
+        $step = (int) ($payload['step'] ?? 1);
         $imageDataUrl = (string) ($payload['imageData'] ?? '');
+        $firstImageData = (string) ($payload['firstImageData'] ?? '');
+
         if ($imageDataUrl === '' || !str_starts_with($imageDataUrl, 'data:image/')) {
             return $this->json(['success' => false, 'error' => 'Missing face image'], Response::HTTP_BAD_REQUEST);
         }
@@ -233,16 +276,72 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Image decode failed'], Response::HTTP_BAD_REQUEST);
         }
 
-        $connection->executeStatement(
-            'UPDATE `user` SET face_data = ? WHERE id = ?',
-            [$binaryImage, (int) $user->getId()],
-            [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
-        );
+        $faceApiUrl = trim((string) ($_ENV['FACE_ID_API_URL'] ?? $_SERVER['FACE_ID_API_URL'] ?? getenv('FACE_ID_API_URL') ?: ''));
+        if ($faceApiUrl === '') {
+            $faceApiUrl = 'http://127.0.0.1:8001';
+        }
+
+        // Validate the detected face once, then store it immediately.
+        try {
+            $extractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
+                'json' => ['image_data' => $imageDataUrl],
+                'headers' => ['Accept' => 'application/json'],
+                'timeout' => 10.0,
+            ]);
+
+            $status = $extractResponse->getStatusCode();
+            if ($status === 400) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'No clear face detected. Keep eyes and mouth visible, then retry.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            if ($status >= 400) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'Face service failed to validate this image.',
+                ], Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            $extractPayload = $extractResponse->toArray(false);
+            if (!isset($extractPayload['embedding']) || !is_array($extractPayload['embedding']) || $extractPayload['embedding'] === []) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'Face validation failed. Please retry in better lighting.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $currentEmbedding = $extractPayload['embedding'];
+        } catch (\Throwable $exception) {
+            $currentEmbedding = null;
+        }
+
+        if ($step === 1 || $step === 2) {
+            if ($currentEmbedding === null) {
+                return $this->json([
+                    'success' => false,
+                    'error' => 'No face detected. Keep your face inside the frame and try again.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $connection->executeStatement(
+                'UPDATE `user` SET face_data = ? WHERE id = ?',
+                [$binaryImage, (int) $user->getId()],
+                [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
+            );
+
+            return $this->json([
+                'success' => true,
+                'step' => $step,
+                'message' => 'Face data saved successfully.',
+            ]);
+        }
 
         return $this->json([
-            'success' => true,
-            'message' => 'Face data captured successfully.',
-        ]);
+            'success' => false,
+            'error' => 'Invalid step parameter.',
+        ], Response::HTTP_BAD_REQUEST);
     }
 
     #[Route('/panel/profile-summary', name: 'app_panel_profile_summary', methods: ['GET'])]
@@ -323,12 +422,13 @@ class HomeController extends AbstractController
 
     #[Route('/mainpage', name: 'app_mainpage')]
     #[IsGranted('ROLE_USER')]
-    public function mainpage(Request $request, Connection $connection): Response
+    public function mainpage(Request $request, Connection $connection, BirthdayRewardService $birthdayRewardService): Response
     {
         $user = $this->getUser();
         $profile = null;
         $visionAccessibleMode = (bool) $request->getSession()->get('vision_accessible_mode', false);
         $visionTheme = (string) $request->getSession()->get('vision_theme', 'default');
+        $birthdayGift = null;
 
         if ($user instanceof User) {
             $defaults = [
@@ -381,6 +481,7 @@ class HomeController extends AbstractController
             }
 
             $profile = $profile ? array_merge($defaults, $profile) : $defaults;
+            $birthdayGift = $birthdayRewardService->buildBirthdayGiftState($user, $request->getSession(), $connection);
 
             // Handle BLOB image conversion to base64
             if (!empty($profile['image'])) {
@@ -417,13 +518,101 @@ class HomeController extends AbstractController
                     $profile['image_url'] = '/images/default_image.png';
                 }
             }
+
         }
 
         return $this->render('home/mainpage.html.twig', [
             'profile' => $profile,
             'visionAccessibleMode' => $visionAccessibleMode,
             'visionTheme' => $visionTheme,
+            'birthdayGift' => $birthdayGift,
         ]);
+    }
+
+    #[Route('/panel/face-id/detect', name: 'app_panel_detect_face_id', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function detectFaceId(Request $request, HttpClientInterface $httpClient): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            return $this->json(['success' => false, 'error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'Invalid payload received by detectFaceId.',
+                'error' => 'Invalid payload',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $imageDataUrl = (string) ($payload['imageData'] ?? '');
+        if ($imageDataUrl === '' || !str_starts_with($imageDataUrl, 'data:image/')) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'Missing or invalid face image data URL.',
+                'error' => 'Missing face image',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $faceApiUrl = trim((string) ($_ENV['FACE_ID_API_URL'] ?? $_SERVER['FACE_ID_API_URL'] ?? getenv('FACE_ID_API_URL') ?: ''));
+        if ($faceApiUrl === '') {
+            $faceApiUrl = 'http://127.0.0.1:8001';
+        }
+
+        try {
+            $extractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
+                'json' => ['image_data' => $imageDataUrl],
+                'headers' => ['Accept' => 'application/json'],
+                'timeout' => 8.0,
+            ]);
+
+            $status = $extractResponse->getStatusCode();
+            if ($status === 400) {
+                return $this->json([
+                    'success' => true,
+                    'detected' => false,
+                    'debugMessage' => 'OpenCV service received the frame but did not find a clear face.',
+                ]);
+            }
+
+            if ($status >= 400) {
+                return $this->json([
+                    'success' => false,
+                    'detected' => false,
+                    'debugMessage' => 'OpenCV service is unreachable or returned an unexpected error.',
+                    'error' => 'Face service failed to validate this image.',
+                ], Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            $extractPayload = $extractResponse->toArray(false);
+            if (!isset($extractPayload['face_box']) || !is_array($extractPayload['face_box'])) {
+                return $this->json([
+                    'success' => true,
+                    'detected' => true,
+                    'debugMessage' => 'OpenCV service detected a face but did not return a face box.',
+                ]);
+            }
+
+            return $this->json([
+                'success' => true,
+                'detected' => true,
+                'debugMessage' => 'OpenCV service detected a face successfully.',
+                'faceBox' => $extractPayload['face_box'],
+            ]);
+        } catch (
+            \Throwable $exception
+        ) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'OpenCV service is unavailable. Start the Python Face ID service.',
+                'error' => 'Face service is unavailable.',
+            ], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
     }
 
     #[Route('/vision-test', name: 'app_vision_test', methods: ['GET'])]
@@ -797,6 +986,56 @@ class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/birthday-gift/collect', name: 'app_collect_birthday_gift', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
+    public function collectBirthdayGift(Request $request, Connection $connection, BirthdayRewardService $birthdayRewardService): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
+
+            return $this->redirectToRoute('app_login');
+        }
+
+        if (!$this->isCsrfTokenValid('birthday-gift-collect', (string) $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Invalid birthday gift request.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'Invalid birthday gift request.');
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        $result = $birthdayRewardService->collectBirthdayGift($user, $request->getSession(), $connection);
+        if (!$result['success']) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json([
+                    'success' => false,
+                    'message' => (string) ($result['message'] ?? 'Birthday gift is not available.'),
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', (string) ($result['message'] ?? 'Birthday gift is not available.'));
+            return $this->redirectToRoute('app_mainpage');
+        }
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'message' => (string) $result['message'],
+                'awarded' => (int) $result['awarded'],
+                'coins' => (int) $result['coins'],
+                'showBanner' => false,
+            ]);
+        }
+
+        $this->addFlash('success', sprintf('Happy birthday! You received %d coins.', (int) $result['awarded']));
+
+        return $this->redirectToRoute('app_mainpage');
+    }
+
     private function fetchOrCreateProfileRow(Connection $connection, int $userId): ?array
     {
         $row = $connection->executeQuery(
@@ -1036,10 +1275,21 @@ class HomeController extends AbstractController
     public function unreadCount(Connection $connection): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user instanceof User) {
-            return $this->json(['unreadCount' => 0]);
+        if (!$user instanceof User || $user->getId() === null) {
+            return $this->json(['unreadCount' => 0, 'unread_count' => 0]);
         }
 
+        try {
+            $unreadCount = (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0',
+                [(int) $user->getId()],
+                [ParameterType::INTEGER]
+            );
+        } catch (\Throwable $exception) {
+            $unreadCount = 0;
+        }
+        
+        return $this->json(['unreadCount' => $unreadCount, 'unread_count' => $unreadCount]);
         $unreadCount = (int) $connection->fetchOne(
             'SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0',
             [$user->getId()],
@@ -1051,7 +1301,7 @@ class HomeController extends AbstractController
 
     #[Route('/chat/messages', name: 'app_chat_messages', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
-    public function chatMessages(Connection $connection): JsonResponse
+    public function chatMessages(Request $request, Connection $connection): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User) {
@@ -1059,49 +1309,161 @@ class HomeController extends AbstractController
         }
 
         $userId = (int) $user->getId();
-        $conversationId = $this->conversationIdForUser($userId);
+        $isAdmin = in_array('ROLE_ADMIN', $user->getRoles(), true);
+        $activeUserId = null;
+        $conversations = [];
+        $admins = [];
+        $rows = [];
 
-        $rows = $connection->executeQuery(
-            'SELECT m.id, m.sender_id, m.receiver_id, m.message, m.timestamp, m.is_read,
-                          u.username, u.name, u.last_name
-             FROM messages m
-                      INNER JOIN `user` u ON u.id = m.sender_id
-             WHERE m.conversation_id = ?
-               AND (m.sender_id = ? OR m.receiver_id = ?)
-             ORDER BY m.timestamp ASC, m.id ASC',
-            [$conversationId, $userId, $userId],
-            [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
-        )->fetchAllAssociative();
+        if ($isAdmin) {
+            $conversations = $this->fetchAdminSupportConversations($connection, $userId);
+            $requestedUserId = (int) $request->query->get('userId', 0);
 
-        $connection->executeStatement(
-            'UPDATE messages
-             SET is_read = 1
-             WHERE conversation_id = ?
-               AND receiver_id = ?
-               AND is_read = 0',
-            [$conversationId, $userId],
-            [ParameterType::STRING, ParameterType::INTEGER]
-        );
+            if ($requestedUserId > 0) {
+                $activeUserId = $requestedUserId;
+            } elseif (!empty($conversations)) {
+                $activeUserId = (int) ($conversations[0]['userId'] ?? 0);
+            }
 
-        $messages = array_map(static function (array $row) use ($userId): array {
+            if ($activeUserId !== null && $activeUserId > 0) {
+                $conversationId = $this->conversationIdForUser($activeUserId);
+
+                $rows = $connection->executeQuery(
+                    'SELECT m.id,
+                            m.sender_id,
+                            m.receiver_id,
+                            m.message,
+                            m.timestamp,
+                            m.is_read,
+                            su.username AS sender_username,
+                            su.name AS sender_name,
+                            su.last_name AS sender_last_name,
+                            ru.status AS receiver_status
+                     FROM messages m
+                              INNER JOIN `user` su ON su.id = m.sender_id
+                              LEFT JOIN `user` ru ON ru.id = m.receiver_id
+                     WHERE m.conversation_id = ?
+                       AND ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?))
+                     ORDER BY m.timestamp ASC, m.id ASC',
+                    [$conversationId, $activeUserId, $userId, $userId, $activeUserId],
+                    [
+                        ParameterType::STRING,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                    ]
+                )->fetchAllAssociative();
+
+                $connection->executeStatement(
+                    'UPDATE messages
+                     SET is_read = 1
+                     WHERE conversation_id = ?
+                       AND sender_id = ?
+                       AND receiver_id = ?
+                       AND is_read = 0',
+                    [$conversationId, $activeUserId, $userId],
+                    [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
+                );
+            }
+        } else {
+            $admins = $this->fetchSupportAdmins($connection, $userId);
+            $adminId = $this->resolveSupportAdminId($connection, $userId);
+            if ($adminId !== null) {
+                $conversationId = $this->conversationIdForUser($userId);
+
+                $rows = $connection->executeQuery(
+                    'SELECT m.id,
+                            m.sender_id,
+                            m.receiver_id,
+                            m.message,
+                            m.timestamp,
+                            m.is_read,
+                            su.username AS sender_username,
+                            su.name AS sender_name,
+                            su.last_name AS sender_last_name,
+                            ru.status AS receiver_status
+                     FROM messages m
+                              INNER JOIN `user` su ON su.id = m.sender_id
+                              LEFT JOIN `user` ru ON ru.id = m.receiver_id
+                     WHERE m.conversation_id = ?
+                       AND ((m.sender_id = ? AND m.receiver_id = ?) OR (m.sender_id = ? AND m.receiver_id = ?))
+                     ORDER BY m.timestamp ASC, m.id ASC',
+                    [$conversationId, $userId, $adminId, $adminId, $userId],
+                    [
+                        ParameterType::STRING,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                    ]
+                )->fetchAllAssociative();
+
+                $connection->executeStatement(
+                    'UPDATE messages
+                     SET is_read = 1
+                     WHERE conversation_id = ?
+                       AND sender_id = ?
+                       AND receiver_id = ?
+                       AND is_read = 0',
+                    [$conversationId, $adminId, $userId],
+                    [ParameterType::STRING, ParameterType::INTEGER, ParameterType::INTEGER]
+                );
+            }
+        }
+
+        $messages = array_map(function (array $row) use ($userId): array {
             $senderId = (int) ($row['sender_id'] ?? 0);
-            $senderName = trim((string) (($row['name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
+            $senderName = trim((string) (($row['sender_name'] ?? '') . ' ' . ($row['sender_last_name'] ?? '')));
             if ($senderName === '') {
-                $senderName = (string) ($row['username'] ?? 'User');
+                $senderName = (string) ($row['sender_username'] ?? 'User');
+            }
+
+            $rawMessage = (string) ($row['message'] ?? '');
+            $parsedPayload = $this->parseChatMessagePayload($rawMessage);
+            $isDeleted = $parsedPayload['isDeleted'];
+            $isEdited = $parsedPayload['isEdited'];
+
+            if (!$isDeleted && $parsedPayload['text'] === self::CHAT_OFFLINE_AUTO_REPLY) {
+                $senderName = self::CHAT_OFFLINE_AUTO_REPLY_SENDER;
+            }
+
+            $isMine = $senderId === $userId;
+            $deliveryState = null;
+            if ($isMine) {
+                if ((int) $row['is_read'] === 1) {
+                    $deliveryState = 'seen';
+                } elseif ($this->isUserOnlineStatus($row['receiver_status'] ?? null)) {
+                    $deliveryState = 'delivered';
+                } else {
+                    $deliveryState = 'sent';
+                }
             }
 
             return [
                 'id' => (int) $row['id'],
-                'message' => (string) $row['message'],
+                'message' => $isDeleted ? '' : $parsedPayload['text'],
                 'timestamp' => (string) $row['timestamp'],
                 'isRead' => (int) $row['is_read'] === 1,
                 'senderId' => $senderId,
+                'senderUsername' => (string) ($row['sender_username'] ?? ''),
                 'senderName' => $senderName,
-                'isMine' => $senderId === $userId,
+                'isMine' => $isMine,
+                'deliveryState' => $deliveryState,
+                'isEdited' => $isEdited,
+                'isDeleted' => $isDeleted,
+                'attachment' => $parsedPayload['attachment'],
+                'callSignal' => $parsedPayload['callSignal'],
             ];
         }, $rows);
 
-        return $this->json(['messages' => $messages]);
+        return $this->json([
+            'messages' => $messages,
+            'isAdmin' => $isAdmin,
+            'activeUserId' => $activeUserId,
+            'conversations' => $conversations,
+            'admins' => $admins,
+        ]);
     }
 
     #[Route('/chat/send', name: 'app_chat_send', methods: ['POST'])]
@@ -1114,34 +1476,262 @@ class HomeController extends AbstractController
         }
 
         $text = trim((string) $request->request->get('message', ''));
-        if ($text === '') {
+        $attachment = $request->files->get('attachment');
+        if (!$attachment instanceof UploadedFile) {
+            $attachment = null;
+        }
+
+        if ($text === '' && $attachment === null) {
             return $this->json(['success' => false, 'error' => 'Message is empty'], 400);
         }
 
         $senderId = (int) $user->getId();
-        $adminIds = $this->getAdminUserIds($connection);
+        $isAdmin = in_array('ROLE_ADMIN', $user->getRoles(), true);
 
-        if (empty($adminIds)) {
-            return $this->json(['success' => false, 'error' => 'No admin available'], 404);
+        $receiverId = null;
+        $conversationId = '';
+
+        if ($attachment !== null) {
+            if (!$attachment->isValid()) {
+                return $this->json(['success' => false, 'error' => 'Attachment upload failed.'], 400);
+            }
+
+            $allowedMimeTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'image/webp',
+                'application/pdf',
+            ];
+
+            $mimeType = (string) ($attachment->getMimeType() ?? '');
+            if (!in_array($mimeType, $allowedMimeTypes, true)) {
+                return $this->json(['success' => false, 'error' => 'Only image or PDF files are allowed.'], 400);
+            }
+
+            if ($attachment->getSize() !== null && $attachment->getSize() > 10 * 1024 * 1024) {
+                return $this->json(['success' => false, 'error' => 'Attachment must be 10MB or less.'], 400);
+            }
         }
 
-        $conversationId = $this->conversationIdForUser($senderId);
+        $messagePayload = $text;
+        if ($attachment !== null) {
+            try {
+                $messagePayload = $this->buildChatAttachmentMessage($attachment, $text);
+            } catch (\Throwable $exception) {
+                return $this->json(['success' => false, 'error' => 'Unable to upload attachment right now.'], 500);
+            }
+        }
+
+        $isCallSignal = $attachment === null && str_starts_with($messagePayload, self::CHAT_CALL_PREFIX);
+
+        if ($isAdmin) {
+            $targetUserId = (int) $request->request->get('userId', 0);
+            if ($targetUserId <= 0) {
+                return $this->json(['success' => false, 'error' => 'Select a user conversation first.'], 400);
+            }
+
+            $targetRole = (string) $connection->fetchOne(
+                'SELECT role FROM `user` WHERE id = ? LIMIT 1',
+                [$targetUserId],
+                [ParameterType::INTEGER]
+            );
+
+            if ($targetRole === '') {
+                return $this->json(['success' => false, 'error' => 'Target user was not found.'], 404);
+            }
+
+            if (in_array(strtoupper($targetRole), ['ADMIN', 'ROLE_ADMIN'], true)) {
+                return $this->json(['success' => false, 'error' => 'Support messages must target a non-admin user.'], 400);
+            }
+
+            $receiverId = $targetUserId;
+            $conversationId = $this->conversationIdForUser($targetUserId);
+        } else {
+            $adminIds = array_values(array_filter(
+                $this->getAdminUserIds($connection),
+                static fn (int $adminId): bool => $adminId !== $senderId
+            ));
+
+            if (empty($adminIds)) {
+                return $this->json(['success' => false, 'error' => 'No admin available'], 404);
+            }
+
+            if ($isCallSignal) {
+                $targetAdminId = (int) $request->request->get('adminId', 0);
+                if ($targetAdminId <= 0 || !in_array($targetAdminId, $adminIds, true)) {
+                    return $this->json(['success' => false, 'error' => 'Choose a valid admin first.'], 400);
+                }
+
+                $conversationId = $this->conversationIdForUser($senderId);
+                $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+                $connection->executeStatement(
+                    'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+                     VALUES (?, ?, ?, ?, 0, ?)',
+                    [$senderId, $targetAdminId, $messagePayload, $now, $conversationId],
+                    [
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                    ]
+                );
+
+                $receiverStatus = $connection->fetchOne(
+                    'SELECT status FROM `user` WHERE id = ? LIMIT 1',
+                    [$targetAdminId],
+                    [ParameterType::INTEGER]
+                );
+
+                return $this->json([
+                    'success' => true,
+                    'deliveryState' => $this->isUserOnlineStatus($receiverStatus) ? 'delivered' : 'sent',
+                ]);
+            }
+
+            $conversationId = $this->conversationIdForUser($senderId);
+            $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
+
+            foreach ($adminIds as $adminId) {
+                $connection->executeStatement(
+                    'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+                     VALUES (?, ?, ?, ?, 0, ?)',
+                    [$senderId, $adminId, $messagePayload, $now, $conversationId],
+                    [
+                        ParameterType::INTEGER,
+                        ParameterType::INTEGER,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                        ParameterType::STRING,
+                    ]
+                );
+            }
+
+            $onlineAdminCount = (int) $connection->fetchOne(
+                'SELECT COUNT(*)
+                 FROM `user`
+                 WHERE id IN (?)
+                   AND LOWER(COALESCE(status, ?)) = ?',
+                [$adminIds, '', 'online'],
+                [ArrayParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING]
+            );
+
+            if ($onlineAdminCount === 0) {
+                $botAdminId = $this->resolveSupportAdminId($connection, $senderId);
+                if ($botAdminId !== null) {
+                    $this->sendOfflineAutoReply($connection, $botAdminId, $senderId, $conversationId, $now);
+                }
+            }
+
+            return $this->json([
+                'success' => true,
+                'deliveryState' => $onlineAdminCount > 0 ? 'delivered' : 'sent',
+            ]);
+        }
+
         $now = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 
-        foreach ($adminIds as $adminId) {
-            $connection->executeStatement(
-                'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
-                 VALUES (?, ?, ?, ?, 0, ?)',
-                [$senderId, $adminId, $text, $now, $conversationId],
-                [
-                    ParameterType::INTEGER,
-                    ParameterType::INTEGER,
-                    ParameterType::STRING,
-                    ParameterType::STRING,
-                    ParameterType::STRING,
-                ]
-            );
+        $connection->executeStatement(
+            'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+             VALUES (?, ?, ?, ?, 0, ?)',
+            [$senderId, $receiverId, $messagePayload, $now, $conversationId],
+            [
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ]
+        );
+
+        $receiverStatus = $connection->fetchOne(
+            'SELECT status FROM `user` WHERE id = ? LIMIT 1',
+            [$receiverId],
+            [ParameterType::INTEGER]
+        );
+
+        return $this->json([
+            'success' => true,
+            'deliveryState' => $this->isUserOnlineStatus($receiverStatus) ? 'delivered' : 'sent',
+        ]);
+    }
+
+    #[Route('/chat/edit', name: 'app_chat_edit', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function chatEdit(Request $request, Connection $connection): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['success' => false, 'error' => 'Unauthorized'], 401);
         }
+
+        $messageId = (int) $request->request->get('id', 0);
+        $newText = trim((string) $request->request->get('message', ''));
+
+        if ($messageId <= 0 || $newText === '') {
+            return $this->json(['success' => false, 'error' => 'Invalid message edit request.'], 400);
+        }
+
+        if ($newText === self::CHAT_DELETED_MARKER) {
+            return $this->json(['success' => false, 'error' => 'Invalid message content.'], 400);
+        }
+
+        $senderId = (int) $user->getId();
+        $ownerId = (int) $connection->fetchOne(
+            'SELECT sender_id FROM messages WHERE id = ? LIMIT 1',
+            [$messageId],
+            [ParameterType::INTEGER]
+        );
+
+        if ($ownerId !== $senderId) {
+            return $this->json(['success' => false, 'error' => 'You can edit only your own messages.'], 403);
+        }
+
+        $storedText = $newText;
+        if (!str_ends_with($storedText, self::CHAT_EDIT_MARKER)) {
+            $storedText .= self::CHAT_EDIT_MARKER;
+        }
+
+        $connection->executeStatement(
+            'UPDATE messages SET message = ? WHERE id = ?',
+            [$storedText, $messageId],
+            [ParameterType::STRING, ParameterType::INTEGER]
+        );
+
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/chat/delete', name: 'app_chat_delete', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function chatDelete(Request $request, Connection $connection): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->json(['success' => false, 'error' => 'Unauthorized'], 401);
+        }
+
+        $messageId = (int) $request->request->get('id', 0);
+        if ($messageId <= 0) {
+            return $this->json(['success' => false, 'error' => 'Invalid delete request.'], 400);
+        }
+
+        $senderId = (int) $user->getId();
+        $ownerId = (int) $connection->fetchOne(
+            'SELECT sender_id FROM messages WHERE id = ? LIMIT 1',
+            [$messageId],
+            [ParameterType::INTEGER]
+        );
+
+        if ($ownerId !== $senderId) {
+            return $this->json(['success' => false, 'error' => 'You can delete only your own messages.'], 403);
+        }
+
+        $connection->executeStatement(
+            'UPDATE messages SET message = ? WHERE id = ?',
+            [self::CHAT_DELETED_MARKER, $messageId],
+            [ParameterType::STRING, ParameterType::INTEGER]
+        );
 
         return $this->json(['success' => true]);
     }
@@ -1362,8 +1952,8 @@ class HomeController extends AbstractController
                 $hashedPassword = $passwordHasher->hashPassword($userEntity, $password);
 
                 $connection->executeStatement(
-                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    'INSERT INTO `user` (email, role, password, name, last_name, date, username, status, two_factor_enabled, `block`)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     [
                         $email,
                         $role,
@@ -1373,6 +1963,7 @@ class HomeController extends AbstractController
                         (new \DateTimeImmutable())->format('Y-m-d'),
                         $username,
                         'offline',
+                        0,
                         0,
                     ],
                     [
@@ -1384,6 +1975,7 @@ class HomeController extends AbstractController
                         ParameterType::STRING,
                         ParameterType::STRING,
                         ParameterType::STRING,
+                        ParameterType::INTEGER,
                         ParameterType::INTEGER,
                     ]
                 );
@@ -1426,7 +2018,9 @@ class HomeController extends AbstractController
         $adminImageUrl = $this->getCurrentUserProfileImageUrl($connection);
 
         $allUsers = $connection->executeQuery(
-            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, p.image
+            'SELECT u.id, u.username, u.email, u.role, u.name, u.last_name, u.status, u.date,
+                    u.two_factor_enabled, u.`block` AS is_blocked,
+                    p.image, p.member_premium, p.language, p.coins
              FROM `user` u
              LEFT JOIN (
                  SELECT p1.*
@@ -1456,6 +2050,66 @@ class HomeController extends AbstractController
         ]);
     }
 
+    #[Route('/users/{id}/toggle-block', name: 'app_user_toggle_block', methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function toggleUserBlock(int $id, Request $request, Connection $connection): Response
+    {
+        if (!$this->isCsrfTokenValid('toggle-block-' . $id, (string) $request->request->get('_token'))) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Invalid block toggle request token.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'Invalid block toggle request token.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentUser = $this->getUser();
+        if ($currentUser instanceof User && (int) $currentUser->getId() === $id) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'You cannot block your own account while logged in.'], Response::HTTP_BAD_REQUEST);
+            }
+
+            $this->addFlash('error', 'You cannot block your own account while logged in.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $exists = $connection->fetchOne('SELECT id FROM `user` WHERE id = ?', [$id], [ParameterType::INTEGER]);
+        if ($exists === false) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'User not found.'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->addFlash('error', 'User not found.');
+            return $this->redirectToRoute('app_users');
+        }
+
+        $currentBlockState = (int) $connection->fetchOne(
+            'SELECT COALESCE(`block`, 0) FROM `user` WHERE id = ?',
+            [$id],
+            [ParameterType::INTEGER]
+        );
+
+        $nextState = $currentBlockState === 1 ? 0 : 1;
+        $connection->executeStatement(
+            'UPDATE `user` SET `block` = ? WHERE id = ?',
+            [$nextState, $id],
+            [ParameterType::INTEGER, ParameterType::INTEGER]
+        );
+
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'blocked' => $nextState === 1,
+                'message' => $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.',
+                'redirectUrl' => $this->generateUrl('app_dashboard'),
+            ]);
+        }
+
+        $this->addFlash('success', $nextState === 1 ? 'User blocked successfully.' : 'User unblocked successfully.');
+
+        return $this->redirectToRoute('app_dashboard');
+    }
+
     #[Route('/users/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
     public function userEdit(int $id, Request $request, Connection $connection): Response
@@ -1468,17 +2122,91 @@ class HomeController extends AbstractController
                 return $this->redirectToRoute('app_user_edit', ['id' => $id]);
             }
 
+            $name = trim((string) $request->request->get('name', ''));
+            $lastName = trim((string) $request->request->get('last_name', ''));
+            $username = trim((string) $request->request->get('username', ''));
+            $email = trim((string) $request->request->get('email', ''));
+            $role = strtoupper(trim((string) $request->request->get('role', 'USER')));
+            $status = strtolower(trim((string) $request->request->get('status', 'offline')));
+            $memberPremium = strtolower(trim((string) $request->request->get('member_premium', 'standard')));
+            $language = trim((string) $request->request->get('language', 'English'));
+
+            $fieldErrors = [];
+
+            if (!preg_match('/^[A-Za-z]{3,}$/', $name)) {
+                $fieldErrors['name'] = 'First name must be at least 3 letters and contain only A-Z or a-z.';
+            }
+
+            if (!preg_match('/^[A-Za-z]{3,}$/', $lastName)) {
+                $fieldErrors['last_name'] = 'Last name must be at least 3 letters and contain only A-Z or a-z.';
+            }
+
+            if ($username === '' || mb_strlen($username) > 15) {
+                $fieldErrors['username'] = 'Username is required and must be 15 characters max.';
+            }
+
+            if (!str_contains($email, '@') || !str_contains($email, '.') || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $fieldErrors['email'] = 'Email must contain @ and . and be valid.';
+            }
+
+            $allowedRoles = ['USER', 'GUIDER', 'ADMIN', 'AGENCY', 'ROLE_USER', 'ROLE_GUIDE', 'ROLE_ADMIN', 'ROLE_AGENCY'];
+            if (!in_array($role, $allowedRoles, true)) {
+                $fieldErrors['role'] = 'Role must be USER, GUIDER, ADMIN, or AGENCY.';
+            }
+
+            $status = $status === 'online' ? 'online' : 'offline';
+
+            $allowedTiers = ['standard', 'premium', 'vip', 'vip+'];
+            if (!in_array($memberPremium, $allowedTiers, true)) {
+                $fieldErrors['member_premium'] = 'Membership tier must be standard, premium, vip, or vip+.';
+            }
+
+            $existingUserByUsername = (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM `user` WHERE username = ? AND id <> ?',
+                [$username, $id],
+                [ParameterType::STRING, ParameterType::INTEGER]
+            );
+            if ($existingUserByUsername > 0) {
+                $fieldErrors['username'] = 'Username already exists.';
+            }
+
+            $existingUserByEmail = (int) $connection->fetchOne(
+                'SELECT COUNT(*) FROM `user` WHERE email = ? AND id <> ?',
+                [$email, $id],
+                [ParameterType::STRING, ParameterType::INTEGER]
+            );
+            if ($existingUserByEmail > 0) {
+                $fieldErrors['email'] = 'Email already exists.';
+            }
+
+            if (!empty($fieldErrors)) {
+                $this->addFlash('user_edit_old_name_' . $id, $name);
+                $this->addFlash('user_edit_old_last_name_' . $id, $lastName);
+                $this->addFlash('user_edit_old_username_' . $id, $username);
+                $this->addFlash('user_edit_old_email_' . $id, $email);
+                $this->addFlash('user_edit_old_role_' . $id, $role);
+                $this->addFlash('user_edit_old_status_' . $id, $status);
+                $this->addFlash('user_edit_old_member_premium_' . $id, $memberPremium);
+                $this->addFlash('user_edit_old_language_' . $id, $language);
+
+                foreach ($fieldErrors as $field => $message) {
+                    $this->addFlash('user_edit_error_' . $field . '_' . $id, $message);
+                }
+
+                return $this->redirectToRoute('app_user_edit', ['id' => $id]);
+            }
+
             $connection->executeStatement(
                 'UPDATE `user`
                  SET name = ?, last_name = ?, username = ?, email = ?, role = ?, status = ?
                  WHERE id = ?',
                 [
-                    trim((string) $request->request->get('name', '')),
-                    trim((string) $request->request->get('last_name', '')),
-                    trim((string) $request->request->get('username', '')),
-                    trim((string) $request->request->get('email', '')),
-                    strtoupper(trim((string) $request->request->get('role', 'USER'))),
-                    trim((string) $request->request->get('status', 'offline')),
+                    $name,
+                    $lastName,
+                    $username,
+                    $email,
+                    $role,
+                    $status,
                     $id,
                 ],
                 [
@@ -1491,9 +2219,6 @@ class HomeController extends AbstractController
                     ParameterType::INTEGER,
                 ]
             );
-
-            $memberPremium = trim((string) $request->request->get('member_premium', 'standard'));
-            $language = trim((string) $request->request->get('language', 'English'));
 
             $profileIds = $connection->executeQuery(
                 'SELECT id FROM profile WHERE id_user = ? ORDER BY id DESC',
@@ -1528,7 +2253,7 @@ class HomeController extends AbstractController
             }
 
             $this->addFlash('success', 'User updated successfully.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $user = $connection->executeQuery(
@@ -1569,26 +2294,34 @@ class HomeController extends AbstractController
     {
         if (!$this->isCsrfTokenValid('delete-user-' . $id, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Invalid delete request token.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $currentUser = $this->getUser();
         if ($currentUser instanceof User && (int) $currentUser->getId() === $id) {
             $this->addFlash('error', 'You cannot delete your own admin account while logged in.');
-            return $this->redirectToRoute('app_users');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $connection->beginTransaction();
         try {
-            $this->deleteFromIfExists($connection, 'profile', 'id_user = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'todo', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'todos', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'messages', 'sender_id = ? OR receiver_id = ?', [$id, $id], [ParameterType::INTEGER, ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'message', 'sender_id = ? OR receiver_id = ?', [$id, $id], [ParameterType::INTEGER, ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'purchase', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'purchases', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'shop', 'user_id = ?', [$id], [ParameterType::INTEGER]);
-            $this->deleteFromIfExists($connection, 'shops', 'user_id = ?', [$id], [ParameterType::INTEGER]);
+            // Delete related records based on actual schema
+            // Using raw DELETE with error handling for non-existent tables
+            $tablesToClean = [
+                ['table' => 'message', 'column' => 'idExpediteur', 'value' => $id],
+                ['table' => 'profile', 'column' => 'id_user', 'value' => $id],
+                ['table' => 'todo', 'column' => 'user_id', 'value' => $id],
+                ['table' => 'purchases', 'column' => 'user_id', 'value' => $id],
+            ];
+            
+            foreach ($tablesToClean as $config) {
+                try {
+                    $sql = sprintf('DELETE FROM `%s` WHERE `%s` = ?', $config['table'], $config['column']);
+                    $connection->executeStatement($sql, [$config['value']], [ParameterType::INTEGER]);
+                } catch (\Throwable $tableError) {
+                    // Log but continue if table doesn't exist or operation fails
+                }
+            }
 
             $connection->executeStatement('DELETE FROM `user` WHERE id = ?', [$id], [ParameterType::INTEGER]);
             $connection->commit();
@@ -1598,7 +2331,7 @@ class HomeController extends AbstractController
             $this->addFlash('error', 'Delete failed: ' . $e->getMessage());
         }
 
-        return $this->redirectToRoute('app_users');
+        return $this->redirectToRoute('app_dashboard');
     }
 
     #[Route('/todos', name: 'app_todos')]
@@ -1752,7 +2485,7 @@ class HomeController extends AbstractController
 
     #[Route('/admin/shop', name: 'app_admin_shop', methods: ['GET', 'POST'])]
     #[IsGranted('ROLE_ADMIN')]
-    public function adminShop(Request $request, Connection $connection): Response
+    public function adminShop(Request $request, Connection $connection, HttpClientInterface $httpClient): Response
     {
         $adminImageUrl = $this->getCurrentUserProfileImageUrl($connection);
 
@@ -1774,9 +2507,86 @@ class HomeController extends AbstractController
         }
 
         if ($request->isMethod('POST')) {
+            $action = (string) $request->request->get('action', 'create');
+
+            if ($action === 'import_amazon') {
+                if (!$this->isCsrfTokenValid('shop-amazon-import', (string) $request->request->get('_token'))) {
+                    $this->addFlash('error', 'Invalid import request token. Please try again.');
+                    return $this->redirectToRoute('app_dashboard');
+                }
+
+                $amazonUrl = trim((string) $request->request->get('amazon_url', ''));
+                $limit = (int) $request->request->get('limit', 12);
+                $limit = max(1, min(30, $limit));
+
+                if ($amazonUrl === '' || !str_contains(strtolower($amazonUrl), 'amazon.')) {
+                    $this->addFlash('error', 'Please provide a valid Amazon search URL.');
+                    return $this->redirectToRoute('app_dashboard');
+                }
+
+                try {
+                    $importedCount = $this->importAmazonProductsToShop($connection, $httpClient, $shopTable, $amazonUrl, $limit);
+                    if ($importedCount > 0) {
+                        $this->addFlash('success', sprintf('Imported %d product(s) from Amazon.', $importedCount));
+                    } else {
+                        $this->addFlash('error', 'No products were imported. Amazon may have blocked scraping for this request.');
+                    }
+                } catch (\Throwable $e) {
+                    $this->addFlash('error', 'Amazon import failed: ' . $e->getMessage());
+                }
+
+                return $this->redirectToRoute('app_dashboard');
+            }
+
+            if ($action === 'deduplicate') {
+                if (!$this->isCsrfTokenValid('shop-product-deduplicate', (string) $request->request->get('_token'))) {
+                    $this->addFlash('error', 'Invalid clean duplicates request token. Please try again.');
+                    return $this->redirectToRoute('app_dashboard');
+                }
+
+                try {
+                    $rows = $connection->executeQuery(
+                        'SELECT id, name FROM ' . $shopTable . ' ORDER BY id ASC'
+                    )->fetchAllAssociative();
+
+                    $seenNames = [];
+                    $duplicateIds = [];
+
+                    foreach ($rows as $row) {
+                        $name = (string) ($row['name'] ?? '');
+                        $normalizedName = strtolower(trim((string) preg_replace('/\s+/', ' ', $name)));
+                        if ($normalizedName === '') {
+                            continue;
+                        }
+
+                        if (isset($seenNames[$normalizedName])) {
+                            $duplicateIds[] = (int) ($row['id'] ?? 0);
+                            continue;
+                        }
+
+                        $seenNames[$normalizedName] = true;
+                    }
+
+                    if ($duplicateIds !== []) {
+                        $deleted = $connection->executeStatement(
+                            'DELETE FROM ' . $shopTable . ' WHERE id IN (?)',
+                            [$duplicateIds],
+                            [ArrayParameterType::INTEGER]
+                        );
+                        $this->addFlash('success', sprintf('Removed %d duplicate product(s).', $deleted));
+                    } else {
+                        $this->addFlash('success', 'No duplicate products found.');
+                    }
+                } catch (\Throwable $e) {
+                    $this->addFlash('error', 'Unable to clean duplicate products: ' . $e->getMessage());
+                }
+
+                return $this->redirectToRoute('app_dashboard');
+            }
+
             if (!$this->isCsrfTokenValid('shop-product-create', (string) $request->request->get('_token'))) {
                 $this->addFlash('error', 'Invalid request token. Please try again.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             $name = trim((string) $request->request->get('name', ''));
@@ -1788,19 +2598,19 @@ class HomeController extends AbstractController
 
             if ($name === '') {
                 $this->addFlash('error', 'Product name is required.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             if ($priceCoins < 0 || $quantity < 0) {
                 $this->addFlash('error', 'Price and quantity must be 0 or greater.');
-                return $this->redirectToRoute('app_admin_shop');
+                return $this->redirectToRoute('app_dashboard');
             }
 
             $imageFile = $request->files->get('image');
             if ($imageFile !== null) {
                 if (!$imageFile->isValid()) {
                     $this->addFlash('error', 'Uploaded image is invalid.');
-                    return $this->redirectToRoute('app_admin_shop');
+                    return $this->redirectToRoute('app_dashboard');
                 }
 
                 $imageData = @file_get_contents($imageFile->getPathname());
@@ -1836,7 +2646,7 @@ class HomeController extends AbstractController
                 $this->addFlash('error', 'Unable to add product: ' . $e->getMessage());
             }
 
-            return $this->redirectToRoute('app_admin_shop');
+            return $this->redirectToRoute('app_dashboard');
         }
 
         $products = [];
@@ -2325,6 +3135,238 @@ class HomeController extends AbstractController
         return array_values(array_unique(array_map('intval', $ids)));
     }
 
+    private function resolveSupportAdminId(Connection $connection, int $senderId): ?int
+    {
+        $adminIds = array_values(array_filter(
+            $this->getAdminUserIds($connection),
+            static fn (int $adminId): bool => $adminId !== $senderId
+        ));
+
+        if (empty($adminIds)) {
+            return null;
+        }
+
+        $conversationId = $this->conversationIdForUser($senderId);
+        $recentRows = $connection->executeQuery(
+            'SELECT sender_id, receiver_id
+             FROM messages
+             WHERE conversation_id = ?
+             ORDER BY timestamp DESC, id DESC
+             LIMIT 100',
+            [$conversationId],
+            [ParameterType::STRING]
+        )->fetchAllAssociative();
+
+        foreach ($recentRows as $row) {
+            $candidate = (int) ((int) $row['sender_id'] === $senderId ? $row['receiver_id'] : $row['sender_id']);
+            if (in_array($candidate, $adminIds, true)) {
+                return $candidate;
+            }
+        }
+
+        $onlineAdmin = $connection->fetchOne(
+            'SELECT id
+             FROM `user`
+             WHERE id IN (?)
+               AND LOWER(COALESCE(status, ?)) = ?
+             ORDER BY id ASC
+             LIMIT 1',
+            [$adminIds, '', 'online'],
+            [ArrayParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING]
+        );
+
+        if ($onlineAdmin !== false && $onlineAdmin !== null) {
+            return (int) $onlineAdmin;
+        }
+
+        return (int) $adminIds[0];
+    }
+
+    private function sendOfflineAutoReply(
+        Connection $connection,
+        int $adminId,
+        int $userId,
+        string $conversationId,
+        string $timestamp
+    ): void {
+        $connection->executeStatement(
+            'INSERT INTO messages (sender_id, receiver_id, message, timestamp, is_read, conversation_id)
+             VALUES (?, ?, ?, ?, 0, ?)',
+            [$adminId, $userId, self::CHAT_OFFLINE_AUTO_REPLY, $timestamp, $conversationId],
+            [
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                ParameterType::STRING,
+                ParameterType::STRING,
+            ]
+        );
+    }
+
+    private function fetchAdminSupportConversations(Connection $connection, int $adminId): array
+    {
+        $rows = $connection->executeQuery(
+                        'SELECT u.id AS user_id,
+                                        u.username,
+                                        u.name,
+                                        u.last_name,
+                                        u.status,
+                                        MAX(m.timestamp) AS last_timestamp,
+                                        SUM(CASE WHEN m.receiver_id = ? AND m.is_read = 0 THEN 1 ELSE 0 END) AS unread_count
+                         FROM messages m
+                                            INNER JOIN `user` u
+                                                                 ON u.id = CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(m.conversation_id, ?, 2), ?, -1) AS UNSIGNED)
+                         WHERE (m.sender_id = ? OR m.receiver_id = ?)
+                             AND m.conversation_id REGEXP ?
+                             AND u.id <> ?
+                         GROUP BY u.id, u.username, u.name, u.last_name, u.status
+                         ORDER BY last_timestamp DESC, u.id DESC',
+                        [$adminId, '_', '_', $adminId, $adminId, '^user_[0-9]+_admins$', $adminId],
+            [
+                ParameterType::INTEGER,
+                                ParameterType::STRING,
+                                ParameterType::STRING,
+                ParameterType::INTEGER,
+                ParameterType::INTEGER,
+                ParameterType::STRING,
+                                ParameterType::INTEGER,
+            ]
+        )->fetchAllAssociative();
+
+        return array_map(function (array $row): array {
+            $fullName = trim((string) (($row['name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
+            if ($fullName === '') {
+                $fullName = (string) ($row['username'] ?? 'User');
+            }
+
+            return [
+                'userId' => (int) ($row['user_id'] ?? 0),
+                'userName' => $fullName,
+                'username' => (string) ($row['username'] ?? ''),
+                'isOnline' => $this->isUserOnlineStatus($row['status'] ?? null),
+                'unreadCount' => (int) ($row['unread_count'] ?? 0),
+                'lastTimestamp' => (string) ($row['last_timestamp'] ?? ''),
+            ];
+        }, $rows);
+    }
+
+    private function fetchSupportAdmins(Connection $connection, int $currentUserId): array
+    {
+        $rows = $connection->executeQuery(
+            'SELECT id, username, name, last_name, status
+             FROM `user`
+             WHERE UPPER(role) IN (?)
+               AND id <> ?
+             ORDER BY CASE WHEN LOWER(COALESCE(status, ?)) = ? THEN 0 ELSE 1 END, id ASC',
+            [['ADMIN', 'ROLE_ADMIN'], $currentUserId, '', 'online'],
+            [ArrayParameterType::STRING, ParameterType::INTEGER, ParameterType::STRING, ParameterType::STRING]
+        )->fetchAllAssociative();
+
+        return array_map(function (array $row): array {
+            $fullName = trim((string) (($row['name'] ?? '') . ' ' . ($row['last_name'] ?? '')));
+            if ($fullName === '') {
+                $fullName = (string) ($row['username'] ?? 'Admin');
+            }
+
+            return [
+                'id' => (int) ($row['id'] ?? 0),
+                'username' => (string) ($row['username'] ?? ''),
+                'name' => $fullName,
+                'isOnline' => $this->isUserOnlineStatus($row['status'] ?? null),
+            ];
+        }, $rows);
+    }
+
+    private function isUserOnlineStatus(mixed $status): bool
+    {
+        if (!is_string($status)) {
+            return false;
+        }
+
+        return strtolower(trim($status)) === 'online';
+    }
+
+    private function buildChatAttachmentMessage(UploadedFile $attachment, string $caption): string
+    {
+        $projectDir = (string) $this->getParameter('kernel.project_dir');
+        $uploadDir = $projectDir . '/public/uploads/chat';
+        if (!is_dir($uploadDir)) {
+            @mkdir($uploadDir, 0775, true);
+        }
+
+        if (!is_dir($uploadDir) || !is_writable($uploadDir)) {
+            throw new \RuntimeException('Upload directory is not writable.');
+        }
+
+        $originalName = (string) ($attachment->getClientOriginalName() ?? 'file');
+        $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName) ?: 'file';
+        $extension = strtolower((string) pathinfo($safeOriginalName, PATHINFO_EXTENSION));
+        $uniqueName = sprintf('chat_%s.%s', bin2hex(random_bytes(8)), $extension !== '' ? $extension : 'bin');
+
+        $attachment->move($uploadDir, $uniqueName);
+
+        $mimeType = (string) ($attachment->getMimeType() ?? 'application/octet-stream');
+        $kind = str_starts_with($mimeType, 'image/') ? 'image' : 'pdf';
+        $payload = [
+            'kind' => $kind,
+            'url' => '/uploads/chat/' . $uniqueName,
+            'name' => $safeOriginalName,
+            'caption' => $caption,
+        ];
+
+        return self::CHAT_ATTACHMENT_PREFIX . json_encode($payload, JSON_UNESCAPED_SLASHES);
+    }
+
+    private function parseChatMessagePayload(string $rawMessage): array
+    {
+        $isDeleted = $rawMessage === self::CHAT_DELETED_MARKER;
+        $isEdited = false;
+        $attachment = null;
+        $callSignal = null;
+        $text = $rawMessage;
+
+        if (!$isDeleted && str_starts_with($rawMessage, self::CHAT_ATTACHMENT_PREFIX)) {
+            $encoded = substr($rawMessage, strlen(self::CHAT_ATTACHMENT_PREFIX));
+            $decoded = json_decode($encoded, true);
+            if (is_array($decoded)) {
+                $attachment = [
+                    'kind' => (string) ($decoded['kind'] ?? 'file'),
+                    'url' => (string) ($decoded['url'] ?? ''),
+                    'name' => (string) ($decoded['name'] ?? 'attachment'),
+                ];
+                $text = trim((string) ($decoded['caption'] ?? ''));
+            } else {
+                $text = '';
+            }
+        }
+
+        if (!$isDeleted && $attachment === null && str_starts_with($rawMessage, self::CHAT_CALL_PREFIX)) {
+            $encoded = substr($rawMessage, strlen(self::CHAT_CALL_PREFIX));
+            $decoded = json_decode($encoded, true);
+            if (is_array($decoded)) {
+                $callSignal = [
+                    'type' => (string) ($decoded['type'] ?? ''),
+                    'room' => (string) ($decoded['room'] ?? ''),
+                    'fromName' => (string) ($decoded['fromName'] ?? ''),
+                ];
+                $text = '';
+            }
+        }
+
+        if (!$isDeleted && $attachment === null && str_ends_with($text, self::CHAT_EDIT_MARKER)) {
+            $isEdited = true;
+            $text = substr($text, 0, -strlen(self::CHAT_EDIT_MARKER));
+        }
+
+        return [
+            'text' => trim($text),
+            'isEdited' => $isEdited,
+            'isDeleted' => $isDeleted,
+            'attachment' => $attachment,
+            'callSignal' => $callSignal,
+        ];
+    }
+
     private function getCurrentUserProfileImageUrl(Connection $connection): string
     {
         $user = $this->getUser();
@@ -2413,6 +3455,120 @@ class HomeController extends AbstractController
             'defaultBuyerEmail' => (string) $user->getEmail(),
             'defaultBuyerPhone' => (string) ($user->getStatus() ?? ''),
         ];
+    }
+
+    private function importAmazonProductsToShop(
+        Connection $connection,
+        HttpClientInterface $httpClient,
+        string $shopTable,
+        string $amazonUrl,
+        int $limit
+    ): int {
+        $response = $httpClient->request('GET', $amazonUrl, [
+            'timeout' => 15,
+            'headers' => [
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                'Accept-Language' => 'en-US,en;q=0.9,fr;q=0.8',
+            ],
+        ]);
+
+        $html = (string) $response->getContent();
+        if ($html === '') {
+            return 0;
+        }
+
+        $dom = new \DOMDocument();
+        @$dom->loadHTML($html);
+        $xpath = new \DOMXPath($dom);
+        $resultNodes = $xpath->query('//div[@data-component-type="s-search-result"]');
+        if ($resultNodes === false || $resultNodes->length === 0) {
+            return 0;
+        }
+
+        $importedCount = 0;
+        foreach ($resultNodes as $node) {
+            if ($importedCount >= $limit) {
+                break;
+            }
+
+            $titleNode = $xpath->query('.//h2//span[1]', $node)?->item(0);
+            if (!$titleNode instanceof \DOMNode) {
+                continue;
+            }
+
+            $name = trim((string) $titleNode->textContent);
+            if ($name === '') {
+                continue;
+            }
+
+            $description = null;
+            $linkNode = $xpath->query('.//h2//a[1]', $node)?->item(0);
+            if ($linkNode instanceof \DOMElement) {
+                $productPath = html_entity_decode((string) $linkNode->getAttribute('href'), ENT_QUOTES | ENT_HTML5);
+                if (str_starts_with($productPath, '/')) {
+                    $description = 'https://www.amazon.fr' . $productPath;
+                } elseif (str_starts_with($productPath, 'http://') || str_starts_with($productPath, 'https://')) {
+                    $description = $productPath;
+                }
+            }
+
+            $priceCoins = 0;
+            $wholeNode = $xpath->query('.//*[contains(@class, "a-price-whole")][1]', $node)?->item(0);
+            $fractionNode = $xpath->query('.//*[contains(@class, "a-price-fraction")][1]', $node)?->item(0);
+            if ($wholeNode instanceof \DOMNode) {
+                $whole = preg_replace('/[^0-9]/', '', (string) $wholeNode->textContent);
+                $fraction = '00';
+                if ($fractionNode instanceof \DOMNode) {
+                    $fraction = str_pad((string) preg_replace('/[^0-9]/', '', $fractionNode->textContent), 2, '0', STR_PAD_RIGHT);
+                }
+
+                $euros = ((int) $whole) + (((int) $fraction) / 100);
+                $priceCoins = max(1, (int) round($euros * 10));
+            }
+
+            // Enforce business price bounds for Amazon imports.
+            $priceCoins = max(40, min(780, $priceCoins));
+
+            $imageBlob = null;
+            $imageNode = $xpath->query('.//img[contains(@class, "s-image")][1]', $node)?->item(0);
+            if ($imageNode instanceof \DOMElement) {
+                $imageUrl = html_entity_decode((string) $imageNode->getAttribute('src'), ENT_QUOTES | ENT_HTML5);
+                try {
+                    $imageResponse = $httpClient->request('GET', $imageUrl, ['timeout' => 8]);
+                    $candidate = $imageResponse->getContent();
+                    if ($candidate !== '') {
+                        $imageBlob = $candidate;
+                    }
+                } catch (\Throwable $e) {
+                    $imageBlob = null;
+                }
+            }
+
+            $connection->executeStatement(
+                'INSERT INTO ' . $shopTable . ' (name, description, price_coins, quantity, image, category, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
+                [
+                    $name,
+                    $description,
+                    $priceCoins,
+                    10,
+                    $imageBlob,
+                    'Amazon import',
+                ],
+                [
+                    ParameterType::STRING,
+                    ParameterType::STRING,
+                    ParameterType::INTEGER,
+                    ParameterType::INTEGER,
+                    ParameterType::LARGE_OBJECT,
+                    ParameterType::STRING,
+                ]
+            );
+
+            ++$importedCount;
+        }
+
+        return $importedCount;
     }
 
     private function deleteFromIfExists(Connection $connection, string $tableName, string $whereSql, array $params, array $types = []): void

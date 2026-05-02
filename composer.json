@@ -10,6 +10,7 @@
         "doctrine/doctrine-bundle": "^2.18",
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.6",
+        "easycorp/easyadmin-bundle": "^5.0",
         "knplabs/knp-time-bundle": "^2.5",
         "nyholm/psr7": "^1.8",
         "openai-php/client": "^0.19.1",
