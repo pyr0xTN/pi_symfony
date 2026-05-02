@@ -3998,7 +3998,7 @@
                 } else if (action === 'offers-grid') {
                     window.location.href = '{{ path('app_offers_grid') }}';
                 }else if (action === 'dashboardMessenger') {
-                    window.location.href = '{{ path('app_dashboard_messenger') }}';
+                    window.location.href = '{{ path('app_dashboard') }}';
                 }
             });
 
@@ -4125,8 +4125,9 @@
                 <button class="nav-tab active" data-view="services">💻 {{ 'main.tab.services'|trans }}</button>
                                 <a class="nav-tab" href="{{ path('app_activities') }}">🏞 {{ 'main.tab.activities'|trans }}</a>
                 <button class="nav-tab" data-view="shop">🛒 {{ 'main.tab.shop'|trans }}</button>
-                <button class="nav-tab" data-view="offers">🔖 {{ 'main.tab.offers'|trans }}</button>
-                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
+<button class="nav-tab" type="button" onclick="window.location.href='{{ path('app_offer_index') }}'">
+    🔖 {{ 'main.tab.offers'|trans }}
+</button>                <button class="nav-tab" data-view="messenger">💬 {{ 'main.tab.messenger'|trans }}</button>
                 <button class="nav-tab" data-view="post">✉️ Posts</button>
                 {% if is_granted('ROLE_ADMIN') %}
                     <a class="nav-tab" href="{{ path('app_admin_stats') }}">📊 {{ 'main.tab.stats'|trans }}</a>

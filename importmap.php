@@ -28,4 +28,7 @@ return [
     'chart.js' => [
         'version' => '3.9.1',
     ],
+    '@symfony/stimulus-bridge' => [
+        'version' => '4.0.1',
+    ],
 ];
