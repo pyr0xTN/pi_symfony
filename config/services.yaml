@@ -40,5 +40,14 @@ services:
     App\Service\ImageUploadService:
         arguments:
             $uploadDir: '%app.upload_dir%'
+    OpenAI\Factory:
+        factory: ['OpenAI', 'factory']
+        calls:
+            - [withApiKey, ['%env(GROQ_API_KEY)%']]
+            - [withBaseUri, ['https://api.groq.com/openai/v1']]
+
+    OpenAI\Client:
+        factory: ['@OpenAI\Factory', 'make']
+
 
 

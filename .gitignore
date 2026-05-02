@@ -19,4 +19,8 @@
 /assets/vendor/
 ###< symfony/asset-mapper ###
 
-/.env
+
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###

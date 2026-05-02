@@ -12,6 +12,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\String\Slugger\SluggerInterface;
+use App\Repository\ConversationRepository;
+use App\Repository\ParticipantConversationRepository;
+use OpenAI\Client;
+use Knp\Bundle\TimeBundle\DateTimeFormatter;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 
 #[Route('/api/messages')]
 class MessagesController extends AbstractController
@@ -23,7 +30,8 @@ class MessagesController extends AbstractController
     public function insertOne(
         Conversation $conversation,
         Request $request,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        HubInterface $hub
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
         $content = $data['content'] ?? '';
@@ -36,7 +44,6 @@ class MessagesController extends AbstractController
         $user = $this->getUser();
 
         $message = new Messages();
-        $message->setId($this->nextMessageId($em));
         $message->setContenu($content);
         $message->setIdConversation($conversation);
         $message->setIdExpediteur($user);
@@ -48,6 +55,21 @@ class MessagesController extends AbstractController
         $em->persist($message);
         $em->flush(); // Enregistrement en base de données
 
+        try {
+            $update = new Update(
+                "https://127.0.0.1/conversations/{$conversation->getId()}",
+                json_encode([
+                    'new_message' => true,
+                    'content'     => $content,           // ← le texte du message
+                    'time'        => $message->getDateEnvoi()->format('H:i'),
+                    'isMine'      => false,              // ← côté receveur c'est jamais "mine"
+                ])
+            );
+            $hub->publish($update);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => 'Mercure Error: ' . $e->getMessage()], 500);
+        }
+
         return new JsonResponse([
             'id' => $message->getId(),
             'time' => $message->getDateEnvoi()->format('H:i'),
@@ -58,7 +80,7 @@ class MessagesController extends AbstractController
     /**
      * Edits an existing message.
      */
-    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['POST','PUT'])]
+    #[Route('/update/{idMessage}', name: 'app_message_update', methods: ['POST', 'PUT'])]
     public function updateOne(
         int $idMessage,
         MessagesRepository $repo,
@@ -75,6 +97,7 @@ class MessagesController extends AbstractController
         $data = json_decode($request->getContent(), true);
         if (isset($data['content'])) {
             $message->setContenu($data['content']);
+            $message->setEdited(true);
             $em->flush();
         }
 
@@ -98,69 +121,239 @@ class MessagesController extends AbstractController
 
         return new JsonResponse(['status' => 'Message deleted']);
     }
+    #[Route('/upload', name: 'api_message_upload', methods: ['POST'])]
+    public function upload(
+        Request $request,
+        EntityManagerInterface $em,
+        SluggerInterface $slugger,
+        ConversationRepository $convRepo,
+        HubInterface $hub
+    ): JsonResponse {
+        $file = $request->files->get('file');
+        $conversationId = $request->request->get('conversationId');
 
-    /**
-     * Fetches all messages for a specific conversation.
-     */
-   /* #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
-    public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
-    {
-        /** @var User $user 
-        $user = $this->getUser();
-        $messages = $repo->findBy(
-            ['idConversation' => $conversation, 'isDeleted' => false],
-            ['dateEnvoi' => 'ASC']
-        );
-
-        $data = [];
-        foreach ($messages as $msg) {
-            $data[] = [
-                'id' => $msg->getId(),
-                'content' => $msg->getContenu(),
-                'time' => $msg->getDateEnvoi()->format('H:i'),
-                'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
-                'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
-                'lu' => $msg->isLu()
-            ];
+        if (!$file || !$conversationId) {
+            return new JsonResponse(['success' => false, 'message' => 'Données manquantes.'], 400);
         }
-        return new JsonResponse($data);
-    }*/
 
-    #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
-    public function fetchMessages(Conversation $conversation, MessagesRepository $repo): JsonResponse
-    {
+        $mimeType = $file->getMimeType();
+        $type = TypeMessage::FICHIER; // Par défaut
+
+        if (str_starts_with($mimeType, 'image/')) {
+            $type = TypeMessage::IMAGE;
+        } elseif (str_starts_with($mimeType, 'audio/') || $file->guessExtension() === 'webm') {
+            $type = TypeMessage::AUDIO;
+        }
+
+        $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $safeFilename = $slugger->slug($originalFilename);
+        $newFilename = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+
+        try {
+            $file->move(
+                $this->getParameter('kernel.project_dir') . '/public/uploads/messages',
+                $newFilename
+            );
+        } catch (\Exception $e) {
+            return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sauvegarde du fichier.']);
+        }
         /** @var User $user */
         $user = $this->getUser();
-        // Récupère tous les messages (grâce au repo modifié au dessus)
-        $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
+        $message = new Messages();
+        $message->setTypeMessage($type);
+        $message->setUrlFichier($newFilename);
+        $message->setContenu($file->getClientOriginalName()); // On garde le nom original comme contenu
+        $message->setDateEnvoi(new \DateTime());
+
+        $message->setIdExpediteur($user);
+        $message->setLu(false); // Le message n'est pas encore lu
+        $message->setIsDeleted(false);
+
+        $conversation = $em->getRepository(Conversation::class)->find($conversationId);
+        $message->setIdConversation($conversation);
+
+        $em->persist($message);
+        $em->flush();
+        try {
+            $update = new Update(
+                "https://127.0.0.1/conversations/{$conversation->getId()}",
+                json_encode([
+                    'new_message' => true,          // ← le texte du message
+                    'time'        => $message->getDateEnvoi()->format('H:i'),
+                    'isMine'      => false,              // ← côté receveur c'est jamais "mine"
+                ])
+            );
+            $hub->publish($update);
+        } catch (\Exception $e) {
+            throw new \Exception("Erreur Mercure : " . $e->getMessage());
+        }
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/fetch/{id}', name: 'app_message_fetch', methods: ['GET'])]
+    public function fetchMessages(
+        Conversation $conversation,
+        MessagesRepository $repo,
+        ParticipantConversationRepository $pcRepo,
+        DateTimeFormatter $dateTimeFormatter
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        // 1. Chercher le statut du participant actuel
+        $p = $pcRepo->findOneBy([
+            'idConversation' => $conversation,
+            'idUtilisateur' => $user
+        ]);
+
+        // 2. Déterminer quels messages récupérer en fonction de l'activité
+        if ($p && !$p->isEstActif() && $p->getDateSortie()) {
+            // L'utilisateur a quitté : on filtre rigoureusement par sa date de sortie
+            $messages = $repo->findMessagesBeforeDate($conversation, $p->getDateSortie());
+        } else {
+            // L'utilisateur est actif (ou c'est un message privé) : on prend tout
+            $messages = $repo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'ASC']);
+        }
 
         $data = [];
         foreach ($messages as $msg) {
             $data[] = [
                 'id' => $msg->getId(),
-                // LOGIQUE ICI : Si supprimé, on remplace le contenu
                 'content' => $msg->isDeleted() ? 'This message was deleted' : $msg->getContenu(),
-                'time' => $msg->getDateEnvoi()->format('H:i'),
+                'time' => $dateTimeFormatter->formatDiff($msg->getDateEnvoi()),
                 'sender' => $msg->getIdExpediteur()->getLastName() . ' ' . $msg->getIdExpediteur()->getName(),
-                //'isMine' => $msg->getIdExpediteur()->getId() === $user->getId(),
-                'isMine' => $user && $msg->getIdExpediteur()->getId() === $user->getId(),
+                'isMine' => $msg->getIdExpediteur()->getId() === $user->getId(),
                 'lu' => $msg->isLu(),
-                'isDeleted' => $msg->isDeleted() 
+                'isDeleted' => $msg->isDeleted(),
+                'edited' => $msg->isEdited(),
+                'type' => $msg->getTypeMessage() ? $msg->getTypeMessage()->value : 'TEXTE',
+                'filePath' => $msg->getUrlFichier(),
+                'reaction' => $msg->getReaction()
             ];
         }
         return new JsonResponse($data);
     }
 
-    private function nextMessageId(EntityManagerInterface $em): int
+    #[Route('/{id}/react', name: 'message_react', methods: ['POST'])]
+    public function react(Messages $message, Request $request, EntityManagerInterface $em): JsonResponse
     {
-        $maxId = (int) $em->createQueryBuilder()
-            ->select('COALESCE(MAX(m.id), 0)')
-            ->from(Messages::class, 'm')
-            ->getQuery()
-            ->getSingleScalarResult();
+        $emoji = $request->toArray()['emoji'] ?? null;
 
-        $next = $maxId + 1;
+        // Si même emoji → toggle off, sinon on remplace
+        if ($message->getReaction() === $emoji) {
+            $message->setReaction(null);
+        } else {
+            $message->setReaction($emoji);
+        }
 
-        return max(1, $next);
+        $em->flush();
+
+        return $this->json([
+            'reaction' => $message->getReaction()
+        ]);
+    }
+
+    #[Route('/mark-read/{id}', name: 'messages_mark_read', methods: ['POST'])]
+    public function markRead(int $id, MessagesRepository $repo): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+        $repo->markAllAsRead($id, $user->getId());
+        return $this->json(['ok' => true]);
+    }
+
+    #[Route('/send-location/{id}', name: 'api_message_send_location', methods: ['POST'])]
+    public function sendLocation(Conversation $conversation, Request $request, EntityManagerInterface $em): JsonResponse
+    {
+        $data = json_decode($request->getContent(), true);
+        $content = $data['content'] ?? ''; // C'est le JSON envoyé par le JS
+
+        /** @var User $user */
+        $user = $this->getUser();
+        $message = new Messages();
+        // (Utilise ton code habituel pour l'ID, les dates, l'expéditeur, etc.)
+        $message->setContenu($content);
+        $message->setTypeMessage(TypeMessage::LOCATION);
+        $message->setIdConversation($conversation);
+        $message->setIdExpediteur($user);
+        $message->setLu(false);
+        $message->setIsDeleted(false);
+        $message->setDateEnvoi(new \DateTime());
+
+        $em->persist($message);
+        $em->flush();
+
+        return new JsonResponse(['success' => true]);
+    }
+
+    #[Route('/{id}/media', name: 'api_conversation_media', methods: ['GET'])]
+    public function getConversationMedia(int $id, MessagesRepository $repo): JsonResponse
+    {
+        $messages = $repo->findBy([
+            'idConversation' => $id,
+            'isDeleted' => false,
+        ]);
+
+        $images = [];
+        $files  = [];
+
+        foreach ($messages as $m) {
+            if ($m->getTypeMessage() === TypeMessage::IMAGE) {
+                $images[] = [
+                    'id'       => $m->getId(),
+                    'url'      => '/uploads/messages/' . $m->getUrlFichier(),
+                    'name'     => $m->getUrlFichier(),
+                    'date'     => $m->getDateEnvoi()->format('d/m/Y'),
+                    'sender'   => $m->getIdExpediteur()->getFirstName(),
+                ];
+            } elseif ($m->getTypeMessage() === TypeMessage::FICHIER) {
+                $files[] = [
+                    'id'       => $m->getId(),
+                    'url'      => '/uploads/messages/' . $m->getUrlFichier(),
+                    'name'     => $m->getContenu(),
+                    'date'     => $m->getDateEnvoi()->format('d/m/Y'),
+                    'sender'   => $m->getIdExpediteur()->getFirstName(),
+                    'isPdf'    => str_ends_with(strtolower($m->getUrlFichier() ?? ''), '.pdf'),
+                ];
+            }
+        }
+
+        return $this->json(['images' => $images, 'files' => $files]);
+    }
+
+    #[Route('/suggest/{id}', name: 'app_message_suggest', methods: ['GET'])]
+    public function suggestReplies(
+        Conversation $conversation,
+        MessagesRepository $msgRepo,
+        Client $client
+    ): JsonResponse {
+        // 1. On récupère les 5 derniers messages pour que l'IA comprenne de quoi on parle
+        $history = $msgRepo->findBy(['idConversation' => $conversation], ['dateEnvoi' => 'DESC'], 5);
+        $history = array_reverse($history);
+
+        $chatContext = "";
+        foreach ($history as $m) {
+            $author = $m->getIdExpediteur() === $this->getUser() ? "Moi" : "L'autre";
+            $chatContext .= "$author : " . $m->getContenu() . "\n";
+        }
+        try {
+            $prompt = "Tu es un assistant de chat. Voici les derniers messages :\n$chatContext\nPropose 3 réponses courtes et naturelles (3 mots max) séparées par des points-virgules. Réponds UNIQUEMENT les 3 suggestions.";
+
+            $result = $client->chat()->create([
+                'model' => 'llama-3.1-8b-instant', // <--- NOUVEAU NOM DU MODÈLE ICI
+                'messages' => [['role' => 'user', 'content' => $prompt]],
+                'max_tokens' => 40
+            ]);
+
+            $suggestionsText = $result->choices[0]->message->content;
+            // Nettoyage final (enlève les guillemets ou points inutiles)
+            $cleanSuggestions = array_map(function ($s) {
+                return trim(str_replace(['"', '.', '1', '2', '3'], '', $s));
+            }, $suggestionsText ? explode(';', $suggestionsText) : []);
+
+            return new JsonResponse(['suggestions' => array_slice($cleanSuggestions, 0, 3)]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['debug_error' => $e->getMessage(), 'suggestions' => []]);
+        }
     }
 }

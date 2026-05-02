@@ -22,8 +22,8 @@
             {% endif %}
 
             <div class="detail-content-card">
-                <div class="detail-author-row">
-                    <div class="avatar">{{ post.user.username|first|upper|default('U') }}</div>
+                <div class="detail-author-row" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                    <div class="avatar" style="margin: 0; width: 50px; height: 50px; font-size: 20px;">{{ post.user.username|first|upper|default('U') }}</div>
                     <div>
                         <span class="detail-author-name">{{ post.user.username|default('Anonymous') }}</span>
                         <span class="post-meta">{{ post.timeAgo }}</span>

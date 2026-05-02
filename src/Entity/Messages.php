@@ -12,7 +12,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Messages
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'NONE')]
+    #[ORM\GeneratedValue]
     #[ORM\Column(name: 'idMessage')]
     private ?int $id = null;
 
@@ -44,6 +44,16 @@ class Messages
 
     #[ORM\Column(name: 'isDeleted')]
     private ?bool $isDeleted = null;
+    #[ORM\Column(name: 'edited')]
+    private ?bool $edited = null;
+
+    public function __construct()
+    {
+        $this->dateEnvoi = new \DateTime();
+        $this->lu = false;
+        $this->isDeleted = false;
+        $this->edited = false;
+    }
 
     public function getId(): ?int
     {
@@ -164,4 +174,16 @@ class Messages
 
         return $this;
     }
-}
+
+    public function isEdited(): ?bool
+    {
+        return $this->edited;
+    }
+
+    public function setEdited(bool $edited): static
+    {
+        $this->edited = $edited;
+
+        return $this;
+    }
+    }
