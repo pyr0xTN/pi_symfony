@@ -783,6 +783,23 @@
             display: block;
         }
 
+        .face-scanner-overlay {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .face-scan-circle {
+            position: absolute;
+            inset: 12%;
+            border-radius: 50%;
+            border: 2px solid rgba(10, 160, 159, 0.85);
+            box-shadow: 0 0 0 1px rgba(252, 186, 48, 0.42), inset 0 0 26px rgba(10, 160, 159, 0.2);
+            pointer-events: none;
+        }
+
         .face-scanner-status {
             margin-top: 10px;
             margin-bottom: 0;
@@ -790,6 +807,30 @@
             font-weight: 600;
             font-size: 0.9rem;
             min-height: 20px;
+        }
+
+        .face-scanner-actions {
+            margin-top: 12px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .face-scanner-capture {
+            border: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0ca7a4, #0a88b1);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            padding: 10px 18px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(6, 110, 140, 0.24);
+        }
+
+        .face-scanner-capture:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
         }
 
         .form-check-label {
@@ -1123,8 +1164,13 @@
             </div>
             <div class="face-scanner-video-wrap">
                 <video id="faceScannerVideo" class="face-scanner-video" autoplay playsinline muted></video>
+                <canvas id="faceScannerOverlay" class="face-scanner-overlay"></canvas>
+                <div class="face-scan-circle" aria-hidden="true"></div>
             </div>
-            <p id="faceScannerStatus" class="face-scanner-status">Center your face. Login starts automatically when a face is detected.</p>
+            <p id="faceScannerStatus" class="face-scanner-status">Center your face, then click Take Picture.</p>
+            <div class="face-scanner-actions">
+                <button type="button" id="faceScannerCaptureBtn" class="face-scanner-capture">Take Picture</button>
+            </div>
         </div>
     </div>
     
@@ -1208,7 +1254,9 @@
             const faceScannerBackdrop = document.getElementById('faceScannerBackdrop');
             const faceScannerClose = document.getElementById('faceScannerClose');
             const faceScannerVideo = document.getElementById('faceScannerVideo');
+            const faceScannerOverlay = document.getElementById('faceScannerOverlay');
             const faceScannerStatus = document.getElementById('faceScannerStatus');
+            const faceScannerCaptureBtn = document.getElementById('faceScannerCaptureBtn');
             let qrScannerStream = null;
             let qrScannerFrameId = null;
             let qrLoginInProgress = false;
@@ -1218,9 +1266,125 @@
             let faceScannerFrameId = null;
             let faceLoginInProgress = false;
             let lastFaceAttemptAt = 0;
+            let faceLoginAttempted = false;
             let faceDetector = null;
+            let faceStableFrames = 0;
+            let latestFaceBounds = null;
             const faceScannerCanvas = document.createElement('canvas');
             const faceScannerContext = faceScannerCanvas.getContext('2d', { willReadFrequently: true });
+
+            const assessFaceCaptureQuality = (canvas) => {
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                if (!context) {
+                    return { ok: false, message: 'Unable to read camera frame.' };
+                }
+
+                const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+                if (!data || width === 0 || height === 0) {
+                    return { ok: false, message: 'Invalid camera frame.' };
+                }
+
+                let sum = 0;
+                let sumSq = 0;
+                let gradientSum = 0;
+                let gradientCount = 0;
+
+                const luma = new Float32Array(width * height);
+                let idx = 0;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (0.299 * data[i]) + (0.587 * data[i + 1]) + (0.114 * data[i + 2]);
+                    luma[idx++] = gray;
+                    sum += gray;
+                    sumSq += gray * gray;
+                }
+
+                const pixelCount = width * height;
+                const mean = sum / pixelCount;
+                const variance = Math.max(0, (sumSq / pixelCount) - (mean * mean));
+                const stdDev = Math.sqrt(variance);
+
+                for (let y = 0; y < height - 1; y += 1) {
+                    for (let x = 0; x < width - 1; x += 1) {
+                        const current = luma[(y * width) + x];
+                        const right = luma[(y * width) + x + 1];
+                        const down = luma[((y + 1) * width) + x];
+                        gradientSum += Math.abs(current - right) + Math.abs(current - down);
+                        gradientCount += 2;
+                    }
+                }
+
+                const sharpness = gradientCount > 0 ? (gradientSum / gradientCount) : 0;
+
+                if (mean < 45 || mean > 210) {
+                    return { ok: false, message: 'Lighting is not good enough. Face is too dark or too bright.' };
+                }
+
+                if (stdDev < 22) {
+                    return { ok: false, message: 'Face contrast is too low. Move to better lighting.' };
+                }
+
+                if (sharpness < 12) {
+                    return { ok: false, message: 'Image is blurry. Hold still and refocus your face.' };
+                }
+
+                return { ok: true };
+            };
+
+            const createFaceOnlyCapture = (faceBounds, frameWidth, frameHeight) => {
+                if (!faceBounds || !faceScannerCanvas) {
+                    return { ok: false, message: 'No face detected. Keep your face inside the scan ring.' };
+                }
+
+                const rawX = Number(faceBounds.x || 0);
+                const rawY = Number(faceBounds.y || 0);
+                const rawW = Number(faceBounds.width || 0);
+                const rawH = Number(faceBounds.height || 0);
+
+                if (rawW <= 0 || rawH <= 0) {
+                    return { ok: false, message: 'No face detected. Keep your face inside the scan ring.' };
+                }
+
+                const faceRatio = (rawW * rawH) / (frameWidth * frameHeight);
+                if (faceRatio < 0.12) {
+                    return { ok: false, message: 'Move closer. Your face must fill more of the frame.' };
+                }
+
+                const pad = Math.round(Math.max(rawW, rawH) * 0.22);
+                const x = Math.max(0, Math.floor(rawX - pad));
+                const y = Math.max(0, Math.floor(rawY - pad));
+                const x2 = Math.min(frameWidth, Math.ceil(rawX + rawW + pad));
+                const y2 = Math.min(frameHeight, Math.ceil(rawY + rawH + pad));
+                const cropW = Math.max(1, x2 - x);
+                const cropH = Math.max(1, y2 - y);
+
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = 320;
+                outputCanvas.height = 320;
+                const outputContext = outputCanvas.getContext('2d');
+                if (!outputContext) {
+                    return { ok: false, message: 'Unable to process face capture.' };
+                }
+
+                outputContext.drawImage(
+                    faceScannerCanvas,
+                    x,
+                    y,
+                    cropW,
+                    cropH,
+                    0,
+                    0,
+                    outputCanvas.width,
+                    outputCanvas.height
+                );
+
+                const quality = assessFaceCaptureQuality(outputCanvas);
+                if (!quality.ok) {
+                    return { ok: false, message: quality.message };
+                }
+
+                return { ok: true, dataUrl: outputCanvas.toDataURL('image/jpeg', 0.95) };
+            };
 
             const isRoleSelected = () => {
                 const checkboxes = document.querySelectorAll('.role-checkbox');
@@ -1680,6 +1844,20 @@
                 }
 
                 faceLoginInProgress = false;
+                faceLoginAttempted = false;
+                faceStableFrames = 0;
+                latestFaceBounds = null;
+
+                if (faceScannerCaptureBtn) {
+                    faceScannerCaptureBtn.disabled = false;
+                }
+
+                if (faceScannerOverlay) {
+                    const overlayContext = faceScannerOverlay.getContext('2d');
+                    if (overlayContext) {
+                        overlayContext.clearRect(0, 0, faceScannerOverlay.width, faceScannerOverlay.height);
+                    }
+                }
             };
 
             const closeFaceScanner = () => {
@@ -1691,8 +1869,22 @@
             };
 
             const submitFaceFrame = (imageDataUrl) => {
+                if (faceLoginInProgress || faceLoginAttempted) {
+                    return;
+                }
+
                 faceLoginInProgress = true;
+                faceLoginAttempted = true;
                 setFaceScannerStatus('Checking your face...');
+
+                if (faceScannerCaptureBtn) {
+                    faceScannerCaptureBtn.disabled = true;
+                }
+
+                if (faceScannerFrameId) {
+                    window.cancelAnimationFrame(faceScannerFrameId);
+                    faceScannerFrameId = null;
+                }
 
                 fetch('{{ path('app_login_face_id') }}', {
                     method: 'POST',
@@ -1713,26 +1905,71 @@
 
                         if (payload && payload.success && payload.redirectUrl) {
                             showPageLoader('Face recognized. Signing you in...');
+                            closeFaceScanner();
                             window.location.assign(payload.redirectUrl);
                             return;
                         }
 
+                        const failureMessage = payload && payload.message
+                            ? payload.message
+                            : 'Face not recognized. Click Face ID and try again.';
+
                         if (payload && payload.message) {
-                            setFaceScannerStatus(payload.message + ' Keep your face centered...');
-                        } else {
-                            setFaceScannerStatus('Face not recognized yet. Keep your face centered...');
+                            setFaceScannerStatus(failureMessage);
                         }
 
+                        window.alert(failureMessage);
+
                         faceLoginInProgress = false;
+                        closeFaceScanner();
                     })
                     .catch(() => {
-                        setFaceScannerStatus('Unable to verify face right now. Retrying...');
+                        const errorMessage = 'Unable to verify face right now. Click Face ID and try again.';
+                        setFaceScannerStatus(errorMessage);
+                        window.alert(errorMessage);
                         faceLoginInProgress = false;
+                        closeFaceScanner();
                     });
             };
 
+            const captureFaceForLogin = () => {
+                if (faceLoginInProgress || faceLoginAttempted) {
+                    return;
+                }
+
+                if (!faceScannerVideo || !faceScannerContext || faceScannerVideo.readyState < 2) {
+                    setFaceScannerStatus('Camera is not ready yet. Please wait a moment.');
+                    return;
+                }
+
+                const width = faceScannerVideo.videoWidth;
+                const height = faceScannerVideo.videoHeight;
+                if (!width || !height) {
+                    setFaceScannerStatus('Camera frame is not available.');
+                    return;
+                }
+
+                faceScannerCanvas.width = width;
+                faceScannerCanvas.height = height;
+                faceScannerContext.drawImage(faceScannerVideo, 0, 0, width, height);
+
+                let imageDataToSubmit = '';
+                if (latestFaceBounds) {
+                    const processed = createFaceOnlyCapture(latestFaceBounds, width, height);
+                    if (processed.ok && processed.dataUrl) {
+                        imageDataToSubmit = processed.dataUrl;
+                    }
+                }
+
+                if (!imageDataToSubmit) {
+                    imageDataToSubmit = faceScannerCanvas.toDataURL('image/jpeg', 0.92);
+                }
+
+                submitFaceFrame(imageDataToSubmit);
+            };
+
             const runFaceScannerFrame = async () => {
-                if (!faceScannerVideo || !faceScannerContext) {
+                if (!faceScannerVideo || !faceScannerContext || faceLoginInProgress || faceLoginAttempted) {
                     return;
                 }
 
@@ -1745,28 +1982,70 @@
                         faceScannerCanvas.height = height;
                         faceScannerContext.drawImage(faceScannerVideo, 0, 0, width, height);
 
-                        const now = Date.now();
-                        if (!faceLoginInProgress && now - lastFaceAttemptAt >= 1200) {
-                            let hasFace = true;
+                        let hasFace = false;
+                        let detectedBounds = null;
 
-                            if (faceDetector) {
-                                try {
-                                    const bitmap = await createImageBitmap(faceScannerCanvas);
-                                    const faces = await faceDetector.detect(bitmap);
-                                    bitmap.close();
-                                    hasFace = Array.isArray(faces) && faces.length > 0;
-                                } catch (error) {
+                        if (faceDetector) {
+                            try {
+                                const detections = await faceDetector.detect(faceScannerVideo);
+                                if (Array.isArray(detections) && detections.length > 0) {
+                                    const box = detections[0].boundingBox;
                                     hasFace = true;
+                                    detectedBounds = {
+                                        x: Number(box.x || 0),
+                                        y: Number(box.y || 0),
+                                        width: Number(box.width || 0),
+                                        height: Number(box.height || 0),
+                                    };
                                 }
+                            } catch (error) {
+                                hasFace = false;
                             }
+                        } else {
+                            hasFace = true;
+                            detectedBounds = {
+                                x: width * 0.2,
+                                y: height * 0.18,
+                                width: width * 0.6,
+                                height: height * 0.66,
+                            };
+                        }
 
-                            if (hasFace) {
-                                lastFaceAttemptAt = now;
-                                const imageDataUrl = faceScannerCanvas.toDataURL('image/jpeg', 0.9);
-                                submitFaceFrame(imageDataUrl);
-                            } else {
-                                setFaceScannerStatus('No face detected yet. Move your face into the frame.');
+                        if (faceScannerOverlay) {
+                            faceScannerOverlay.width = faceScannerVideo.clientWidth || width;
+                            faceScannerOverlay.height = faceScannerVideo.clientHeight || height;
+                            const overlayContext = faceScannerOverlay.getContext('2d');
+                            if (overlayContext) {
+                                overlayContext.clearRect(0, 0, faceScannerOverlay.width, faceScannerOverlay.height);
+
+                                const centerX = faceScannerOverlay.width / 2;
+                                const centerY = faceScannerOverlay.height / 2;
+                                const radius = Math.min(faceScannerOverlay.width, faceScannerOverlay.height) * 0.31;
+
+                                overlayContext.fillStyle = 'rgba(3, 15, 27, 0.32)';
+                                overlayContext.fillRect(0, 0, faceScannerOverlay.width, faceScannerOverlay.height);
+                                overlayContext.save();
+                                overlayContext.globalCompositeOperation = 'destination-out';
+                                overlayContext.beginPath();
+                                overlayContext.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                                overlayContext.fill();
+                                overlayContext.restore();
+
+                                overlayContext.beginPath();
+                                overlayContext.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                                overlayContext.strokeStyle = hasFace ? '#f6bc43' : '#0ca7a4';
+                                overlayContext.lineWidth = 3;
+                                overlayContext.stroke();
                             }
+                        }
+
+                        if (hasFace && detectedBounds) {
+                            latestFaceBounds = detectedBounds;
+                            setFaceScannerStatus('Face detected. Click Take Picture.');
+                        } else {
+                            latestFaceBounds = null;
+                            faceStableFrames = 0;
+                            setFaceScannerStatus('No face detected yet. Move your face into the circle then click Take Picture.');
                         }
                     }
                 }
@@ -1804,7 +2083,11 @@
 
                     faceScannerVideo.srcObject = faceScannerStream;
                     await faceScannerVideo.play();
-                    setFaceScannerStatus('Center your face. Detection is automatic...');
+                    setFaceScannerStatus('Center your face in the circle, then click Take Picture.');
+                    faceLoginAttempted = false;
+                    faceLoginInProgress = false;
+                    faceStableFrames = 0;
+                    latestFaceBounds = null;
                     faceScannerFrameId = window.requestAnimationFrame(() => {
                         runFaceScannerFrame();
                     });
@@ -1837,9 +2120,12 @@
 
             if (faceIdLoginBtn) {
                 faceIdLoginBtn.addEventListener('click', () => {
-                    showPageLoader('Opening Face ID scanner...');
-                    window.location.assign('{{ path('app_login_face_id_page') }}');
+                    openFaceScanner();
                 });
+            }
+
+            if (faceScannerCaptureBtn) {
+                faceScannerCaptureBtn.addEventListener('click', captureFaceForLogin);
             }
 
             if (qrScannerClose) {

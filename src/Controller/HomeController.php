@@ -827,7 +827,7 @@ class HomeController extends AbstractController
 
     #[Route('/panel/2fa/send-credentials-qr', name: 'app_panel_send_credentials_qr', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function sendCredentialsQr(MailerInterface $mailer): JsonResponse
+    public function sendCredentialsQr(MailerInterface $mailer, Request $request): JsonResponse
     {
         $user = $this->getUser();
         if (!$user instanceof User || $user->getId() === null) {
@@ -842,7 +842,17 @@ class HomeController extends AbstractController
             return $this->json(['success' => false, 'error' => 'Missing credentials payload'], Response::HTTP_BAD_REQUEST);
         }
 
-        $qrPayload = sprintf("email: %s\npassword_hash: %s", $emailAddress, $passwordHash);
+        $publicUrl = trim((string) ($_ENV['APP_PUBLIC_URL'] ?? $_SERVER['APP_PUBLIC_URL'] ?? getenv('APP_PUBLIC_URL') ?: ''));
+        if ($publicUrl === '') {
+            $publicUrl = rtrim($request->getSchemeAndHttpHost(), '/') . '/';
+        }
+
+        $qrPayload = sprintf(
+            "email: %s\npassword_hash: %s\nsite_url: %s",
+            $emailAddress,
+            $passwordHash,
+            $publicUrl
+        );
         $qrImageUrl = 'https://quickchart.io/qr?size=320&margin=2&text=' . rawurlencode($qrPayload);
 
         try {
@@ -852,7 +862,7 @@ class HomeController extends AbstractController
                 ->subject('Your Rehletna QR Code (Email + Password Hash)')
                 ->text(
                     "Hello " . $displayName . ",\n\n"
-                    . "A quick scan helps you sign in faster with less typing.\n\n"
+                    . "Scan this QR code to sign in with your email and password hash.\n\n"
                     . $qrPayload . "\n\n"
                     . "If you did not request this email, please secure your account immediately."
                 )
@@ -865,10 +875,10 @@ class HomeController extends AbstractController
                     . '</div>'
                     . '<div style="padding:22px;color:#1f3f5f;">'
                     . '<p style="margin:0 0 12px;font-size:15px;line-height:1.7;">Hello <strong>%s</strong>,</p>'
-                    . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#456b90;">A quick scan helps you sign in faster with less typing.</p>'
+                    . '<p style="margin:0 0 16px;font-size:14px;line-height:1.7;color:#456b90;">Scan this code to sign in with your email and password hash.</p>'
                     . '<div style="text-align:center;margin:12px 0 8px;padding:14px;border:1px solid #dce9f6;border-radius:14px;background:#f8fbff;">'
                     . '<img src="%s" alt="Credentials QR Code" width="260" height="260" style="max-width:100%%;border:1px solid #cfe1f3;border-radius:12px;padding:10px;background:#fff;">'
-                    . '<div style="margin-top:10px;font-size:12px;color:#54779a;">Scan with your trusted QR app</div>'
+                    . '<div style="margin-top:10px;font-size:12px;color:#54779a;">Contains: email + password_hash + site_url</div>'
                     . '</div>'
                     . '<div style="margin-top:16px;padding:10px 12px;border-radius:10px;background:#fff4f4;border:1px solid #f3d2d2;color:#9b3d3d;font-size:12px;line-height:1.6;">If you did not request this email, change your password immediately.</div>'
                     . '</div>'
@@ -906,8 +916,6 @@ class HomeController extends AbstractController
         $step = (int) ($payload['step'] ?? 1);
         $imageDataUrl = (string) ($payload['imageData'] ?? '');
         $firstImageData = (string) ($payload['firstImageData'] ?? '');
-        $firstEmbeddingKey = 'face_id_capture_first_embedding';
-        $validationSkippedKey = 'face_id_capture_validation_skipped';
 
         if ($imageDataUrl === '' || !str_starts_with($imageDataUrl, 'data:image/')) {
             return $this->json(['success' => false, 'error' => 'Missing face image'], Response::HTTP_BAD_REQUEST);
@@ -929,9 +937,7 @@ class HomeController extends AbstractController
             $faceApiUrl = 'http://127.0.0.1:8001';
         }
 
-        $validationSkipped = false;
-
-        // Validate first capture
+        // Validate the detected face once, then store it immediately.
         try {
             $extractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
                 'json' => ['image_data' => $imageDataUrl],
@@ -964,120 +970,16 @@ class HomeController extends AbstractController
 
             $currentEmbedding = $extractPayload['embedding'];
         } catch (\Throwable $exception) {
-            $validationSkipped = true;
             $currentEmbedding = null;
         }
 
-        // Step 1: Return first capture as success and prompt for second
-        if ($step === 1) {
-            $session->set($validationSkippedKey, $validationSkipped);
-            $session->set($firstEmbeddingKey, $currentEmbedding);
-
-            return $this->json([
-                'success' => true,
-                'step' => 1,
-                'message' => 'First face captured. Now take a second photo to confirm.',
-                'nextStep' => 2,
-                'validationSkipped' => $validationSkipped,
-            ]);
-        }
-
-        // Step 2: Compare with first capture
-        if ($step === 2) {
-            $stepOneValidationSkipped = (bool) $session->get($validationSkippedKey, false);
-            $firstEmbedding = $session->get($firstEmbeddingKey);
-
-            if ($stepOneValidationSkipped) {
-                $session->remove($firstEmbeddingKey);
-                $session->remove($validationSkippedKey);
-
-                $connection->executeStatement(
-                    'UPDATE `user` SET face_data = ? WHERE id = ?',
-                    [$binaryImage, (int) $user->getId()],
-                    [ParameterType::LARGE_OBJECT, ParameterType::INTEGER]
-                );
-
+        if ($step === 1 || $step === 2) {
+            if ($currentEmbedding === null) {
                 return $this->json([
-                    'success' => true,
-                    'step' => 2,
-                    'message' => 'Face data saved successfully. Validation was limited, but your second photo was stored.',
-                    'similarity' => null,
-                    'validationSkipped' => true,
-                ]);
+                    'success' => false,
+                    'error' => 'No face detected. Keep your face inside the frame and try again.',
+                ], Response::HTTP_BAD_REQUEST);
             }
-
-            if (!is_array($firstEmbedding) || $firstEmbedding === []) {
-                if ($firstImageData === '' || !str_starts_with($firstImageData, 'data:image/')) {
-                    return $this->json([
-                        'success' => false,
-                        'error' => 'Missing first scan. Start over and capture again.',
-                    ], Response::HTTP_BAD_REQUEST);
-                }
-
-                try {
-                    $firstExtractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
-                        'json' => ['image_data' => $firstImageData],
-                        'headers' => ['Accept' => 'application/json'],
-                        'timeout' => 15.0,
-                    ]);
-
-                    $firstStatus = $firstExtractResponse->getStatusCode();
-                    if ($firstStatus >= 400) {
-                        throw new \RuntimeException('First image extraction failed');
-                    }
-
-                    $firstExtractPayload = $firstExtractResponse->toArray(false);
-                    if (!isset($firstExtractPayload['embedding']) || !is_array($firstExtractPayload['embedding']) || $firstExtractPayload['embedding'] === []) {
-                        throw new \RuntimeException('First image embedding extraction failed');
-                    }
-
-                    $firstEmbedding = $firstExtractPayload['embedding'];
-                    $session->set($firstEmbeddingKey, $firstEmbedding);
-                } catch (\Throwable $exception) {
-                    return $this->json([
-                        'success' => false,
-                        'error' => 'Could not validate first photo for comparison. Start over and try again.',
-                    ], Response::HTTP_SERVICE_UNAVAILABLE);
-                }
-            }
-
-            // Compare embeddings
-            if (!$validationSkipped && $currentEmbedding && $firstEmbedding) {
-                try {
-                    $compareResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/compare', [
-                        'json' => [
-                            'probe_embedding' => $currentEmbedding,
-                            'stored_embedding' => $firstEmbedding,
-                        ],
-                        'headers' => ['Accept' => 'application/json'],
-                        'timeout' => 10.0,
-                    ]);
-
-                    if ($compareResponse->getStatusCode() >= 400) {
-                        throw new \RuntimeException('Comparison failed');
-                    }
-
-                    $comparePayload = $compareResponse->toArray(false);
-                    $similarity = (float) ($comparePayload['similarity'] ?? 0.0);
-
-                    if ($similarity < 0.92) {
-                        return $this->json([
-                            'success' => false,
-                            'error' => 'Photos do not match. They must be the same face. Please start over.',
-                            'similarity' => $similarity,
-                        ], Response::HTTP_BAD_REQUEST);
-                    }
-                } catch (\Throwable $exception) {
-                    return $this->json([
-                        'success' => false,
-                        'error' => 'Face comparison service is unavailable. Please try again later.',
-                    ], Response::HTTP_SERVICE_UNAVAILABLE);
-                }
-            }
-
-            // Comparison passed (or validation skipped); use second image as the one to save
-            $session->remove($firstEmbeddingKey);
-            $session->remove($validationSkippedKey);
 
             $connection->executeStatement(
                 'UPDATE `user` SET face_data = ? WHERE id = ?',
@@ -1087,11 +989,8 @@ class HomeController extends AbstractController
 
             return $this->json([
                 'success' => true,
-                'step' => 2,
-                'message' => $validationSkipped
-                    ? 'Face data saved. Validation was skipped because Python face service is offline.'
-                    : 'Face data saved successfully. Both photos matched!',
-                'validationSkipped' => $validationSkipped,
+                'step' => $step,
+                'message' => 'Face data saved successfully.',
             ]);
         }
 
@@ -1275,6 +1174,7 @@ class HomeController extends AbstractController
                     $profile['image_url'] = '/images/default_image.png';
                 }
             }
+
         }
 
         return $this->render('home/mainpage.html.twig', [
@@ -1283,6 +1183,92 @@ class HomeController extends AbstractController
             'visionTheme' => $visionTheme,
             'birthdayGift' => $birthdayGift,
         ]);
+    }
+
+    #[Route('/panel/face-id/detect', name: 'app_panel_detect_face_id', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
+    public function detectFaceId(Request $request, HttpClientInterface $httpClient): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || $user->getId() === null) {
+            return $this->json(['success' => false, 'error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $payload = json_decode($request->getContent(), true);
+        if (!is_array($payload)) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'Invalid payload received by detectFaceId.',
+                'error' => 'Invalid payload',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $imageDataUrl = (string) ($payload['imageData'] ?? '');
+        if ($imageDataUrl === '' || !str_starts_with($imageDataUrl, 'data:image/')) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'Missing or invalid face image data URL.',
+                'error' => 'Missing face image',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $faceApiUrl = trim((string) ($_ENV['FACE_ID_API_URL'] ?? $_SERVER['FACE_ID_API_URL'] ?? getenv('FACE_ID_API_URL') ?: ''));
+        if ($faceApiUrl === '') {
+            $faceApiUrl = 'http://127.0.0.1:8001';
+        }
+
+        try {
+            $extractResponse = $httpClient->request('POST', rtrim($faceApiUrl, '/') . '/extract', [
+                'json' => ['image_data' => $imageDataUrl],
+                'headers' => ['Accept' => 'application/json'],
+                'timeout' => 8.0,
+            ]);
+
+            $status = $extractResponse->getStatusCode();
+            if ($status === 400) {
+                return $this->json([
+                    'success' => true,
+                    'detected' => false,
+                    'debugMessage' => 'OpenCV service received the frame but did not find a clear face.',
+                ]);
+            }
+
+            if ($status >= 400) {
+                return $this->json([
+                    'success' => false,
+                    'detected' => false,
+                    'debugMessage' => 'OpenCV service is unreachable or returned an unexpected error.',
+                    'error' => 'Face service failed to validate this image.',
+                ], Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            $extractPayload = $extractResponse->toArray(false);
+            if (!isset($extractPayload['face_box']) || !is_array($extractPayload['face_box'])) {
+                return $this->json([
+                    'success' => true,
+                    'detected' => true,
+                    'debugMessage' => 'OpenCV service detected a face but did not return a face box.',
+                ]);
+            }
+
+            return $this->json([
+                'success' => true,
+                'detected' => true,
+                'debugMessage' => 'OpenCV service detected a face successfully.',
+                'faceBox' => $extractPayload['face_box'],
+            ]);
+        } catch (
+            \Throwable $exception
+        ) {
+            return $this->json([
+                'success' => false,
+                'detected' => false,
+                'debugMessage' => 'OpenCV service is unavailable. Start the Python Face ID service.',
+                'error' => 'Face service is unavailable.',
+            ], Response::HTTP_SERVICE_UNAVAILABLE);
+        }
     }
 
     #[Route('/vision-test', name: 'app_vision_test', methods: ['GET'])]
