@@ -212,7 +212,7 @@ class HomeController extends AbstractController
                     . '</div>'
                     . '</div>'
                     . '</div>',
-                        . '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
+                        '<div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #d7e7f7;border-radius:18px;overflow:hidden;box-shadow:0 14px 30px rgba(17,53,86,0.12);">'
                         . '<div style="background:linear-gradient(135deg,#0e5f97,#1a86c8);padding:18px 22px;color:#ffffff;">'
                         . '<div style="font-size:12px;letter-spacing:0.4px;opacity:.9;text-transform:uppercase;">Rehletna Security</div>'
                         . '<h2 style="margin:8px 0 0;font-size:24px;line-height:1.2;">Your Login QR Code</h2>'
