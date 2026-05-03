@@ -340,3 +340,45 @@ function escapeHtml(text) {
         document.addEventListener('keydown', onKey);
     }
 })();
+
+// ── Badges (Weather & Sentiment) ─────────────────────────────
+(function () {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fetch weather for places
+        document.querySelectorAll('.weather-badge').forEach(badge => {
+            const place = badge.dataset.place;
+            if (!place) return;
+
+            fetch('/api/weather/' + place)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.iconUrl && data.temperature !== undefined) {
+                        badge.innerHTML = `<img src="${data.iconUrl}" alt="weather" style="width:16px;height:16px;vertical-align:middle;"> ${Math.round(data.temperature)}°C`;
+                        badge.style.display = 'inline-flex';
+                    }
+                })
+                .catch(err => console.error('Weather fetch failed', err));
+        });
+
+        // Fetch sentiment/mood for posts
+        document.querySelectorAll('.mood-badge').forEach(badge => {
+            const postId = badge.dataset.postId;
+            if (!postId) return;
+
+            fetch('/api/post/' + postId + '/sentiment')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.emoji && data.mood) {
+                        badge.innerHTML = `${data.emoji} ${data.mood}`;
+                        badge.style.display = 'inline-flex';
+                        badge.title = 'AI Sentiment Analysis: ' + data.mood;
+                    } else if (data.error) {
+                        // Keep it hidden if groq failed
+                        console.error('Sentiment API error:', data.error);
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(err => console.error('Sentiment fetch failed', err));
+        });
+    });
+})();

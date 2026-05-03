@@ -194,4 +194,20 @@ class ApiController extends AbstractController
         $photo = $unsplashService->fetchPhoto(urldecode($query));
         return $this->json($photo ?? ['error' => 'No photo found']);
     }
+
+    #[Route('/post/{id}/sentiment', name: 'api_post_sentiment', methods: ['GET'])]
+    public function sentiment(
+        int $id,
+        PublicationRepository $pubRepo,
+        \App\Service\SentimentService $sentimentService
+    ): JsonResponse {
+        $post = $pubRepo->find($id);
+        if (!$post) return $this->json(['error' => 'Post not found'], 404);
+
+        $content = $post->getContent();
+        if (empty($content)) return $this->json(['error' => 'Empty content'], 400);
+
+        $data = $sentimentService->analyze($content);
+        return $this->json($data ?? ['error' => 'Sentiment analysis failed']);
+    }
 }
