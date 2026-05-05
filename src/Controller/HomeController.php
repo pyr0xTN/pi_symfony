@@ -6,6 +6,8 @@ namespace App\Controller;
 use App\Entity\User;
 use App\Repository\ConversationRepository;
 use App\Repository\UserRepository;
+use App\Repository\MessagesRepository;
+use App\Repository\ParticipantConversationRepository;
 use App\Service\WeatherService;
 use App\BirthdayRewardBundle\Service\BirthdayRewardService;
 use Doctrine\DBAL\ArrayParameterType;
@@ -1500,17 +1502,19 @@ class HomeController extends AbstractController
         return $this->redirectToRoute('app_settings');
     }
 
-    #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
+     #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
-    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo): Response
+    public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo, MessagesRepository $msgRepo, ParticipantConversationRepository $pcRepo): Response
     {
         $view = $request->request->get('view');
         $user = $this->getUser();
-        
+
         // Load different views based on selection
         switch ($view) {
             case 'services':
                 return $this->render('partials/services.html.twig');
+            case 'activities':
+                return $this->render('partials/activities.html.twig');
             case 'shop':
                 return $this->render('partials/shop.html.twig', [
                     'shop' => $this->buildShopViewData($connection),
@@ -1523,10 +1527,36 @@ class HomeController extends AbstractController
                 if (!$user instanceof User) {
                     throw $this->createAccessDeniedException();
                 }
-                $conversations = $convRepo->findConversationsByUser($user->getId());
+
+                // 1. Récupérer les conversations brutes
+                $rawConversations = $convRepo->findConversationsByUser($user->getId());
                 $allUsers = $userRepo->findAllExceptMe($user->getId());
+
+                $conversationsWithMetas = [];
+                foreach ($rawConversations as $conv) {
+                    // 1. Chercher le statut de l'utilisateur pour CETTE conversation
+                    $p = $pcRepo->findOneBy(['idConversation' => $conv, 'idUtilisateur' => $user]);
+
+                    // 2. Déterminer le dernier message à afficher en preview
+                    if ($p && !$p->isEstActif() && $p->getDateSortie()) {
+                        // Si l'utilisateur a quitté : on cherche le dernier message AVANT sa sortie
+                        $lastMsg = $msgRepo->findLastMessageBeforeDate($conv, $p->getDateSortie());
+                        $unread = 0;
+                    } else {
+                        // Sinon : on prend le dernier message réel
+                        $lastMsg = $msgRepo->findOneBy(['idConversation' => $conv], ['dateEnvoi' => 'DESC']);
+                         $unread = $msgRepo->countUnread($conv->getId(), $user->getId());
+                    }
+
+                    $conversationsWithMetas[] = [
+                        'conv' => $conv,
+                        'lastMsg' => $lastMsg,
+                        'unread' => $unread
+                    ];
+                }
+
                 return $this->render('messenger/chatView.html.twig', [
-                    'conversations' => $conversations,
+                    'conversations' => $conversationsWithMetas, // On envoie les données préparées
                     'users' => $allUsers
                 ]);
             case 'post':
