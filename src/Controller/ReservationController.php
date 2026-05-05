@@ -2,632 +2,285 @@
 
 namespace App\Controller;
 
-use App\Entity\Reservations;
-use App\Entity\Services;
+use App\Entity\Reservation;
+use App\Entity\User;
 use App\Form\ReservationType;
-use App\Repository\ReservationsRepository;
-use App\Repository\ServicesRepository;
+use App\Repository\OfferRepository;
+use App\Repository\ReservationRepository;
+use App\Service\MailerSendService;
+use App\Service\PdfTicketService;
+use App\Service\StripeService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Dompdf\Dompdf;
-use Dompdf\Options;
-use Stripe\Stripe;
-use Stripe\Charge;
-use Stripe\Exception\CardException;
-use PayPalCheckoutSdk\Core\PayPalHttpClient;
-use PayPalCheckoutSdk\Core\SandboxEnvironment;
-use PayPalCheckoutSdk\Core\ProductionEnvironment;
-use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
-use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
-use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
-use Symfony\UX\Chartjs\Model\Chart;
-use Knp\Component\Pager\PaginatorInterface;
-use App\Service\ReservationConflictService;
 
-
-#[Route('/reservation')]
-class ReservationController extends AbstractController
+#[Route('/reservations')]
+final class ReservationController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $em,
-        private ReservationsRepository $reservationsRepo,
-        private ServicesRepository     $servicesRepo,
-        private ChartBuilderInterface  $chartBuilder,
-        private PaginatorInterface     $paginator,
-        private ReservationConflictService $conflictService,
+        private readonly StripeService     $stripe,
+        private readonly MailerSendService $mailer,
+        private readonly PdfTicketService  $pdfTicket,
     ) {}
 
-
-    #[Route('', name: 'reservations_index', methods: ['GET'])]
-    public function index(Request $request): Response
+    #[Route('/book/{id}', name: 'app_reservation_book', requirements: ['id' => '\d+'])]
+    public function book(int $id, Request $request, OfferRepository $offerRepository, EntityManagerInterface $em): Response
     {
-        $search       = $request->query->get('q', '');
-        $qb           = $this->reservationsRepo->findAllQueryBuilder($search);
-
-        $pagination = $this->paginator->paginate(
-            $qb,
-            $request->query->getInt('page', 1),
-            8 // items per page
-        );
-
-        // For charts, we need all reservations
-        $allReservations = $search
-            ? $this->reservationsRepo->findBySearch($search)
-            : $this->reservationsRepo->findAll();
-
-        // ── Stats Calculation ──
-        $conf  = 0;
-        $pend  = 0;
-        $canc  = 0;
-        foreach ($allReservations as $r) {
-            $st = strtolower($r->getStatut());
-            if ($st === 'confirmée' || $st === 'confirmed') $conf++;
-            elseif ($st === 'en attente' || $st === 'pending') $pend++;
-            elseif ($st === 'annulée' || $st === 'cancelled') $canc++;
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
         }
 
-        // ── Status Chart ──
-        $chart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
-        $chart->setData([
-            'labels' => ['Confirmée', 'En attente', 'Annulée'],
-            'datasets' => [
-                [
-                    'backgroundColor' => ['#4ba3a1', '#f6c750', '#ff6b6b'], // teal, yellow, red
-                    'data' => [$conf, $pend, $canc],
-                ],
-            ],
-        ]);
-        $chart->setOptions([
-            'maintainAspectRatio' => false,
-            'plugins' => [
-                'legend' => ['display' => false], // Custom legend in HTML
-            ],
-        ]);
-
-        return $this->render('reservation/index.html.twig', [
-            'active_page'  => 'reservations',
-            'pagination'   => $pagination,
-            'statusChart'  => $chart,
-            'stats' => [
-                'total' => count($allReservations),
-                'conf'  => $conf,
-                'pend'  => $pend,
-                'canc'  => $canc,
-            ],
-        ]);
-    }
-
-    
-    #[Route('/new', name: 'reservation_new', methods: ['GET', 'POST'])]
-    public function new(Request $request): Response
-    {
-       
-        $serviceId   = $request->query->getInt('serviceId');
-        $serviceType = $request->query->get('serviceType', '');
-
-        $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
-        if (!$service) {
-            throw $this->createNotFoundException('Service introuvable.');
+        if ($this->isGranted('ROLE_AGENCY') || $this->isGranted('ROLE_ADMIN')) {
+            $this->addFlash('danger', 'Agencies and admins cannot make reservations.');
+            return $this->redirectToRoute('app_offer_index');
         }
 
-        $reservation = new Reservations();
-        $reservation->setStatut('En attente');
-        $reservation->setIdService($service);
+        $offer = $offerRepository->find($id);
+        if (!$offer || $offer->getStatus() !== 'ACTIVE') {
+            throw $this->createNotFoundException('Offer not found or no longer available.');
+        }
 
-        $form = $this->createForm(ReservationType::class, $reservation, [
-            'service_type' => $serviceType,
-        ]);
+        $bookedSpots = 0;
+        foreach ($offer->getReservations() as $r) {
+            if ($r->getStatus() === 'CONFIRMED') {
+                $bookedSpots += $r->getNumberOfPersons();
+            }
+        }
+        $remainingCapacity = ($offer->getCapacity() ?? 999) - $bookedSpots;
+
+        if ($remainingCapacity <= 0) {
+            $this->addFlash('danger', 'Sorry, this offer is fully booked.');
+            return $this->redirectToRoute('app_offer_show', ['id' => $id]);
+        }
+
+        $reservation = new Reservation();
+        $form = $this->createForm(ReservationType::class, $reservation, ['max_capacity' => $remainingCapacity]);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $total = bcmul($offer->getPromoPrice(), (string) $reservation->getNumberOfPersons(), 2);
 
-            if ($serviceType === 'vol') {
-                $seatNb = $form->get('siege')->getData();
+            $reservation->setOffer($offer);
+            $reservation->setUser($user);
+            $reservation->setReservationDate(new \DateTimeImmutable());
+            $reservation->setTotalAmount($total);
+            $reservation->setStatus('PENDING');
+            $reservation->setPaymentStatus('UNPAID');
+            $reservation->setCreatedAt(new \DateTimeImmutable());
 
-                if (empty($seatNb)) {
-                    return $this->render('reservation/new.html.twig', [
-                        'active_page'   => 'reservations',
-                        'form'          => $form,
-                        'service'       => $service,
-                        'serviceType'   => $serviceType,
-                        'seats'         => $this->buildSeatMap($service),
-                        'custom_errors' => ['Veuillez sélectionner un siège.'],
-                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
-                }
+            $em->persist($reservation);
+            $em->flush();
 
-                $reservation->setSeatNb((int) $seatNb);
-            } else {
-                $reservation->setSeatNb(0);
-            }
-
-            // Read availability directly from the entity — never trust the client query param
-            if ($service->getDisponibilite()) {
-                $conflicts = $this->conflictService->checkConflicts(
-                    $reservation->getNom(),
-                    $service,
-                    $reservation->getDateReservation()
-                );
-
-                if (!empty($conflicts)) {
-                    return $this->render('reservation/new.html.twig', [
-                        'active_page'   => 'reservations',
-                        'form'          => $form,
-                        'service'       => $service,
-                        'serviceType'   => $serviceType,
-                        'seats'         => $serviceType === 'vol' ? $this->buildSeatMap($service) : [],
-                        'custom_errors' => $conflicts,
-                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
-                }
-
-                $service->decrementCapacite();
-                $this->em->persist($reservation);
-                $this->em->flush();
-
-                // Cash: no online payment needed — stay 'En attente', go back to services
-                if ($reservation->getModePaiement() === 'cash') {
-                    $this->addFlash('success', 'Réservation créée avec succès ! Vous réglerez sur place.');
-                    return $this->redirectToRoute('reservations_index');
-                }
-
-                // Stripe / PayPal: go to payment page to confirm
-                return $this->redirectToRoute('reservation_payment', [
-                    'id'     => $reservation->getIdReservation(),
-                    'origin' => 'back', // Track back-office origin
-                ]);
-            } else {
-                $this->addFlash('danger', 'Service indisponible.');
-            }
+            return $this->redirectToRoute('app_reservation_checkout', ['id' => $reservation->getId()]);
         }
 
-       
-        $seats = [];
-        if ($serviceType === 'vol') {
-            $seats = $this->buildSeatMap($service);
-        }
-
-        return $this->render('reservation/new.html.twig', [
-            'active_page' => 'reservations',
-            'form'        => $form,
-            'service'     => $service,
-            'serviceType' => $serviceType,
-            'seats'       => $seats,
-        ]);
-    }
-    #[Route('/newreservation', name: 'reservation_newfront', methods: ['GET', 'POST'])]
-    public function newreservation(Request $request): Response
-    {
-        
-        $serviceId   = $request->query->getInt('serviceId');
-        $serviceType = $request->query->get('serviceType', '');
-
-        $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
-        if (!$service) {
-            throw $this->createNotFoundException('Service introuvable.');
-        }
-
-        $reservation = new Reservations();
-        $reservation->setStatut('En attente');
-        $reservation->setIdService($service);
-
-        $form = $this->createForm(ReservationType::class, $reservation, [
-            'service_type' => $serviceType,
-        ]);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-
-            if ($serviceType === 'vol') {
-                $seatNb = $form->get('siege')->getData();
-
-                if (empty($seatNb)) {
-                    return $this->render('reservation/reservationfront.html.twig', [
-                        'active_page'   => 'reservations',
-                        'form'          => $form,
-                        'service'       => $service,
-                        'serviceType'   => $serviceType,
-                        'seats'         => $this->buildSeatMap($service),
-                        'custom_errors' => ['Veuillez sélectionner un siège.'],
-                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
-                }
-
-                $reservation->setSeatNb((int) $seatNb);
-            } else {
-                $reservation->setSeatNb(0);
-            }
-
-            // Read availability directly from the entity — never trust the client query param
-            if ($service->getDisponibilite()) {
-                $conflicts = $this->conflictService->checkConflicts(
-                    $reservation->getNom(),
-                    $service,
-                    $reservation->getDateReservation()
-                );
-
-                if (!empty($conflicts)) {
-                    return $this->render('reservation/reservationfront.html.twig', [
-                        'active_page'   => 'reservations',
-                        'form'          => $form,
-                        'service'       => $service,
-                        'serviceType'   => $serviceType,
-                        'seats'         => $serviceType === 'vol' ? $this->buildSeatMap($service) : [],
-                        'custom_errors' => $conflicts,
-                    ], new \Symfony\Component\HttpFoundation\Response(null, 422));
-                }
-
-                $service->decrementCapacite();
-                $this->em->persist($reservation);
-                $this->em->flush();
-
-                // Cash: no online payment needed — stay 'En attente', go back to my reservations
-                if ($reservation->getModePaiement() === 'cash') {
-                    $this->addFlash('success', 'Réservation créée avec succès ! Vous réglerez sur place.');
-                    return $this->redirectToRoute('myreservations_index');
-                }
-
-                // Stripe / PayPal: go to payment page to confirm
-                return $this->redirectToRoute('reservation_payment', [
-                    'id'     => $reservation->getIdReservation(),
-                    'origin' => 'front', // Track front-office origin
-                ]);
-            } else {
-                $this->addFlash('danger', 'Service indisponible.');
-                return $this->redirectToRoute('reservation_newfront', [
-                    'serviceId'   => $serviceId,
-                    'serviceType' => $serviceType,
-                ]);
-            }
-        }
-
-       
-        $seats = [];
-        if ($serviceType === 'vol') {
-            $seats = $this->buildSeatMap($service);
-        }
-
-        return $this->render('reservation/reservationfront.html.twig', [
-            'active_page' => 'reservations',
-            'form'        => $form,
-            'service'     => $service,
-            'serviceType' => $serviceType,
-            'seats'       => $seats,
+        return $this->render('reservation/book.html.twig', [
+            'offer'             => $offer,
+            'form'              => $form->createView(),
+            'remainingCapacity' => $remainingCapacity,
+            'pricePerPerson'    => $offer->getPromoPrice(),
         ]);
     }
 
- 
-    #[Route('/{id}', name: 'reservation_show', methods: ['GET'])]
-    public function show(int $id): Response
+
+    #[Route('/checkout/{id}', name: 'app_reservation_checkout', requirements: ['id' => '\d+'])]
+    public function checkout(int $id, ReservationRepository $repo): Response
     {
-        $reservation = $this->reservationsRepo->find($id);
-        if (!$reservation) {
-            throw $this->createNotFoundException("Réservation #$id introuvable.");
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
         }
 
-        return $this->render('reservation/show.html.twig', [
-            'active_page' => 'reservations',
+        $reservation = $repo->find($id);
+        if (!$reservation || $reservation->getUser()->getId() !== $user->getId()) {
+            throw $this->createNotFoundException('Reservation not found.');
+        }
+
+        if ($reservation->getPaymentStatus() === 'PAID') {
+            return $this->redirectToRoute('app_reservation_my_show', ['id' => $id]);
+        }
+
+        $session = $this->stripe->createCheckoutSession($reservation);
+
+        return $this->render('reservation/checkout.html.twig', [
+            'reservation'     => $reservation,
+            'stripeUrl'       => $session->url,
+            'stripePublicKey' => $this->stripe->getPublicKey(),
+        ]);
+    }
+
+    #[Route('/pay/{id}/success', name: 'app_reservation_pay_success', requirements: ['id' => '\d+'])]
+    public function paySuccess(int $id, Request $request, ReservationRepository $repo, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $reservation = $repo->find($id);
+        if (!$reservation || $reservation->getUser()->getId() !== $user->getId()) {
+            throw $this->createNotFoundException('Reservation not found.');
+        }
+
+        $sessionId = $request->query->get('session_id');
+
+        if ($sessionId && $reservation->getPaymentStatus() !== 'PAID') {
+            try {
+                $session = $this->stripe->retrieveSession($sessionId);
+
+                if ($session->payment_status === 'paid') {
+    $reservation->setPaymentStatus('PAID');
+    $reservation->setStatus('CONFIRMED');
+    $reservation->setUpdatedAt(new \DateTimeImmutable());
+    $em->flush();
+
+    // TEMPORARY DEBUG — remove after fixing
+    try {
+        $pdfPath = $this->pdfTicket->generateToFile($reservation);
+    } catch (\Throwable $e) {
+        file_put_contents(sys_get_temp_dir() . '/pdf_error.log', $e->getMessage());
+        $pdfPath = null;
+    }
+
+    try {
+        $this->mailer->sendReservationConfirmation($reservation, $pdfPath);
+    } catch (\Throwable $e) {
+        file_put_contents(sys_get_temp_dir() . '/mail_error.log', $e->getMessage());
+    }
+}
+            } catch (\Throwable) {
+                // Stripe verification failed
+            }
+        }
+
+        return $this->render('reservation/pay_success.html.twig', [
             'reservation' => $reservation,
         ]);
     }
 
-   
-
-    #[Route('/{id}/delete', name: 'reservation_delete', methods: ['GET', 'POST'])]
-    public function delete(Request $request, int $id): Response
+    #[Route('/pay/{id}/cancel', name: 'app_reservation_pay_cancel', requirements: ['id' => '\d+'])]
+    public function payCancel(int $id, ReservationRepository $repo): Response
     {
-        $reservation = $this->reservationsRepo->find($id);
-        if (!$reservation) {
-            throw $this->createNotFoundException("Réservation #$id introuvable.");
-        }
+        $reservation = $repo->find($id);
 
-        if ($request->isMethod('POST')) {
-            if ($this->isCsrfTokenValid('delete_resa_' . $id, $request->request->get('_token'))) {
-                $reservation->getIdService()->incrementCapacite();
-                $this->em->remove($reservation);
-                $this->em->flush();
-                $this->addFlash('success', 'Réservation supprimée.');
-            }
-        } else {
-            $reservation->getIdService()->incrementCapacite();
-            $this->em->remove($reservation);
-            $this->em->flush();
-            $this->addFlash('success', 'Réservation supprimée.');
-        }
-
-        return $this->redirectToRoute('reservations_index');
-    }
-    #[Route('/{id}/approve', name: 'reservation_approve', methods: ['POST'])]
-    public function approve(int $id): Response
-    {
-        $reservation = $this->reservationsRepo->find($id);
-        if (!$reservation) {
-            throw $this->createNotFoundException("Réservation #$id introuvable.");
-        }
-    
-        $reservation->setStatut('Confirmée');
-        $this->em->flush();
-    
-        $this->addFlash('success', 'Réservation confirmée.');
-        return $this->redirectToRoute('reservations_index');
-    }
-    #[Route('/by-service/{serviceId}', name: 'reservations_by_service', methods: ['GET'])]
-public function byService(int $serviceId): Response
-{
-    $service = $this->servicesRepo->findOneBy(['idService' => $serviceId]);
-    if (!$service) {
-        throw $this->createNotFoundException('Service introuvable.');
-    }
-
-    $reservations = $this->reservationsRepo->findBy(['idService' => $service]);
-
-    return $this->render('reservation/index.html.twig', [
-        'active_page'  => 'reservations',
-        'reservations' => $reservations,
-    ]);
-}
-
-#[Route('/{id}/pdf', name: 'reservation_pdf', methods: ['GET'])]
-public function pdf(int $id): Response
-{
-    $reservation = $this->reservationsRepo->find($id);
-    if (!$reservation) {
-        throw $this->createNotFoundException("Réservation #$id introuvable.");
-    }
-
-    // Only confirmed reservations can be printed
-    if (strtolower($reservation->getStatut()) !== 'confirmée') {
-        $this->addFlash('error', 'Seules les réservations confirmées peuvent être imprimées.');
-        return $this->redirectToRoute('reservation_show', ['id' => $id]);
-    }
-
-    $options = new Options();
-    $options->set('defaultFont', 'DejaVu Sans');
-    $options->set('isRemoteEnabled', true);
-
-    $dompdf = new Dompdf($options);
-
-    $html = $this->renderView('reservation/pdf.html.twig', [
-        'reservation' => $reservation,
-    ]);
-
-    $dompdf->loadHtml($html);
-    $dompdf->setPaper('A4', 'portrait');
-    $dompdf->render();
-
-    $filename = 'reservation-' . $reservation->getIdReservation() . '.pdf';
-
-    return new Response(
-        $dompdf->output(),
-        200,
-        [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $filename . '"',
-        ]
-    );
-}
-  
-
-    private function buildSeatMap(Services $vol): array
-    {
-        // Layout must stay consistent: total seats = current free capacity + currently reserved count
-        $reservations = $vol->getReservationss();
-        $capacity     = $vol->getCapacite() + count($reservations);
- 
-        
-        $takenSeats = array_map(
-            fn(Reservations $r) => $r->getSeatNb(),
-            $reservations->toArray()
-        );
- 
-        $cols    = 6; 
-        $seats   = [];
- 
-        for ($seatNumber = 1; $seatNumber <= $capacity; $seatNumber++) {
-            $seats[] = [
-                'number'   => $seatNumber,
-                'occupied' => in_array($seatNumber, $takenSeats, true),
-            ];
-        }
- 
-        return $seats;
-    }
-
-// ═══════════════════════════════════════
-// PAYMENT PAGE
-// ═══════════════════════════════════════
-
-#[Route('/{id}/payment', name: 'reservation_payment', methods: ['GET'])]
-public function payment(Request $request, int $id): Response
-{
-    $reservation = $this->reservationsRepo->find($id);
-    if (!$reservation) {
-        throw $this->createNotFoundException("Réservation #$id introuvable.");
-    }
-
-    $origin = $request->query->get('origin', 'back');
-
-    return $this->render('reservation/payment.html.twig', [
-        'reservation'      => $reservation,
-        'amount'           => $reservation->getIdService()->getPrix(),
-        'stripe_pub_key'   => $_ENV['STRIPE_PUBLISHABLE_KEY'],
-        'paypal_client_id' => $_ENV['PAYPAL_CLIENT_ID'],
-        'modePaiement'     => $reservation->getModePaiement(),
-        'origin'           => $origin,
-    ]);
-}
-
-// ═══════════════════════════════════════
-// STRIPE
-// ═══════════════════════════════════════
-
-#[Route('/{id}/payment/stripe', name: 'reservation_pay_stripe', methods: ['POST'])]
-public function payStripe(Request $request, int $id): Response
-{
-    $reservation = $this->reservationsRepo->find($id);
-    if (!$reservation) {
-        throw $this->createNotFoundException("Réservation #$id introuvable.");
-    }
-
-    $origin      = $request->query->get('origin', 'back');
-    $stripeToken = $request->request->get('stripeToken');
-    $amount      = $reservation->getIdService()->getPrix();
-
-    // Guard: if token is missing the JS failed to generate it (bad key or JS error)
-    if (empty($stripeToken)) {
-        $this->addFlash('error', 'Erreur : impossible de récupérer les informations de carte. Vérifiez votre connexion et réessayez.');
-        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
-    }
-
-    Stripe::setApiKey($_ENV['STRIPE_SECRET_KEY']);
-
-    try {
-        Charge::create([
-            'amount'      => (int)($amount * 100), // in cents
-            'currency'    => 'usd',
-            'source'      => $stripeToken,
-            'description' => 'Reservation #' . $reservation->getIdReservation(),
+        return $this->render('reservation/pay_cancel.html.twig', [
+            'reservation' => $reservation,
         ]);
-
-        $reservation->setStatut('Confirmée');
-        $this->em->flush();
-
-        $this->addFlash('success', 'Paiement par carte effectué ! Réservation confirmée.');
-        return $this->redirectToRoute($origin === 'front' ? 'myreservations_index' : 'reservations_index');
-
-    } catch (CardException $e) {
-        // Payment failed — delete the pending reservation to keep the DB clean
-        $reservation->getIdService()->incrementCapacite();
-        $this->em->remove($reservation);
-        $this->em->flush();
-        $this->addFlash('error', 'Carte refusée : ' . $e->getMessage() . ' Veuillez réessayer.');
-        return $this->redirectToRoute($origin === 'front' ? 'ourservices_index' : 'services_index');
-    } catch (\Exception $e) {
-        $this->addFlash('error', 'Erreur Stripe : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
-    }
-}
-
-// ═══════════════════════════════════════
-// PAYPAL — Create Order
-// ═══════════════════════════════════════
-
-private function getPaypalClient(): PayPalHttpClient
-{
-    $clientId     = $_ENV['PAYPAL_CLIENT_ID'];
-    $clientSecret = $_ENV['PAYPAL_CLIENT_SECRET'];
-
-    $environment = $_ENV['PAYPAL_MODE'] === 'sandbox'
-        ? new SandboxEnvironment($clientId, $clientSecret)
-        : new ProductionEnvironment($clientId, $clientSecret);
-
-    return new PayPalHttpClient($environment);
-}
-#[Route('/{id}/payment/paypal/create', name: 'reservation_paypal_create', methods: ['POST'])]
-public function paypalCreate(Request $request, int $id): Response
-{
-    $reservation = $this->reservationsRepo->find($id);
-    if (!$reservation) {
-        throw $this->createNotFoundException("Réservation #$id introuvable.");
     }
 
-    $origin = $request->query->get('origin', 'back');
-    $amount = number_format($reservation->getIdService()->getPrix(), 2, '.', '');
-    $client = $this->getPaypalClient();
-
-    $paypalRequest = new OrdersCreateRequest();
-    $paypalRequest->prefer('return=representation');
-    $paypalRequest->body = [
-        'intent'         => 'CAPTURE',
-        'purchase_units' => [
-            [
-                'amount'      => [
-                    'currency_code' => 'USD',
-                    'value'         => $amount,
-                ],
-                'description' => 'Reservation #' . $reservation->getIdReservation(),
-            ]
-        ],
-        'application_context' => [
-            'return_url' => $this->generateUrl(
-                'reservation_paypal_success',
-                ['id' => $id, 'origin' => $origin],
-                \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL
-            ),
-            'cancel_url' => $this->generateUrl(
-                'reservation_paypal_cancel',
-                ['id' => $id, 'origin' => $origin],
-                \Symfony\Component\Routing\Generator\UrlGeneratorInterface::ABSOLUTE_URL
-            ),
-        ],
-    ];
-
-    try {
-        $response = $client->execute($paypalRequest);
-        $order    = $response->result;
-
-        foreach ($order->links as $link) {
-            if ($link->rel === 'approve') {
-                return $this->redirect($link->href);
-            }
+    #[Route('/my/{id}/cancel', name: 'app_reservation_cancel', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function cancel(int $id, Request $request, ReservationRepository $repo, EntityManagerInterface $em): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
         }
 
-        throw new \Exception('No approval link found.');
-
-    } catch (\Exception $e) {
-        $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
-    }
-}
-
-// ═══════════════════════════════════════
-// PAYPAL — Capture after approval
-// ═══════════════════════════════════════
-
-#[Route('/{id}/payment/paypal/success', name: 'reservation_paypal_success', methods: ['GET'])]
-public function paypalSuccess(Request $request, int $id): Response
-{
-    $reservation = $this->reservationsRepo->find($id);
-    if (!$reservation) {
-        throw $this->createNotFoundException("Réservation #$id introuvable.");
-    }
-
-    $origin         = $request->query->get('origin', 'back');
-    $orderId        = $request->query->get('token');
-    $client         = $this->getPaypalClient();
-    $captureRequest = new OrdersCaptureRequest($orderId);
-    $captureRequest->prefer('return=representation');
-
-    try {
-        $response = $client->execute($captureRequest);
-
-        if ($response->result->status === 'COMPLETED') {
-            $reservation->setStatut('Confirmée');
-            $this->em->flush();
-
-            $this->addFlash('success', 'Paiement PayPal effectué ! Réservation confirmée.');
-            return $this->redirectToRoute($origin === 'front' ? 'myreservations_index' : 'reservations_index');
+        $reservation = $repo->find($id);
+        if (!$reservation || $reservation->getUser()->getId() !== $user->getId()) {
+            throw $this->createNotFoundException('Reservation not found.');
         }
 
-        throw new \Exception('Payment not completed.');
+        if (!$this->isCsrfTokenValid('cancel_reservation_' . $id, $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
 
-    } catch (\Exception $e) {
-        $this->addFlash('error', 'Erreur PayPal : ' . $e->getMessage());
-        return $this->redirectToRoute('reservation_payment', ['id' => $id, 'origin' => $origin]);
+        if ($reservation->getPaymentStatus() === 'PAID') {
+            $this->addFlash('danger', 'Paid reservations cannot be cancelled online. Please contact the agency.');
+            return $this->redirectToRoute('app_reservation_my_show', ['id' => $id]);
+        }
+
+        $reservation->setStatus('CANCELLED');
+        $reservation->setUpdatedAt(new \DateTimeImmutable());
+        $em->flush();
+
+        $this->addFlash('success', 'Reservation cancelled.');
+        return $this->redirectToRoute('app_reservation_my_list');
     }
-}
-#[Route('/{id}/payment/paypal/cancel', name: 'reservation_paypal_cancel', methods: ['GET'])]
-public function paypalCancel(Request $request, int $id): Response
-{
-    $origin = $request->query->get('origin', 'back');
-    // Delete the pending reservation so the DB stays clean on cancellation
-    $reservation = $this->reservationsRepo->find($id);
-    if ($reservation && $reservation->getStatut() === 'En attente') {
-        $reservation->getIdService()->incrementCapacite();
-        $this->em->remove($reservation);
-        $this->em->flush();
+
+    #[Route('/my', name: 'app_reservation_my_list')]
+    public function myList(ReservationRepository $repo): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        return $this->render('reservation/my_list.html.twig', [
+            'reservations' => $repo->findBy(['user' => $user], ['createdAt' => 'DESC']),
+        ]);
     }
-    $this->addFlash('error', 'Paiement PayPal annulé. Votre réservation a été supprimée.');
-    return $this->redirectToRoute($origin === 'front' ? 'ourservices_index' : 'services_index');
-}
+
+    #[Route('/my/{id}', name: 'app_reservation_my_show', requirements: ['id' => '\d+'])]
+    public function myShow(int $id, ReservationRepository $repo): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $reservation = $repo->find($id);
+        if (!$reservation || $reservation->getUser()->getId() !== $user->getId()) {
+            throw $this->createNotFoundException('Reservation not found.');
+        }
+
+        return $this->render('reservation/my_show.html.twig', [
+            'reservation' => $reservation,
+        ]);
+    }
+
+    #[Route('/agency', name: 'app_reservation_agency_list')]
+    public function agencyDashboard(ReservationRepository $repo): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || !$this->isGranted('ROLE_AGENCY')) {
+            throw $this->createAccessDeniedException('Agencies only.');
+        }
+
+        $reservations = $repo->findByAgency($user);
+
+        $stats = [
+            'total'     => count($reservations),
+            'confirmed' => count(array_filter($reservations, fn($r) => $r->getStatus() === 'CONFIRMED')),
+            'pending'   => count(array_filter($reservations, fn($r) => $r->getStatus() === 'PENDING')),
+            'cancelled' => count(array_filter($reservations, fn($r) => $r->getStatus() === 'CANCELLED')),
+            'revenue'   => array_sum(array_map(
+                fn($r) => $r->getStatus() === 'CONFIRMED' ? (float) $r->getTotalAmount() : 0,
+                $reservations
+            )),
+            'persons'   => array_sum(array_map(
+                fn($r) => $r->getStatus() === 'CONFIRMED' ? $r->getNumberOfPersons() : 0,
+                $reservations
+            )),
+        ];
+
+        $monthlyData = $repo->getMonthlyRevenueByAgency($user, 6);
+
+        return $this->render('reservation/agency_dashboard.html.twig', [
+            'reservations' => $reservations,
+            'stats'        => $stats,
+            'monthlyData'  => $monthlyData,
+        ]);
+    }
+
+    #[Route('/agency/{id}', name: 'app_reservation_agency_show', requirements: ['id' => '\d+'])]
+    public function agencyShow(int $id, ReservationRepository $repo): Response
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User || !$this->isGranted('ROLE_AGENCY')) {
+            throw $this->createAccessDeniedException('Agencies only.');
+        }
+
+        $reservation = $repo->find($id);
+        if (!$reservation || $reservation->getOffer()->getUser()->getId() !== $user->getId()) {
+            throw $this->createNotFoundException('Reservation not found.');
+        }
+
+        return $this->render('reservation/agency_show.html.twig', [
+            'reservation' => $reservation,
+        ]);
+    }
 }

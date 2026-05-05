@@ -1,0 +1,517 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Reservations - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .reservations-page {
+            min-height: 100vh;
+            padding: 32px 18px 56px;
+            background:
+                radial-gradient(900px 320px at 0% -10%, rgba(15, 165, 162, 0.16), transparent 58%),
+                radial-gradient(700px 260px at 100% 0%, rgba(245, 179, 1, 0.14), transparent 50%),
+                linear-gradient(180deg, #f4f9ff 0%, #edf5fb 100%);
+        }
+
+        .reservations-shell {
+            width: min(1180px, 100%);
+            margin: 0 auto;
+        }
+
+        .reservations-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .reservations-summary-card {
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid rgba(126, 152, 178, 0.16);
+            box-shadow: 0 10px 24px rgba(7, 57, 107, 0.06);
+        }
+
+        .reservations-summary-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: #6a8198;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .reservations-summary-value {
+            font-size: 26px;
+            font-weight: 900;
+            color: #123f5b;
+            line-height: 1;
+        }
+
+        .reservations-summary-note {
+            margin-top: 6px;
+            color: #587089;
+            font-size: 13px;
+        }
+
+        .reservations-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
+            margin-bottom: 22px;
+            padding: 24px;
+            border-radius: 24px;
+            background: linear-gradient(135deg, rgba(11, 78, 126, 0.97), rgba(15, 165, 162, 0.92));
+            color: #ffffff;
+            box-shadow: 0 18px 38px rgba(10, 52, 90, 0.18);
+        }
+
+        .reservations-title {
+            margin: 0;
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        .reservations-subtitle {
+            margin: 8px 0 0;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 15px;
+            max-width: 64ch;
+        }
+
+        .reservations-count {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .reservations-list {
+            display: grid;
+            gap: 14px;
+        }
+
+        .reservations-section {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .reservations-section-title {
+            margin: 0 0 8px;
+            font-size: 18px;
+            color: #123f5b;
+            font-weight: 800;
+        }
+
+        .reservations-section-subtitle {
+            margin: -2px 0 0;
+            color: #587089;
+            font-size: 13px;
+        }
+
+        .reservation-card {
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(126, 152, 178, 0.22);
+            box-shadow: 0 14px 30px rgba(7, 57, 107, 0.08);
+        }
+
+        .reservation-card.passed {
+            border-color: rgba(16, 185, 129, 0.24);
+            box-shadow: 0 14px 30px rgba(16, 185, 129, 0.08);
+        }
+
+        .reservation-card-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            align-items: flex-start;
+            margin-bottom: 14px;
+        }
+
+        .reservation-card-title {
+            margin: 0;
+            font-size: 20px;
+            color: #134563;
+            font-weight: 800;
+        }
+
+        .reservation-card-meta {
+            margin-top: 6px;
+            color: #587089;
+            font-size: 13px;
+        }
+
+        .reservation-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+        }
+
+        .reservation-badge.passed {
+            color: #0f8f66;
+            background: rgba(16, 185, 129, 0.12);
+        }
+
+        .reservation-badge.upcoming {
+            color: #0d5e8a;
+            background: rgba(13, 94, 138, 0.1);
+        }
+
+        .reservation-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .reservation-item {
+            border: 1px solid rgba(126, 152, 178, 0.18);
+            border-radius: 16px;
+            padding: 12px 14px;
+            background: rgba(245, 249, 252, 0.7);
+        }
+
+        .reservation-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6a8198;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .reservation-value {
+            color: #174a78;
+            font-weight: 700;
+        }
+
+        .reservation-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .reservation-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 12px;
+            padding: 11px 14px;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .reservation-action:hover {
+            transform: translateY(-1px);
+        }
+
+        .reservation-action.review {
+            color: #ffffff;
+            background: linear-gradient(135deg, #0fa5a2, #1788b6);
+            box-shadow: 0 10px 20px rgba(11, 154, 157, 0.22);
+        }
+
+        .reservation-action.delete {
+            color: #ffffff;
+            background: linear-gradient(135deg, #e85d75, #c6364f);
+            box-shadow: 0 10px 20px rgba(200, 54, 79, 0.18);
+        }
+
+        .reservation-action.delete[disabled] {
+            cursor: not-allowed;
+            opacity: 0.45;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .reservations-empty {
+            padding: 24px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(126, 152, 178, 0.18);
+            color: #4f657c;
+            text-align: center;
+        }
+
+        .reservations-banner {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid rgba(16, 185, 129, 0.28);
+            background: rgba(16, 185, 129, 0.12);
+            color: #0f8f66;
+            font-weight: 700;
+        }
+
+        @media (max-width: 900px) {
+            .reservations-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .reservations-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .reservation-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .reservations-page {
+                padding-inline: 12px;
+            }
+
+            .reservation-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .reservation-actions {
+                justify-content: stretch;
+            }
+
+            .reservation-action {
+                width: 100%;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+    <div class="reservations-page">
+        <div class="reservations-shell">
+            <div class="reservations-head">
+                <div>
+                    <h1 class="reservations-title">My Reservations</h1>
+                    <p class="reservations-subtitle">Your reserved activities appear here. You can review them after the activity is over, and you can remove past reservations from this list.</p>
+                </div>
+                <div class="reservations-count">{{ reservations|length }} total</div>
+            </div>
+
+            {% for message in app.flashes('success') %}
+                <div class="reservations-banner">{{ message }}</div>
+            {% endfor %}
+
+            {% set passedReservations = reservations|filter(r => r.passed) %}
+            {% set upcomingReservations = reservations|filter(r => not r.passed) %}
+
+            <div class="reservations-summary">
+                <div class="reservations-summary-card">
+                    <span class="reservations-summary-label">Total reserved</span>
+                    <div class="reservations-summary-value">{{ reservations|length }}</div>
+                    <div class="reservations-summary-note">All activities linked to your account.</div>
+                </div>
+                <div class="reservations-summary-card">
+                    <span class="reservations-summary-label">Upcoming</span>
+                    <div class="reservations-summary-value">{{ upcomingReservations|length }}</div>
+                    <div class="reservations-summary-note">Still locked for review until completed.</div>
+                </div>
+                <div class="reservations-summary-card">
+                    <span class="reservations-summary-label">Passed</span>
+                    <div class="reservations-summary-value">{{ passedReservations|length }}</div>
+                    <div class="reservations-summary-note">Ready for review and removable from your list.</div>
+                </div>
+            </div>
+
+            {% if reservations is empty %}
+                <div class="reservations-empty">You have no reserved activities yet.</div>
+            {% else %}
+                {% if upcomingReservations is not empty %}
+                    <section class="reservations-section">
+                        <div>
+                            <h2 class="reservations-section-title">Upcoming reservations</h2>
+                            <p class="reservations-section-subtitle">These activities are still in progress or scheduled for later.</p>
+                        </div>
+                        <div class="reservations-list">
+                            {% for reservation in upcomingReservations %}
+                                <article class="reservation-card">
+                            <div class="reservation-card-head">
+                                <div>
+                                    <h2 class="reservation-card-title">{{ reservation.title }}</h2>
+                                    <div class="reservation-card-meta">
+                                        Guide: {{ reservation.guideName }} · Reserved on {{ reservation.bookedAt|date('Y-m-d H:i') }}
+                                    </div>
+                                </div>
+                                <span class="reservation-badge {{ reservation.passed ? 'passed' : 'upcoming' }}">
+                                    {{ reservation.passed ? 'Passed' : 'Upcoming' }}
+                                </span>
+                            </div>
+
+                            <div class="reservation-grid">
+                                <div class="reservation-item">
+                                    <span class="reservation-label">Activity date</span>
+                                    <span class="reservation-value">{{ reservation.date ? reservation.date|date('Y-m-d H:i') : '-' }}</span>
+                                </div>
+                                <div class="reservation-item">
+                                    <span class="reservation-label">Location</span>
+                                    <span class="reservation-value">{{ reservation.location ?: '-' }}</span>
+                                </div>
+                                <div class="reservation-item">
+                                    <span class="reservation-label">Price</span>
+                                    <span class="reservation-value">{{ reservation.price|number_format(2, '.', ',') }} DT</span>
+                                </div>
+                                <div class="reservation-item">
+                                    <span class="reservation-label">Review access</span>
+                                    <span class="reservation-value">{{ reservation.passed ? 'Unlocked' : 'Locked until activity ends' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="reservation-actions">
+                                <a class="reservation-action review" href="{{ path('app_activities') ~ '?modal=' ~ reservation.activityId }}">Open review</a>
+                                <button
+                                    type="button"
+                                    class="reservation-action delete js-delete-reservation"
+                                    data-delete-url="{{ path('app_my_reservation_delete', { reservationId: reservation.id }) }}"
+                                    data-reservation-title="{{ reservation.title|e('html_attr') }}"
+                                    {{ reservation.canDelete ? '' : 'disabled' }}
+                                    title="{{ reservation.canDelete ? 'Delete this past reservation' : 'You can delete it after the activity is over' }}"
+                                >
+                                    Delete reservation
+                                </button>
+                            </div>
+                        </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                {% if passedReservations is not empty %}
+                    <section class="reservations-section">
+                        <div>
+                            <h2 class="reservations-section-title">Passed activities</h2>
+                            <p class="reservations-section-subtitle">Write your global review now or remove the reservation from your list.</p>
+                        </div>
+                        <div class="reservations-list">
+                            {% for reservation in passedReservations %}
+                                <article class="reservation-card passed">
+                                    <div class="reservation-card-head">
+                                        <div>
+                                            <h2 class="reservation-card-title">{{ reservation.title }}</h2>
+                                            <div class="reservation-card-meta">
+                                                Guide: {{ reservation.guideName }} · Reserved on {{ reservation.bookedAt|date('Y-m-d H:i') }}
+                                            </div>
+                                        </div>
+                                        <span class="reservation-badge passed">Passed</span>
+                                    </div>
+
+                                    <div class="reservation-grid">
+                                        <div class="reservation-item">
+                                            <span class="reservation-label">Activity date</span>
+                                            <span class="reservation-value">{{ reservation.date ? reservation.date|date('Y-m-d H:i') : '-' }}</span>
+                                        </div>
+                                        <div class="reservation-item">
+                                            <span class="reservation-label">Location</span>
+                                            <span class="reservation-value">{{ reservation.location ?: '-' }}</span>
+                                        </div>
+                                        <div class="reservation-item">
+                                            <span class="reservation-label">Price</span>
+                                            <span class="reservation-value">{{ reservation.price|number_format(2, '.', ',') }} DT</span>
+                                        </div>
+                                        <div class="reservation-item">
+                                            <span class="reservation-label">Review access</span>
+                                            <span class="reservation-value">Unlocked</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="reservation-actions">
+                                        <a class="reservation-action review" href="{{ path('app_activities') ~ '?modal=' ~ reservation.activityId }}">Write review</a>
+                                        <button
+                                            type="button"
+                                            class="reservation-action delete js-delete-reservation"
+                                            data-delete-url="{{ path('app_my_reservation_delete', { reservationId: reservation.id }) }}"
+                                            data-reservation-title="{{ reservation.title|e('html_attr') }}"
+                                            {{ reservation.canDelete ? '' : 'disabled' }}
+                                            title="{{ reservation.canDelete ? 'Delete this past reservation' : 'You can delete it after the activity is over' }}"
+                                        >
+                                            Delete reservation
+                                        </button>
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            function initReservationDeletes() {
+                document.querySelectorAll('.js-delete-reservation').forEach(function (button) {
+                    if (button.getAttribute('data-initialized') === '1') {
+                        return;
+                    }
+                    button.setAttribute('data-initialized', '1');
+
+                    button.addEventListener('click', async function () {
+                        if (button.disabled) {
+                            return;
+                        }
+
+                        var title = button.getAttribute('data-reservation-title') || 'this reservation';
+                        if (!window.confirm('Delete ' + title + ' from your reservations?')) {
+                            return;
+                        }
+
+                        button.disabled = true;
+                        try {
+                            var response = await fetch(button.getAttribute('data-delete-url'), {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                },
+                                body: new URLSearchParams({
+                                    _token: '{{ csrf_token('delete-reservation') }}'
+                                }).toString()
+                            });
+
+                            var data = await response.json().catch(function () { return {}; });
+                            if (!response.ok || !data.success) {
+                                throw new Error(data && data.message ? data.message : 'Unable to delete reservation.');
+                            }
+
+                            window.location.reload();
+                        } catch (error) {
+                            window.alert(error && error.message ? error.message : 'Unable to delete reservation.');
+                            button.disabled = false;
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', initReservationDeletes);
+            document.addEventListener('turbo:load', initReservationDeletes);
+            if (document.readyState !== 'loading') {
+                initReservationDeletes();
+            }
+        })();
+    </script>
+{% endblock %}

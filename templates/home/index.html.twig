@@ -1,0 +1,1735 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Home - Rehletna.tn{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap');
+
+        :root {
+            --home-bg-deep: #050a1f;
+            --home-bg-mid: #0a1d3c;
+            --home-bg-light: #12315f;
+            --home-line: rgba(125, 211, 252, 0.22);
+            --home-cyan: #67e8f9;
+            --home-blue: #93c5fd;
+            --home-text: #e8f4ff;
+            --home-muted: #b9cce4;
+            --home-map-sea: rgba(20, 85, 132, 0.25);
+            --home-map-land: rgba(135, 199, 224, 0.22);
+            --home-map-route: rgba(111, 216, 255, 0.55);
+            --home-map-point: #a2f4ff;
+            --home-map-point-ring: rgba(162, 244, 255, 0.32);
+        }
+
+        .home-landing {
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: linear-gradient(150deg, var(--home-bg-deep), var(--home-bg-mid) 52%, var(--home-bg-light));
+            color: var(--home-text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 36px 16px 44px;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+            isolation: isolate;
+            font-family: 'Space Grotesk', 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        .global-quick-toggle,
+        .global-glass-overlay,
+        .global-glass-panel {
+            display: none !important;
+        }
+
+        .home-top-tools {
+            position: fixed;
+            top: 16px;
+            left: 16px;
+            z-index: 35;
+            display: flex;
+            gap: 0;
+        }
+
+        .home-top-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid rgba(138, 220, 255, 0.55);
+            background: rgba(8, 24, 47, 0.9);
+            color: #e7f7ff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(3, 13, 25, 0.4);
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+            padding: 0;
+        }
+
+        .home-top-icon img {
+            width: 28px;
+            height: 28px;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .home-top-icon:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            color: #0d355a;
+        }
+
+        .home-bg-layer {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .home-bg-layer.grid {
+            inset: 0;
+            background-image:
+                linear-gradient(var(--home-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--home-line) 1px, transparent 1px);
+            background-size: 34px 34px;
+            opacity: 0.23;
+            z-index: 0;
+        }
+
+        .home-bg-layer.glow-a,
+        .home-bg-layer.glow-b,
+        .home-bg-layer.glow-c {
+            border-radius: 999px;
+            filter: blur(2px);
+            z-index: 0;
+            animation: floatPulse 9s ease-in-out infinite;
+        }
+
+        .home-bg-layer.glow-a {
+            width: 520px;
+            height: 520px;
+            left: -120px;
+            top: -170px;
+            background: radial-gradient(circle, rgba(103, 232, 249, 0.28), transparent 70%);
+        }
+
+        .home-bg-layer.glow-b {
+            width: 600px;
+            height: 600px;
+            right: -180px;
+            top: -180px;
+            animation-delay: -2.2s;
+            background: radial-gradient(circle, rgba(129, 140, 248, 0.22), transparent 70%);
+        }
+
+        .home-bg-layer.glow-c {
+            width: 520px;
+            height: 520px;
+            right: -80px;
+            bottom: -220px;
+            animation-delay: -4.6s;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 72%);
+        }
+
+        .home-bg-layer.logo-halo {
+            width: 450px;
+            height: 450px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -52%);
+            opacity: 0.08;
+            background: url('{{ asset('images/logo.png') }}') center/contain no-repeat;
+            z-index: 0;
+            (function initInteractiveMap() {
+                const container = document.getElementById('interactiveMap');
+                if (!container) return;
+
+                // ensure container overlays the background map area and accepts pointer events
+                container.style.position = 'absolute';
+                container.style.inset = '6% 4% 9%';
+                container.style.borderRadius = '28px';
+                container.style.overflow = 'hidden';
+                container.style.zIndex = '0';
+                container.style.pointerEvents = 'auto';
+
+                const popup = document.createElement('div');
+                popup.id = 'mapPopup';
+                popup.style.position = 'fixed';
+                popup.style.pointerEvents = 'none';
+                popup.style.zIndex = 9999;
+                popup.style.padding = '8px 10px';
+                popup.style.borderRadius = '10px';
+                popup.style.background = 'rgba(2,10,22,0.92)';
+                popup.style.color = '#e8f6ff';
+                popup.style.fontSize = '13px';
+                popup.style.display = 'none';
+                popup.style.boxShadow = '0 8px 30px rgba(2,10,22,0.7)';
+                popup.innerHTML = '<div id="mapPopupInner" style="display:flex;align-items:center;gap:8px;"><img id="mapPopupFlag" src="" alt="" style="width:28px;height:20px;border-radius:3px;display:none;object-fit:cover;"/><span id="mapPopupName"></span></div>';
+                document.body.appendChild(popup);
+
+                const svgUrl = '{{ asset('images/world-map-2d.svg') }}';
+
+                fetch(svgUrl).then(function (r) { return r.text(); }).then(function (svgText) {
+                    container.innerHTML = svgText;
+                    const svgEl = container.querySelector('svg');
+                    if (!svgEl) return;
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+                    svgEl.style.display = 'block';
+
+                    const selector = 'path, polygon, circle, rect, ellipse';
+                    svgEl.querySelectorAll(selector).forEach(function (el, idx) {
+                        el.style.cursor = 'pointer';
+                        el.style.pointerEvents = 'all';
+
+                        const computed = window.getComputedStyle(el);
+                        const orig = el.getAttribute('fill') || computed.fill || '';
+                        el.dataset._origFill = orig;
+
+                        el.addEventListener('pointerenter', function (ev) {
+                            try {
+                                el.setAttribute('fill', '#ffd166');
+                                const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                                const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                                const nameEl = document.getElementById('mapPopupName');
+                                const flagImg = document.getElementById('mapPopupFlag');
+                                if (nameEl) nameEl.textContent = name;
+                                if (flagImg) {
+                                    if (code && /^[a-z]{2}$/.test(code)) {
+                                        flagImg.src = 'https://flagcdn.com/w40/' + code + '.png';
+                                        flagImg.style.display = 'inline-block';
+                                    } else {
+                                        flagImg.style.display = 'none';
+                                        flagImg.src = '';
+                                    }
+                                }
+                                popup.style.display = 'block';
+                                const clientX = ev.clientX || 0;
+                                const clientY = ev.clientY || 0;
+                                popup.style.left = (clientX + 14) + 'px';
+                                popup.style.top = (clientY + 8) + 'px';
+                            } catch (e) {}
+                        });
+
+                        el.addEventListener('pointermove', function (ev) {
+                            const clientX = ev.clientX || 0;
+                            const clientY = ev.clientY || 0;
+                            popup.style.left = (clientX + 14) + 'px';
+                            popup.style.top = (clientY + 8) + 'px';
+                        });
+
+                        el.addEventListener('pointerleave', function () {
+                            const orig = el.dataset._origFill || '';
+                            if (orig && orig !== 'none') {
+                                el.setAttribute('fill', orig);
+                            } else {
+                                el.removeAttribute('fill');
+                            }
+                            popup.style.display = 'none';
+                        });
+
+                        el.addEventListener('click', function (ev) {
+                            ev.preventDefault();
+                            const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                            const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                            const flagHtml = (code && /^[a-z]{2}$/.test(code)) ? '<img src="https://flagcdn.com/w160/' + code + '.png" alt="flag" style="width:160px;height:auto;border-radius:6px;display:block;margin-bottom:12px;"/>' : '';
+                            const html = '<!doctype html><meta charset="utf-8"><title>' + name + '</title><div style="font-family:Inter, system-ui, sans-serif;padding:22px;background:#04202b;color:#e8f6ff;min-height:120px;">' + flagHtml + '<h2 style="margin:0 0 8px;">' + name + '</h2></div>';
+                            const w = window.open('', '_blank', 'noopener');
+                            if (w) {
+                                w.document.write(html);
+                                w.document.close();
+                            }
+                        });
+                    });
+                }).catch(function () {
+                    container.style.display = 'none';
+                });
+            })();
+            animation-delay: -0.7s;
+        }
+
+        .home-flight-point.flight-istanbul {
+            left: 54%;
+            top: 38%;
+            animation-delay: -2.2s;
+        }
+
+        .home-card {
+            width: min(1040px, 100%);
+            border: 1px solid rgba(148, 197, 255, 0.28);
+            border-radius: 28px;
+            background:
+                linear-gradient(150deg, rgba(14, 28, 54, 0.82), rgba(8, 23, 44, 0.82)),
+                radial-gradient(280px 160px at 16% -20%, rgba(103, 232, 249, 0.14), transparent 70%);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
+            padding: 34px 26px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .home-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: linear-gradient(120deg, rgba(103, 232, 249, 0.09), rgba(147, 197, 253, 0.04), rgba(255, 255, 255, 0));
+            pointer-events: none;
+        }
+
+        .home-logo {
+            width: min(240px, 72vw);
+            height: auto;
+            margin-bottom: 4px;
+            filter: drop-shadow(0 8px 22px rgba(5, 17, 29, 0.6));
+        }
+
+        .home-title {
+            margin: 4px 0 0;
+            font-size: clamp(32px, 5.4vw, 58px);
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            color: #f2fbff;
+            text-shadow: 0 8px 30px rgba(20, 190, 240, 0.22);
+        }
+
+        .home-subtitle {
+            margin: 12px auto 0;
+            max-width: 720px;
+            color: var(--home-blue);
+            font-size: clamp(15px, 2.5vw, 21px);
+            line-height: 1.65;
+        }
+
+        .home-description {
+            margin: 16px auto 0;
+            max-width: 760px;
+            color: #d9e9f8;
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .home-cta-row {
+            margin-top: 30px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .home-btn {
+            min-width: 180px;
+            border: 1px solid rgba(153, 220, 255, 0.45);
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 700;
+            padding: 12px 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.25s ease, background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .home-btn-primary {
+            background: linear-gradient(135deg, #2dd4bf, #38bdf8);
+            color: #03253d;
+            border-color: rgba(94, 234, 212, 0.75);
+        }
+
+        .home-btn-primary:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            color: #0d355a;
+            box-shadow: 0 10px 24px rgba(56, 189, 248, 0.25);
+        }
+
+        .home-qr-section {
+            margin-top: 26px;
+            border: 1px solid rgba(139, 197, 255, 0.28);
+            border-radius: 18px;
+            background: rgba(9, 28, 52, 0.58);
+            padding: 22px 16px 16px;
+        }
+
+        .home-qr-section h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #f2f9ff;
+        }
+
+        .home-qr-description {
+            margin: 8px 0 0;
+            color: var(--home-muted);
+            font-size: 15px;
+        }
+
+        .home-qr-content {
+            margin-top: 16px;
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .home-qr-image {
+            width: 190px;
+            height: 190px;
+            border-radius: 14px;
+            border: 1px solid rgba(139, 197, 255, 0.46);
+            background: #ffffff;
+            padding: 10px;
+        }
+
+        .home-qr-meta {
+            max-width: 360px;
+            text-align: left;
+        }
+
+        .home-qr-link {
+            display: inline-flex;
+            margin-top: 10px;
+            color: #8fe6ff;
+            text-decoration: underline;
+            word-break: break-all;
+        }
+
+        .home-qr-edit {
+            margin-top: 12px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .home-qr-input {
+            flex: 1 1 220px;
+            min-width: 180px;
+            border: 1px solid rgba(148, 197, 255, 0.4);
+            border-radius: 10px;
+            background: rgba(8, 23, 44, 0.82);
+            color: #e8f6ff;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .home-qr-apply {
+            border: 1px solid rgba(103, 232, 249, 0.55);
+            border-radius: 10px;
+            background: rgba(15, 71, 94, 0.65);
+            color: #d8f7ff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 10px 14px;
+            cursor: pointer;
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .home-qr-apply:hover {
+            transform: translateY(-1px);
+            background: rgba(34, 111, 140, 0.75);
+        }
+
+        .home-qr-note {
+            margin-top: 8px;
+            color: #d9e9f8;
+            font-size: 13px;
+            line-height: 1.55;
+        }
+
+        .home-device-row {
+            margin-top: 14px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .home-device-card {
+            flex: 1 1 140px;
+            min-width: 140px;
+            border: 1px solid rgba(148, 197, 255, 0.34);
+            border-radius: 12px;
+            background: rgba(10, 38, 66, 0.78);
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .home-device-card img {
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+        }
+
+        .home-device-card span {
+            color: #e8f6ff;
+            font-size: 13px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .home-dev-team {
+            margin-top: 34px;
+            padding: 22px 14px 14px;
+            border: 1px solid rgba(139, 197, 255, 0.24);
+            border-radius: 18px;
+            background: rgba(9, 28, 52, 0.5);
+        }
+
+        .home-dev-team h2 {
+            margin: 0;
+            font-size: 24px;
+            color: #f2f9ff;
+        }
+
+        .home-dev-team p {
+            margin: 6px 0 0;
+            color: var(--home-muted);
+            font-size: 15px;
+        }
+
+        .home-dev-grid {
+            margin-top: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .home-dev-card {
+            border: 1px solid rgba(148, 197, 255, 0.3);
+            border-radius: 14px;
+            padding: 14px 10px;
+            background: rgba(9, 33, 59, 0.76);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 154px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
+        }
+
+        .home-dev-card:hover {
+            border-color: #38bdf8;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.75), 0 0 22px rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .home-dev-avatar {
+            width: 84px;
+            height: 84px;
+            border-radius: 999px;
+            border: 2px dashed rgba(153, 220, 255, 0.75);
+            background: radial-gradient(circle at 35% 30%, rgba(103, 232, 249, 0.12), rgba(9, 28, 52, 0.85));
+            box-shadow: inset 0 0 18px rgba(103, 232, 249, 0.12);
+        }
+
+        .home-dev-avatar.has-photo {
+            border-style: solid;
+            border-color: rgba(111, 224, 255, 0.95);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            box-shadow: 0 0 0 3px rgba(8, 31, 55, 0.72), 0 0 22px rgba(56, 189, 248, 0.35);
+        }
+
+        .home-dev-name {
+            margin: 0;
+            color: #e8f4ff;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.35;
+        }
+
+        .home-dev-name.placeholder {
+            color: #9bb8d7;
+            font-weight: 600;
+        }
+
+        .home-dev-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 25;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            background: rgba(4, 13, 28, 0.34);
+            backdrop-filter: blur(9px);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.22s ease, visibility 0.22s ease;
+        }
+
+        .home-landing.is-dev-open .home-card,
+        .home-landing.is-dev-open .home-bg-layer {
+            filter: blur(7px);
+            transform: scale(0.995);
+            transition: filter 0.25s ease, transform 0.25s ease;
+        }
+
+        .home-dev-modal.is-open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .home-dev-modal-content {
+            width: min(980px, 95vw);
+            height: min(680px, 90vh);
+            border-radius: 24px;
+            border: 1px solid rgba(148, 197, 255, 0.34);
+            background:
+                linear-gradient(150deg, rgba(14, 28, 54, 0.9), rgba(8, 23, 44, 0.9)),
+                radial-gradient(340px 220px at 18% -20%, rgba(103, 232, 249, 0.14), transparent 72%);
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #f2fbff;
+            font-size: clamp(44px, 10vw, 94px);
+            font-weight: 800;
+            user-select: none;
+            padding: clamp(22px, 4vw, 46px);
+            text-align: left;
+        }
+
+        .home-dev-panel {
+            width: min(760px, 100%);
+            border: 1px solid rgba(135, 211, 255, 0.36);
+            border-radius: 18px;
+            background: linear-gradient(150deg, rgba(8, 22, 41, 0.72), rgba(7, 26, 49, 0.62));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 34px rgba(0, 0, 0, 0.24);
+            padding: clamp(18px, 2.8vw, 30px);
+        }
+
+        .home-dev-panel-head {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .home-dev-panel-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 999px;
+            border: 2px solid rgba(111, 224, 255, 0.9);
+            background: radial-gradient(circle at 35% 30%, rgba(103, 232, 249, 0.22), rgba(9, 28, 52, 0.9));
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            box-shadow: 0 0 0 3px rgba(8, 31, 55, 0.7), 0 0 18px rgba(56, 189, 248, 0.25);
+            flex-shrink: 0;
+        }
+
+        .home-dev-panel-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .home-dev-panel-name {
+            margin: 0;
+            color: #edf8ff;
+            font-size: clamp(18px, 2.2vw, 24px);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .home-dev-panel-tag {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(108, 225, 255, 0.46);
+            color: #a7efff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .home-dev-panel h3 {
+            margin: 0;
+            color: #f3fbff;
+            font-size: clamp(28px, 4vw, 44px);
+            line-height: 1.15;
+            text-shadow: 0 8px 26px rgba(56, 189, 248, 0.24);
+        }
+
+        .home-dev-panel p {
+            margin: 14px 0 0;
+            color: #d8ebff;
+            font-size: clamp(16px, 1.8vw, 21px);
+            line-height: 1.75;
+            font-weight: 500;
+        }
+
+        .home-contact {
+            margin-top: 36px;
+            border: 1px solid rgba(139, 197, 255, 0.24);
+            background: rgba(9, 28, 52, 0.58);
+            border-radius: 18px;
+            padding: 22px 16px 16px;
+        }
+
+        .home-contact h2 {
+            margin: 0 0 6px;
+            font-size: 24px;
+            color: #f2f9ff;
+        }
+
+        .home-contact p {
+            margin: 0;
+            color: var(--home-muted);
+            font-size: 15px;
+        }
+
+        .home-socials {
+            margin-top: 18px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .home-social {
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 197, 255, 0.34);
+            color: #e8f6ff;
+            text-decoration: none;
+            background: rgba(10, 38, 66, 0.78);
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            min-width: 178px;
+            font-size: 14px;
+            font-weight: 700;
+            justify-content: center;
+            transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .home-social:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            color: #0d355a;
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.2);
+        }
+
+        .home-social-icon {
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(103, 232, 249, 0.16);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        html.dark-mode .home-card {
+            background: rgba(9, 22, 40, 0.86);
+        }
+
+        html.dark-mode .home-landing {
+            --home-map-sea: rgba(26, 102, 162, 0.3);
+            --home-map-land: rgba(159, 216, 240, 0.26);
+            --home-map-route: rgba(131, 226, 255, 0.8);
+            --home-map-point: #c8fbff;
+            --home-map-point-ring: rgba(143, 237, 255, 0.46);
+        }
+
+        html.dark-mode .home-bg-layer.map {
+            opacity: 0.93;
+        }
+
+        html.dark-mode .home-bg-layer.map::before {
+            opacity: 0.96;
+            filter: saturate(1.2) contrast(1.14) brightness(1.08);
+        }
+
+        html.dark-mode .home-point-label {
+            color: #effcff;
+        }
+
+        @keyframes floatPulse {
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(12px);
+            }
+        }
+
+        @keyframes breathe {
+            0%,
+            100% {
+                opacity: 0.07;
+                transform: translate(-50%, -52%) scale(1);
+            }
+            50% {
+                opacity: 0.11;
+                transform: translate(-50%, -52%) scale(1.04);
+            }
+        }
+
+        @keyframes pulseDot {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 5px rgba(162, 244, 255, 0.22);
+            }
+            50% {
+                transform: scale(1.18);
+                box-shadow: 0 0 0 10px rgba(162, 244, 255, 0.08);
+            }
+        }
+
+        @media (max-width: 700px) {
+            .home-landing {
+                align-items: flex-start;
+                padding: calc(58px + env(safe-area-inset-top)) 10px calc(22px + env(safe-area-inset-bottom));
+                overflow-y: auto;
+            }
+
+            .home-card {
+                margin-bottom: calc(14px + env(safe-area-inset-bottom));
+            }
+
+            .home-card {
+                width: 100%;
+                border-radius: 18px;
+                padding: 20px 12px;
+            }
+
+            .home-title {
+                font-size: clamp(26px, 9vw, 34px);
+            }
+
+            .home-subtitle {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            .home-description {
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .home-top-tools {
+                top: 12px;
+                left: 12px;
+            }
+
+            .home-top-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .home-bg-layer.map,
+            .home-bg-layer.routes {
+                inset: 10% 3% 11%;
+                border-radius: 18px;
+            }
+
+            .home-point-label {
+                font-size: 10px;
+                left: 12px;
+            }
+
+            .home-btn {
+                width: 100%;
+            }
+
+            .home-social {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .home-qr-section,
+            .home-dev-team,
+            .home-contact {
+                margin-top: 22px;
+                border-radius: 14px;
+                padding: 16px 12px 12px;
+            }
+
+            .home-qr-content {
+                gap: 12px;
+            }
+
+            .home-qr-image {
+                width: min(76vw, 220px);
+                height: min(76vw, 220px);
+            }
+
+            .home-qr-edit {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .home-qr-input,
+            .home-qr-apply {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .home-device-row {
+                gap: 10px;
+            }
+
+            .home-device-card {
+                min-width: 0;
+            }
+
+            .home-qr-meta {
+                text-align: center;
+                width: 100%;
+                max-width: none;
+            }
+
+            .home-dev-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 10px;
+            }
+
+            .home-dev-card {
+                min-height: 130px;
+                padding: 12px 8px;
+            }
+
+            .home-dev-avatar {
+                width: 70px;
+                height: 70px;
+            }
+
+            .home-dev-modal {
+                padding: 10px;
+            }
+
+            .home-dev-modal-content {
+                width: 100%;
+                height: auto;
+                max-height: min(86dvh, 86vh);
+                border-radius: 16px;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .home-landing {
+                padding-left: 8px;
+                padding-right: 8px;
+                padding-bottom: calc(26px + env(safe-area-inset-bottom));
+            }
+
+            .home-card {
+                padding: 16px 10px;
+            }
+
+            .home-dev-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .home-title {
+                font-size: 24px;
+            }
+
+            .home-top-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .home-flight-point.flight-newyork,
+            .home-flight-point.flight-dubai {
+                display: none;
+            }
+
+            .home-top-icon img {
+                width: 24px;
+                height: 24px;
+            }
+
+            .home-qr-section h2,
+            .home-dev-team h2,
+            .home-contact h2 {
+                font-size: 20px;
+            }
+        }
+
+        /* iPhone 14 portrait: 390 x 844 */
+        @media (max-width: 390px) and (min-height: 840px) {
+            .home-landing {
+                padding-top: calc(52px + env(safe-area-inset-top));
+                padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            }
+
+            .home-logo {
+                width: min(198px, 64vw);
+            }
+
+            .home-title {
+                font-size: 22px;
+            }
+
+            .home-subtitle,
+            .home-description {
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .home-cta-row {
+                margin-top: 18px;
+            }
+
+            .home-btn {
+                min-width: 0;
+                padding: 10px 14px;
+            }
+
+            .home-qr-image {
+                width: min(70vw, 210px);
+                height: min(70vw, 210px);
+            }
+
+            .home-dev-card {
+                min-height: 118px;
+            }
+
+            .home-dev-avatar {
+                width: 62px;
+                height: 62px;
+            }
+
+            .home-dev-name {
+                font-size: 13px;
+            }
+        }
+
+        /* iPhone 14 landscape: 844 x 390 */
+        @media (max-height: 430px) and (orientation: landscape) {
+            .home-landing {
+                align-items: flex-start;
+                padding: calc(14px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
+                overflow: hidden;
+            }
+
+            .home-card {
+                width: min(1140px, 100%);
+                padding: 12px 12px;
+                max-height: calc(100dvh - 36px);
+                overflow: hidden;
+            }
+
+            .home-logo {
+                width: 118px;
+                margin-bottom: 0;
+            }
+
+            .home-title {
+                font-size: 20px;
+            }
+
+            .home-subtitle,
+            .home-description {
+                font-size: 12px;
+                line-height: 1.4;
+                margin-top: 6px;
+            }
+
+            .home-qr-section,
+            .home-dev-team,
+            .home-contact {
+                display: none;
+            }
+
+            .home-qr-section,
+            .home-dev-team,
+            .home-contact {
+                margin-top: 12px;
+                padding: 12px 10px 10px;
+            }
+
+            .home-qr-content {
+                gap: 10px;
+            }
+
+            .home-qr-image {
+                width: 130px;
+                height: 130px;
+            }
+
+            .home-dev-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .home-dev-card {
+                min-height: 106px;
+                padding: 8px;
+            }
+
+            .home-dev-avatar {
+                width: 46px;
+                height: 46px;
+            }
+
+            .home-dev-name {
+                font-size: 12px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<section class="home-landing">
+    <div class="home-top-tools" aria-label="Page tools">
+        <button type="button" class="home-top-icon" id="langToggleBtn" aria-label="Toggle language French and English" title="FR / EN">
+            <img id="langFlagImg" src="{{ asset('images/france.png') }}" alt="Francais">
+        </button>
+    </div>
+
+    <span class="home-bg-layer grid" aria-hidden="true"></span>
+    <span class="home-bg-layer map" aria-hidden="true"></span>
+    <div id="interactiveMap" class="home-bg-layer map" aria-hidden="false" style="pointer-events: auto;"></div>
+    <span class="home-bg-layer routes" aria-hidden="true"></span>
+    <span class="home-bg-layer glow-a" aria-hidden="true"></span>
+    <span class="home-bg-layer glow-b" aria-hidden="true"></span>
+    <span class="home-bg-layer glow-c" aria-hidden="true"></span>
+    <span class="home-bg-layer logo-halo" aria-hidden="true"></span>
+    <span class="home-bg-layer home-flight-point flight-tunis" aria-hidden="true"><span class="home-point-label">Tunis</span></span>
+    <span class="home-bg-layer home-flight-point flight-paris" aria-hidden="true"><span class="home-point-label">Paris</span></span>
+    <span class="home-bg-layer home-flight-point flight-dubai" aria-hidden="true"><span class="home-point-label">Dubai</span></span>
+    <span class="home-bg-layer home-flight-point flight-newyork" aria-hidden="true"><span class="home-point-label">New York</span></span>
+    <span class="home-bg-layer home-flight-point flight-istanbul" aria-hidden="true"><span class="home-point-label">Istanbul</span></span>
+
+    <div class="home-card">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehltna logo" class="home-logo">
+
+        <h1 class="home-title" id="homeTitle">Welcome to Rehltna.tn</h1>
+        <p class="home-subtitle" id="homeSubtitle">Your futuristic travel companion for smooth and easy journeys.</p>
+
+        <p class="home-description" id="homeDescription">
+            Rehltna.tn is a modern platform designed to give clients a better travel experience from start to finish.
+            Discover destinations, compare options quickly, and organize your trip with less effort and more confidence.
+        </p>
+
+        <div class="home-cta-row">
+            <a href="{{ path('app_login') }}" class="home-btn home-btn-primary" id="homeStartBtn">Start Now</a>
+        </div>
+
+        <div class="home-qr-section" id="scan-access">
+            <h2 id="qrTitle">Scan & Open on Phone</h2>
+            <p class="home-qr-description" id="qrDescription">Scan this QR code to open this website on your phone. You can also open it on your PC with the link.</p>
+
+            <div class="home-qr-content">
+                <img id="homeQrImage" class="home-qr-image" src="" alt="QR code to open this site">
+
+                <div class="home-qr-meta">
+                    <a id="homeQrOpenLink" class="home-qr-link" href="#" target="_blank" rel="noopener noreferrer">Open this site in browser</a>
+                    <p class="home-qr-note" id="homeQrHint">Tip: If the URL contains localhost or 127.0.0.1, open the site with your PC local IP so your phone can access it.</p>
+
+                    <div class="home-qr-edit">
+                        <input id="homeQrUrlInput" class="home-qr-input" type="text" placeholder="http://192.168.1.50:8000/" aria-label="Custom URL for phone QR">
+                        <button id="homeQrApplyBtn" type="button" class="home-qr-apply">Use this URL</button>
+                    </div>
+
+                    <div class="home-device-row">
+                        <div class="home-device-card">
+                            <img src="{{ asset('images/phone-icon.svg') }}" alt="Phone">
+                            <span id="phoneCardLabel">Phone: scan QR to open fast</span>
+                        </div>
+                        <div class="home-device-card">
+                            <img src="{{ asset('images/pc-icon.svg') }}" alt="PC">
+                            <span id="pcCardLabel">PC: copy and open the same link</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="home-dev-team" id="developers">
+            <h2 id="devTitle">Our Developers</h2>
+            <p id="devSubtitle">Image placeholders ready for your team profiles.</p>
+
+            <div class="home-dev-grid">
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Wassim Becharguia"
+                    data-dev-module="User"
+                    data-dev-photo="{{ asset('images/pic1.jpg') }}"
+                    data-dev-title="Gestion des utilisateurs"
+                    data-dev-description="Responsable de la gestion des utilisateurs, incluant la création, la modification et la sécurisation des comptes afin d’assurer une expérience fiable et fluide."
+                    data-dev-title-en="User management"
+                    data-dev-description-en="Responsible for user management, including account creation, updates, and security to ensure a reliable and smooth experience."
+                    data-dev-module-en="User"
+                    data-dev-title-fr="Gestion des utilisateurs"
+                    data-dev-description-fr="Responsable de la gestion des utilisateurs, incluant la création, la modification et la sécurisation des comptes afin d’assurer une expérience fiable et fluide."
+                    data-dev-module-fr="Utilisateur"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic1.jpg') }}');"></div>
+                    <p class="home-dev-name">Wassim becharguia</p>
+                </article>
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Sahar Oueslati"
+                    data-dev-module="Design"
+                    data-dev-photo="{{ asset('images/pic3.jpg') }}"
+                    data-dev-title="Experience utilisateur"
+                    data-dev-description="Conception de parcours intuitifs et harmonisation des ecrans afin d'offrir une navigation claire, rapide et agreable pour tous les utilisateurs."
+                    data-dev-title-en="User experience"
+                    data-dev-description-en="Design of intuitive user journeys and harmonized interfaces to deliver clear, fast, and enjoyable navigation for everyone."
+                    data-dev-module-en="Design"
+                    data-dev-title-fr="Gestion des activités et des offres de guides touristiques"
+                    data-dev-description-fr="Gestion des activités et des offres de guides touristiques, permettant la découverte et la réservation d'expériences variées"
+                    data-dev-module-fr="Activités"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic3.jpg') }}');"></div>
+                    <p class="home-dev-name">Sahar Oueslati</p>
+                </article>
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Doua Jlassi"
+                    data-dev-module="Messagerie"
+                    data-dev-photo="{{ asset('images/pic4.jpg') }}"
+                    data-dev-title="Gestion des messageries"
+                    data-dev-description="Gestion des messageries, facilitant la communication transparente entre utilisateurs et agences"
+                    data-dev-title-en="Messaging management"
+                    data-dev-description-en="Messaging management, facilitating transparent communication between users and agencies"
+                    data-dev-module-en="Messaging"
+                    data-dev-title-fr="Gestion des messageries"
+                    data-dev-description-fr="Gestion des messageries, facilitant la communication transparente entre utilisateurs et agences"
+                    data-dev-module-fr="Messagerie"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic4.jpg') }}');"></div>
+                    <p class="home-dev-name">Doua Jlassi</p>
+                </article>
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Achref Souli"
+                    data-dev-module="Performance"
+                    data-dev-photo="{{ asset('images/pic6.jpeg') }}"
+                    data-dev-title="Performance et optimisation"
+                    data-dev-description="Gestion des activités, enrichissant le catalogue d'offres touristiques"
+                    data-dev-title-en="Activity management"
+                    data-dev-description-en="Activity management, enriching the catalog of tourist offers"
+                    data-dev-module-en="Activities"
+                    data-dev-title-fr="Gestion des activités"
+                    data-dev-description-fr="Gestion des activités, enrichissant le catalogue d'offres touristiques"
+                    data-dev-module-fr="Activités"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic6.jpeg') }}');"></div>
+                    <p class="home-dev-name">Achref Souli</p>
+                </article>
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Wajdi Farhat"
+                    data-dev-module="API"
+                    data-dev-photo="{{ asset('images/pic2.jpg') }}"
+                    data-dev-title="Integration API"
+                    data-dev-description="Connexion des services externes et synchronisation des donnees en temps reel afin d'ameliorer la coherence et la qualite des informations."
+                    data-dev-title-en="API integration"
+                    data-dev-description-en="Connection of external services and real-time data synchronization to improve consistency and data quality."
+                    data-dev-module-en="API"
+                    data-dev-title-fr="Gestion des publications"
+                    data-dev-description-fr="Gestion des publications, animant la communauté avec contenu engageant"
+                    data-dev-module-fr="Publications"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic2.jpg') }}');"></div>
+                    <p class="home-dev-name">Wajdi Farhat</p>
+                </article>
+                <article
+                    class="home-dev-card"
+                    role="button"
+                    tabindex="0"
+                    aria-label="Open developer page"
+                    data-dev-name="Dhia Mestiri"
+                    data-dev-module="Security"
+                    data-dev-photo="{{ asset('images/pic5.jpeg') }}"
+                    data-dev-title="Qualite et securite"
+                    data-dev-description="Gestion des offres des agences, connectant les prestataires avec les voyageurs"
+                    data-dev-title-fr="Gestion des offres des agences"
+                    data-dev-description-fr="Gestion des offres des agences, connectant les prestataires avec les voyageurs"
+                    data-dev-module-fr="Offres d'agences"
+                >
+                    <div class="home-dev-avatar has-photo" aria-hidden="true" style="background-image: url('{{ asset('images/pic5.jpeg') }}');"></div>
+                    <p class="home-dev-name">Dhia Mestiri</p>
+                </article>
+            </div>
+        </div>
+
+        <div class="home-contact" id="contact-us">
+            <h2>Contact Us</h2>
+            <p>Connect with Rehltna and stay updated across all channels.</p>
+
+            <div class="home-socials">
+                <a href="https://www.facebook.com/rehltna.tn" target="_blank" rel="noopener noreferrer" class="home-social" aria-label="Facebook Rehltna">
+                    <span class="home-social-icon">FB</span>
+                    <span>Facebook</span>
+                </a>
+                <a href="https://www.instagram.com/rehltna.tn" target="_blank" rel="noopener noreferrer" class="home-social" aria-label="Instagram Rehltna">
+                    <span class="home-social-icon">IG</span>
+                    <span>Instagram</span>
+                </a>
+                <a href="mailto:rehltna.tn@gmail.com" class="home-social" aria-label="Email Rehltna">
+                    <span class="home-social-icon">GM</span>
+                    <span>rehltna.tn@gmail.com</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="home-dev-modal" id="homeDevModal" aria-hidden="true">
+        <div class="home-dev-modal-content">
+            <section class="home-dev-panel" aria-label="Developer details">
+                <div class="home-dev-panel-head">
+                    <div class="home-dev-panel-avatar" id="homeDevPanelAvatar" aria-hidden="true"></div>
+                    <div class="home-dev-panel-meta">
+                        <h4 class="home-dev-panel-name" id="homeDevPanelName">Wassim Becharguia</h4>
+                        <span class="home-dev-panel-tag" id="homeDevPanelModule">Module: User</span>
+                    </div>
+                </div>
+                <h3 id="homeDevPanelTitle">Gestion des utilisateurs</h3>
+                <p id="homeDevPanelDescription">Responsable de la gestion des utilisateurs.</p>
+            </section>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const homeLanding = document.querySelector('.home-landing');
+            const devCards = document.querySelectorAll('.home-dev-card');
+            const devModal = document.getElementById('homeDevModal');
+            const devModalContent = devModal ? devModal.querySelector('.home-dev-modal-content') : null;
+            const langToggleBtn = document.getElementById('langToggleBtn');
+            const homeTitle = document.getElementById('homeTitle');
+            const homeSubtitle = document.getElementById('homeSubtitle');
+            const homeDescription = document.getElementById('homeDescription');
+            const homeStartBtn = document.getElementById('homeStartBtn');
+            const qrTitle = document.getElementById('qrTitle');
+            const qrDescription = document.getElementById('qrDescription');
+            const phoneCardLabel = document.getElementById('phoneCardLabel');
+            const pcCardLabel = document.getElementById('pcCardLabel');
+            const qrHint = document.getElementById('homeQrHint');
+            const homeQrImage = document.getElementById('homeQrImage');
+            const homeQrOpenLink = document.getElementById('homeQrOpenLink');
+            const homeQrUrlInput = document.getElementById('homeQrUrlInput');
+            const homeQrApplyBtn = document.getElementById('homeQrApplyBtn');
+            const devTitle = document.getElementById('devTitle');
+            const devSubtitle = document.getElementById('devSubtitle');
+            const panelAvatar = document.getElementById('homeDevPanelAvatar');
+            const panelName = document.getElementById('homeDevPanelName');
+            const panelModule = document.getElementById('homeDevPanelModule');
+            const panelTitle = document.getElementById('homeDevPanelTitle');
+            const panelDescription = document.getElementById('homeDevPanelDescription');
+
+            if (!devModal || !devModalContent || !panelAvatar || !panelName || !panelModule || !panelTitle || !panelDescription || devCards.length === 0 || !langToggleBtn) {
+                return;
+            }
+
+            const baseTranslations = {
+                en: {
+                    homeTitle: 'Welcome to Rehltna.tn',
+                    homeSubtitle: 'Your futuristic travel companion for smooth and easy journeys.',
+                    homeDescription: 'Rehltna.tn is a modern platform designed to give clients a better travel experience from start to finish. Discover destinations, compare options quickly, and organize your trip with less effort and more confidence.',
+                    startNow: 'Start Now',
+                    qrTitle: 'Scan & Open on Phone',
+                    qrDescription: 'Scan this QR code to open this website on your phone. You can also open it on your PC with the link.',
+                    phoneCardLabel: 'Phone: scan QR to open fast',
+                    pcCardLabel: 'PC: copy and open the same link',
+                    qrHint: 'Tip: If the URL contains localhost or 127.0.0.1, open the site with your PC local IP so your phone can access it.',
+                    qrApplyButton: 'Use this URL',
+                    devTitle: 'Our Developers',
+                    devSubtitle: 'Image placeholders ready for your team profiles.',
+                    modulePrefix: 'Module: '
+                },
+                fr: {
+                    homeTitle: 'Bienvenue sur Rehltna.tn',
+                    homeSubtitle: 'Votre compagnon de voyage futuriste pour des trajets fluides et simples.',
+                    homeDescription: 'Rehletna.tn est une plateforme web innovante de réservation de voyages et d\'événements multi-agences. Ce projet représente une solution technologique complète et sécurisée qui transforme l\'organisation des voyages en un processus simple, collaboratif et personnalisé.',
+                    startNow: 'Commencer',
+                    qrTitle: 'Scanner et ouvrir sur mobile',
+                    qrDescription: 'Scannez ce QR code pour ouvrir ce site sur votre téléphone. Vous pouvez aussi l\'ouvrir sur PC avec le lien.',
+                    phoneCardLabel: 'Telephone : scannez le QR pour ouvrir rapidement',
+                    pcCardLabel: 'PC : copiez et ouvrez le meme lien',
+                    qrHint: 'Astuce : si l\'URL contient localhost ou 127.0.0.1, ouvrez le site avec l\'IP locale de votre PC pour que votre telephone y accede.',
+                    qrApplyButton: 'Utiliser cette URL',
+                    devTitle: 'Nos developpeurs',
+                    devSubtitle: 'Profils de l equipe en presentation.',
+                    modulePrefix: 'Module: '
+                }
+            };
+
+            const getLocalizedField = function (card, baseName, lang, fallback) {
+                const key = baseName + lang.charAt(0).toUpperCase() + lang.slice(1);
+                return card.dataset[key] || card.dataset[baseName] || fallback;
+            };
+
+            let activeLang = 'en';
+            let activeCard = null;
+
+            const applyLanguage = function () {
+                const t = baseTranslations[activeLang];
+                if (homeTitle) {
+                    homeTitle.textContent = t.homeTitle;
+                }
+                if (homeSubtitle) {
+                    homeSubtitle.textContent = t.homeSubtitle;
+                }
+                if (homeDescription) {
+                    homeDescription.textContent = t.homeDescription;
+                }
+                if (homeStartBtn) {
+                    homeStartBtn.textContent = t.startNow;
+                }
+                if (qrTitle) {
+                    qrTitle.textContent = t.qrTitle;
+                }
+                if (qrDescription) {
+                    qrDescription.textContent = t.qrDescription;
+                }
+                if (phoneCardLabel) {
+                    phoneCardLabel.textContent = t.phoneCardLabel;
+                }
+                if (pcCardLabel) {
+                    pcCardLabel.textContent = t.pcCardLabel;
+                }
+                if (qrHint) {
+                    qrHint.textContent = t.qrHint;
+                }
+                if (homeQrApplyBtn) {
+                    homeQrApplyBtn.textContent = t.qrApplyButton;
+                }
+                if (devTitle) {
+                    devTitle.textContent = t.devTitle;
+                }
+                if (devSubtitle) {
+                    devSubtitle.textContent = t.devSubtitle;
+                }
+                if (activeCard) {
+                    panelModule.textContent = t.modulePrefix + getLocalizedField(activeCard, 'devModule', activeLang, 'General');
+                    panelTitle.textContent = getLocalizedField(activeCard, 'devTitle', activeLang, 'Developer profile');
+                    panelDescription.textContent = getLocalizedField(activeCard, 'devDescription', activeLang, 'No description available.');
+                }
+            };
+
+
+            const applyQrTarget = function (url) {
+                if (!homeQrImage || !homeQrOpenLink || !url) {
+                    return;
+                }
+
+                const qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=' + encodeURIComponent(url);
+                homeQrImage.src = qrApi;
+                homeQrOpenLink.href = url;
+                homeQrOpenLink.textContent = url;
+            };
+
+            const detectLanIpv4 = function () {
+                return new Promise(function (resolve) {
+                    const RTCPeer = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+                    if (!RTCPeer) {
+                        resolve('');
+                        return;
+                    }
+
+                    const rtc = new RTCPeer({ iceServers: [] });
+                    let settled = false;
+
+                    const finish = function (ip) {
+                        if (settled) {
+                            return;
+                        }
+                        settled = true;
+                        try {
+                            rtc.onicecandidate = null;
+                            rtc.close();
+                        } catch (e) {
+                            // noop
+                        }
+                        resolve(ip || '');
+                    };
+
+                    rtc.createDataChannel('lan-check');
+
+                    rtc.onicecandidate = function (event) {
+                        if (!event || !event.candidate || !event.candidate.candidate) {
+                            return;
+                        }
+
+                        const candidate = event.candidate.candidate;
+                        const match = candidate.match(/(\d{1,3}(?:\.\d{1,3}){3})/);
+                        if (!match) {
+                            return;
+                        }
+
+                        const ip = match[1];
+                        const isLan = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[0-1])\./.test(ip);
+                        if (isLan) {
+                            finish(ip);
+                        }
+                    };
+
+                    rtc.createOffer()
+                        .then(function (offer) {
+                            return rtc.setLocalDescription(offer);
+                        })
+                        .then(function () {
+                            window.setTimeout(function () {
+                                finish('');
+                            }, 1400);
+                        })
+                        .catch(function () {
+                            finish('');
+                        });
+                });
+            };
+
+            const initQr = function () {
+                if (!homeQrImage || !homeQrOpenLink) {
+                    return;
+                }
+
+                const normalizedOrigin = window.location.origin.replace(/\/$/, '');
+                const defaultQrUrl = normalizedOrigin + '/';
+                applyQrTarget(defaultQrUrl);
+
+                if (homeQrUrlInput) {
+                    homeQrUrlInput.value = defaultQrUrl;
+                }
+
+                if (homeQrApplyBtn && homeQrUrlInput) {
+                    homeQrApplyBtn.addEventListener('click', function () {
+                        const customUrl = homeQrUrlInput.value.trim();
+                        if (customUrl) {
+                            applyQrTarget(customUrl);
+                        }
+                    });
+                }
+
+                const isLoopbackHost = /^(localhost|127\.0\.0\.1|::1)$/i.test(window.location.hostname);
+                if (isLoopbackHost) {
+                    detectLanIpv4().then(function (lanIp) {
+                        if (!lanIp) {
+                            return;
+                        }
+
+                        const portPart = window.location.port ? ':' + window.location.port : '';
+                        const lanUrl = window.location.protocol + '//' + lanIp + portPart + '/';
+                        applyQrTarget(lanUrl);
+
+                        if (homeQrUrlInput) {
+                            homeQrUrlInput.value = lanUrl;
+                        }
+                    });
+                }
+            };
+
+            initQr();
+            if (langToggleBtn) {
+                const langFlagImg = document.getElementById('langFlagImg');
+                langToggleBtn.addEventListener('click', function () {
+                    activeLang = activeLang === 'en' ? 'fr' : 'en';
+                    if (langFlagImg) {
+                        langFlagImg.src = activeLang === 'en' ? '{{ asset('images/france.png') }}' : '{{ asset('images/usa.png') }}';
+                        langFlagImg.alt = activeLang === 'en' ? 'Francais' : 'English';
+                    }
+                    applyLanguage();
+                });
+            }
+
+            const openModal = function (card) {
+                activeCard = card;
+                const photo = card.dataset.devPhoto || '';
+                panelName.textContent = card.dataset.devName || 'Developer';
+                panelModule.textContent = baseTranslations[activeLang].modulePrefix + getLocalizedField(card, 'devModule', activeLang, 'General');
+                panelTitle.textContent = getLocalizedField(card, 'devTitle', activeLang, 'Developer profile');
+                panelDescription.textContent = getLocalizedField(card, 'devDescription', activeLang, 'No description available.');
+                panelAvatar.style.backgroundImage = photo ? 'url("' + photo + '")' : '';
+                devModal.classList.add('is-open');
+                devModal.setAttribute('aria-hidden', 'false');
+                if (homeLanding) {
+                    homeLanding.classList.add('is-dev-open');
+                }
+            };
+
+            const closeModal = function () {
+                devModal.classList.remove('is-open');
+                devModal.setAttribute('aria-hidden', 'true');
+                if (homeLanding) {
+                    homeLanding.classList.remove('is-dev-open');
+                }
+            };
+
+            devCards.forEach(function (card) {
+                card.addEventListener('click', function () {
+                    openModal(card);
+                });
+
+                card.addEventListener('keydown', function (event) {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openModal(card);
+                    }
+                });
+            });
+
+            devModal.addEventListener('click', function (event) {
+                if (event.target === devModal) {
+                    closeModal();
+                }
+            });
+
+            devModalContent.addEventListener('click', function (event) {
+                event.stopPropagation();
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && devModal.classList.contains('is-open')) {
+                    closeModal();
+                }
+            });
+
+            applyLanguage();
+
+            /* Interactive map: fetch SVG, inline it, change country color on pointerover and show popup with country name + flag */
+            (function initInteractiveMap() {
+                const container = document.getElementById('interactiveMap');
+                if (!container) return;
+
+                const popup = document.createElement('div');
+                popup.id = 'mapPopup';
+                popup.style.position = 'fixed';
+                popup.style.pointerEvents = 'auto';
+                popup.style.zIndex = 9999;
+                popup.style.padding = '8px 10px';
+                popup.style.borderRadius = '10px';
+                popup.style.background = 'rgba(2,10,22,0.92)';
+                popup.style.color = '#e8f6ff';
+                popup.style.fontSize = '13px';
+                popup.style.display = 'none';
+                popup.style.boxShadow = '0 8px 30px rgba(2,10,22,0.7)';
+                popup.innerHTML = '<div id="mapPopupInner" style="display:flex;align-items:center;gap:8px;"><img id="mapPopupFlag" src="" alt="" style="width:28px;height:20px;border-radius:3px;display:none;object-fit:cover;"/><span id="mapPopupName"></span></div>';
+                document.body.appendChild(popup);
+
+                const svgUrl = '{{ asset('images/world-map-2d.svg') }}';
+
+                fetch(svgUrl).then(function (r) { return r.text(); }).then(function (svgText) {
+                    container.innerHTML = svgText;
+                    const svgEl = container.querySelector('svg');
+                    if (!svgEl) return;
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+                    svgEl.style.display = 'block';
+
+                    // use pointer events for robust cross-device behaviour
+                    svgEl.querySelectorAll('path, g, rect, circle, polygon').forEach(function (el, idx) {
+                        el.style.cursor = 'pointer';
+                        el.style.pointerEvents = 'auto';
+
+                        const computed = window.getComputedStyle(el);
+                        const orig = el.getAttribute('fill') || computed.fill || '';
+                        el.dataset._origFill = orig;
+
+                        el.addEventListener('pointerover', function (ev) {
+                            // highlight
+                            try {
+                                el.setAttribute('fill', '#ffd166');
+
+                                const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                                const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+
+                                const nameEl = document.getElementById('mapPopupName');
+                                const flagImg = document.getElementById('mapPopupFlag');
+                                if (nameEl) nameEl.textContent = name;
+
+                                if (flagImg) {
+                                    if (code && /^[a-z]{2}$/.test(code)) {
+                                        flagImg.src = 'https://flagcdn.com/w40/' + code + '.png';
+                                        flagImg.style.display = 'inline-block';
+                                    } else {
+                                        flagImg.style.display = 'none';
+                                        flagImg.src = '';
+                                    }
+                                }
+
+                                popup.style.display = 'block';
+                                // position using client coords to avoid scroll offset issues
+                                const clientX = ev.clientX || 0;
+                                const clientY = ev.clientY || 0;
+                                popup.style.left = (clientX + 14) + 'px';
+                                popup.style.top = (clientY + 8) + 'px';
+                            } catch (e) {
+                                // ignore
+                            }
+                        });
+
+                        el.addEventListener('pointermove', function (ev) {
+                            const clientX = ev.clientX || 0;
+                            const clientY = ev.clientY || 0;
+                            popup.style.left = (clientX + 14) + 'px';
+                            popup.style.top = (clientY + 8) + 'px';
+                        });
+
+                        el.addEventListener('pointerout', function () {
+                            const orig = el.dataset._origFill || '';
+                            if (orig && orig !== 'none') {
+                                el.setAttribute('fill', orig);
+                            } else {
+                                el.removeAttribute('fill');
+                            }
+                            popup.style.display = 'none';
+                        });
+
+                        el.addEventListener('click', function (ev) {
+                            ev.preventDefault();
+                            const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                            const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                            const flagHtml = (code && /^[a-z]{2}$/.test(code)) ? '<img src="https://flagcdn.com/w160/' + code + '.png" alt="flag" style="width:160px;height:auto;border-radius:6px;display:block;margin-bottom:12px;"/>' : '';
+                            const html = '<!doctype html><meta charset="utf-8"><title>' + name + '</title><div style="font-family:Inter, system-ui, sans-serif;padding:22px;background:#04202b;color:#e8f6ff;min-height:120px;">' + flagHtml + '<h2 style="margin:0 0 8px;">' + name + '</h2></div>';
+                            const w = window.open('', '_blank', 'noopener');
+                            if (w) {
+                                w.document.write(html);
+                                w.document.close();
+                            }
+                        });
+                    });
+                }).catch(function () {
+                    container.style.display = 'none';
+                });
+            })();
+        });
+    </script>
+{% endblock %}

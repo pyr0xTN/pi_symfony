@@ -73,7 +73,7 @@ class HotelController extends AbstractController
             return $this->redirectToRoute('dashboard');
         }
 
-        return $this->render('hotel/new.html.twig', [
+        return $this->render('dashboard/hotel/new.html.twig', [
             'active_page' => 'services',
             'form'        => $form,
         ]);
@@ -202,7 +202,7 @@ class HotelController extends AbstractController
             $this->addFlash('success', 'hotel supprimée.');
         }
 
-        return $this->redirectToRoute('services_index');
+        return $this->redirectToRoute('servicespage');
     }
 
    

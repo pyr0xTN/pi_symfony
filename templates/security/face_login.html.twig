@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% set faceMode = mode|default('login') %}
+    {% set isEnrollMode = faceMode == 'enroll' %}
+    <title>{{ isEnrollMode ? 'Face ID Enrollment - Rehletna.tn' : 'Face ID Login - Rehletna.tn' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #041b2f;
+            --bg-mid: #0a3f63;
+            --teal: #09a7a2;
+            --gold: #f6bc43;
+            --panel: rgba(239, 248, 255, 0.92);
+            --ink: #08355f;
+            --muted: #2d5f88;
+            --danger: #d63f45;
+            --ok: #198754;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(900px 500px at 15% -10%, rgba(246, 188, 67, 0.24), rgba(246, 188, 67, 0)),
+                radial-gradient(900px 500px at 100% 0%, rgba(9, 167, 162, 0.28), rgba(9, 167, 162, 0)),
+                linear-gradient(145deg, var(--bg-deep) 0%, var(--bg-mid) 54%, #0e5e75 100%);
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.33;
+            pointer-events: none;
+            animation: floatBlob 11s ease-in-out infinite;
+        }
+
+        .blob.a {
+            width: 260px;
+            height: 260px;
+            background: rgba(246, 188, 67, 0.65);
+            top: -40px;
+            left: -60px;
+        }
+
+        .blob.b {
+            width: 300px;
+            height: 300px;
+            background: rgba(8, 170, 170, 0.72);
+            right: -90px;
+            bottom: -90px;
+            animation-delay: 1.8s;
+        }
+
+        @keyframes floatBlob {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(16px);
+            }
+        }
+
+        .face-shell {
+            width: min(860px, 100%);
+            border-radius: 24px;
+            border: 1px solid rgba(246, 188, 67, 0.34);
+            background: linear-gradient(130deg, rgba(255, 255, 255, 0.96), rgba(235, 247, 255, 0.88));
+            box-shadow: 0 26px 60px rgba(0, 20, 40, 0.42);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            min-height: 520px;
+            backdrop-filter: blur(8px);
+        }
+
+        .camera-zone {
+            background: linear-gradient(160deg, #062843 0%, #0d4f73 100%);
+            padding: 24px;
+            color: #e6f7ff;
+            position: relative;
+        }
+
+        .camera-zone h1 {
+            font-size: clamp(1.35rem, 2vw, 1.8rem);
+            margin: 0 0 4px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .camera-zone p {
+            margin: 0 0 16px;
+            color: rgba(228, 244, 255, 0.88);
+            font-size: 0.95rem;
+        }
+
+        .video-wrap {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(246, 188, 67, 0.42);
+            box-shadow: inset 0 0 0 1px rgba(9, 167, 162, 0.34), 0 16px 28px rgba(0, 0, 0, 0.3);
+            aspect-ratio: 4 / 5;
+            background: #001423;
+        }
+
+        .preview-wrap {
+            margin-top: 14px;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid rgba(246, 188, 67, 0.26);
+            background: linear-gradient(180deg, rgba(4, 24, 43, 0.74), rgba(6, 48, 74, 0.54));
+            box-shadow: inset 0 0 0 1px rgba(9, 167, 162, 0.16), 0 12px 20px rgba(0, 0, 0, 0.18);
+            display: none;
+        }
+
+        .preview-wrap.show {
+            display: block;
+        }
+
+        .preview-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .preview-title {
+            margin: 0;
+            font-size: 0.82rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: rgba(230, 247, 255, 0.84);
+        }
+
+        .preview-badge {
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            letter-spacing: 0.03em;
+            color: #072945;
+            background: linear-gradient(135deg, rgba(246, 188, 67, 0.98), rgba(255, 233, 158, 0.92));
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.16);
+        }
+
+        .preview-frame {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #04131f, #09263d);
+            border: 1px solid rgba(9, 167, 162, 0.26);
+            aspect-ratio: 4 / 5;
+        }
+
+        #enrollPreviewCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .preview-caption {
+            margin: 10px 0 0;
+            color: rgba(228, 244, 255, 0.88);
+            font-size: 0.83rem;
+            line-height: 1.45;
+        }
+
+        .preview-caption strong {
+            color: #f6bc43;
+        }
+
+        #faceVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scaleX(-1);
+        }
+
+        .scan-ring {
+            position: absolute;
+            inset: 11% 15%;
+            border: 2px solid rgba(246, 188, 67, 0.9);
+            border-radius: 52% 48% 50% 50%;
+            pointer-events: none;
+            box-shadow: 0 0 0 1px rgba(9, 167, 162, 0.4), inset 0 0 22px rgba(9, 167, 162, 0.2), 0 0 42px rgba(246, 188, 67, 0.14);
+            animation: ringPulse 2.4s ease-in-out infinite;
+        }
+
+        .scan-ring::before,
+        .scan-ring::after {
+            content: '';
+            position: absolute;
+            inset: -10px;
+            border-radius: inherit;
+            border: 1px solid rgba(246, 188, 67, 0.18);
+            animation: ringPulse 3.2s ease-in-out infinite;
+        }
+
+        .scan-ring::after {
+            inset: -22px;
+            border-color: rgba(9, 167, 162, 0.12);
+            animation-delay: 0.45s;
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 13%;
+            right: 13%;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(9, 167, 162, 0.1), rgba(9, 167, 162, 1), rgba(9, 167, 162, 0.1));
+            box-shadow: 0 0 12px rgba(9, 167, 162, 0.8), 0 0 22px rgba(246, 188, 67, 0.44);
+            pointer-events: none;
+            animation: scanTravel 2.2s ease-in-out infinite;
+        }
+
+        .scan-corners::before,
+        .scan-corners::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border: 3px solid var(--gold);
+            pointer-events: none;
+        }
+
+        .scan-corners::before {
+            top: 10px;
+            left: 10px;
+            border-right: 0;
+            border-bottom: 0;
+            border-top-left-radius: 8px;
+        }
+
+        .scan-corners::after {
+            right: 10px;
+            bottom: 10px;
+            border-left: 0;
+            border-top: 0;
+            border-bottom-right-radius: 8px;
+        }
+
+        .tracker-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .wireframe-grid {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.92;
+        }
+
+        .wireframe-grid::before,
+        .wireframe-grid::after {
+            content: '';
+            position: absolute;
+            inset: 14% 15%;
+            border-radius: 50%;
+            border: 1px solid rgba(9, 167, 162, 0.22);
+            box-shadow: 0 0 0 1px rgba(246, 188, 67, 0.12), inset 0 0 16px rgba(9, 167, 162, 0.08);
+        }
+
+        .wireframe-grid::after {
+            inset: 18% 20%;
+            border-style: dashed;
+            opacity: 0.75;
+        }
+
+        .scan-grid-line {
+            position: absolute;
+            background: linear-gradient(180deg, rgba(9, 167, 162, 0.02), rgba(9, 167, 162, 0.42), rgba(9, 167, 162, 0.02));
+            box-shadow: 0 0 12px rgba(9, 167, 162, 0.18);
+            opacity: 0.55;
+        }
+
+        .scan-grid-line.vertical {
+            top: 8%;
+            bottom: 8%;
+            width: 1px;
+        }
+
+        .scan-grid-line.horizontal {
+            left: 8%;
+            right: 8%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(9, 167, 162, 0.02), rgba(9, 167, 162, 0.42), rgba(9, 167, 162, 0.02));
+        }
+
+        .scan-grid-line.v1 { left: 24%; }
+        .scan-grid-line.v2 { left: 50%; }
+        .scan-grid-line.v3 { left: 76%; }
+        .scan-grid-line.h1 { top: 25%; }
+        .scan-grid-line.h2 { top: 50%; }
+        .scan-grid-line.h3 { top: 75%; }
+
+        .scan-target {
+            position: absolute;
+            inset: 14% 16%;
+            border-radius: 50%;
+            border: 1px solid rgba(246, 188, 67, 0.42);
+            box-shadow: 0 0 0 1px rgba(9, 167, 162, 0.16), 0 0 30px rgba(246, 188, 67, 0.12), inset 0 0 18px rgba(9, 167, 162, 0.12);
+        }
+
+        .scan-target::before,
+        .scan-target::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(246, 188, 67, 0.45);
+            box-shadow: 0 0 0 10px rgba(246, 188, 67, 0.06);
+        }
+
+        .scan-target::after {
+            width: 52px;
+            height: 52px;
+            border-color: rgba(9, 167, 162, 0.18);
+            box-shadow: 0 0 0 14px rgba(9, 167, 162, 0.06);
+        }
+
+        .track-node {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            margin-left: -9px;
+            margin-top: -9px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.95);
+            box-shadow: 0 0 0 4px rgba(9, 167, 162, 0.25), 0 0 14px rgba(9, 167, 162, 0.8);
+            background: rgba(9, 167, 162, 0.9);
+            opacity: 0;
+            transform: scale(0.82);
+            transition: left 0.18s linear, top 0.18s linear, opacity 0.2s ease, transform 0.2s ease;
+        }
+
+        .track-node::after {
+            content: attr(data-label);
+            position: absolute;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            padding: 3px 7px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            color: #ffffff;
+            background: rgba(0, 20, 35, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            white-space: nowrap;
+        }
+
+        .track-node.track-mouth {
+            width: 24px;
+            height: 14px;
+            margin-left: -12px;
+            margin-top: -7px;
+            border-radius: 999px;
+            background: rgba(246, 188, 67, 0.95);
+            box-shadow: 0 0 0 4px rgba(246, 188, 67, 0.24), 0 0 14px rgba(246, 188, 67, 0.8);
+        }
+
+        .track-node.active {
+            opacity: 1;
+            transform: scale(1);
+            animation: trackerPulse 1.3s ease-in-out infinite;
+        }
+
+        .track-node.locked {
+            background: rgba(246, 188, 67, 0.98);
+            box-shadow: 0 0 0 4px rgba(246, 188, 67, 0.18), 0 0 16px rgba(246, 188, 67, 0.86);
+        }
+
+        @keyframes trackerPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.12);
+            }
+        }
+
+        @keyframes scanTravel {
+            0% { top: 14%; }
+            50% { top: 86%; }
+            100% { top: 14%; }
+        }
+
+        @keyframes ringPulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.92;
+            }
+            50% {
+                transform: scale(1.03);
+                opacity: 0.64;
+            }
+        }
+
+        .info-zone {
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 14px;
+        }
+
+        .enroll-hero {
+            display: none;
+            margin-bottom: 4px;
+            padding: 16px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, rgba(6, 48, 74, 0.08), rgba(246, 188, 67, 0.1));
+            border: 1px solid rgba(9, 167, 162, 0.16);
+        }
+
+        .enroll-hero.show {
+            display: block;
+        }
+
+        .enroll-hero-label {
+            margin: 0 0 4px;
+            color: #0a6888;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            font-weight: 800;
+        }
+
+        .enroll-hero-title {
+            margin: 0 0 6px;
+            color: #063459;
+            font-size: 1.05rem;
+            font-weight: 800;
+        }
+
+        .enroll-hero-text {
+            margin: 0;
+            color: #2b5c84;
+            font-size: 0.88rem;
+            line-height: 1.45;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .brand i {
+            width: 30px;
+            height: 30px;
+            display: inline-grid;
+            place-items: center;
+            border-radius: 50%;
+            color: #fff;
+            background: linear-gradient(135deg, #08a6a1, #0d5f7d);
+            box-shadow: 0 8px 16px rgba(9, 167, 162, 0.35);
+        }
+
+        .title {
+            margin: 0;
+            color: #063459;
+            font-size: clamp(1.5rem, 2.3vw, 2.1rem);
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            margin: 0;
+            color: #2b5c84;
+            font-size: 0.98rem;
+            line-height: 1.55;
+        }
+
+        .status {
+            border-radius: 14px;
+            border: 1px solid rgba(8, 95, 125, 0.24);
+            background: rgba(8, 95, 125, 0.08);
+            padding: 12px 14px;
+            color: #134d73;
+            font-weight: 600;
+            font-size: 0.93rem;
+            min-height: 46px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status.ok {
+            border-color: rgba(25, 135, 84, 0.35);
+            background: rgba(25, 135, 84, 0.12);
+            color: var(--ok);
+        }
+
+        .status.error {
+            border-color: rgba(214, 63, 69, 0.35);
+            background: rgba(214, 63, 69, 0.09);
+            color: var(--danger);
+        }
+
+        .actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-main {
+            color: #fff;
+            background: linear-gradient(135deg, #0aa7a2 0%, #0f6a8a 100%);
+            box-shadow: 0 12px 24px rgba(10, 167, 162, 0.34);
+        }
+
+        .btn-main:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px rgba(10, 167, 162, 0.4);
+        }
+
+        .btn-light {
+            color: #16517b;
+            background: rgba(8, 95, 125, 0.1);
+            border: 1px solid rgba(8, 95, 125, 0.2);
+        }
+
+        .btn-light:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(8, 95, 125, 0.16);
+        }
+
+        .hint {
+            margin: 2px 0 0;
+            font-size: 0.82rem;
+            color: #3c6b90;
+        }
+
+        .enroll-preview-note {
+            margin: 0;
+            color: #2d5f88;
+            font-size: 0.84rem;
+            line-height: 1.45;
+            display: none;
+        }
+
+        .enroll-preview-note.show {
+            display: block;
+        }
+
+        @media (max-width: 860px) {
+            .face-shell {
+                grid-template-columns: 1fr;
+            }
+
+            .camera-zone {
+                padding-bottom: 16px;
+            }
+
+            .video-wrap {
+                aspect-ratio: 1 / 1;
+                max-height: 420px;
+            }
+
+            .info-zone {
+                padding-top: 16px;
+            }
+
+            .preview-wrap {
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="blob a" aria-hidden="true"></div>
+    <div class="blob b" aria-hidden="true"></div>
+
+    <main class="face-shell">
+        <section class="camera-zone">
+            <h1>{{ isEnrollMode ? 'Face ID Enrollment' : 'Face ID Scanner' }}</h1>
+            <p>{{ isEnrollMode ? 'Center your face and save it to your profile. The scan starts automatically.' : 'Look straight to the camera. We scan automatically every second.' }}</p>
+
+            <div class="video-wrap">
+                <video id="faceVideo" autoplay playsinline muted></video>
+                <div class="wireframe-grid" aria-hidden="true">
+                    <div class="scan-grid-line vertical v1"></div>
+                    <div class="scan-grid-line vertical v2"></div>
+                    <div class="scan-grid-line vertical v3"></div>
+                    <div class="scan-grid-line horizontal h1"></div>
+                    <div class="scan-grid-line horizontal h2"></div>
+                    <div class="scan-grid-line horizontal h3"></div>
+                    <div class="scan-target"></div>
+                </div>
+                <div class="scan-ring" aria-hidden="true"></div>
+                <div class="scan-line" aria-hidden="true"></div>
+                <div class="scan-corners" aria-hidden="true"></div>
+                <div class="tracker-layer" aria-hidden="true">
+                    <div id="leftEyeNode" class="track-node" data-label="Left Eye"></div>
+                    <div id="rightEyeNode" class="track-node" data-label="Right Eye"></div>
+                    <div id="mouthNode" class="track-node track-mouth" data-label="Mouth"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-zone">
+            <span class="brand"><i class="fas fa-shield-halved"></i>{{ isEnrollMode ? 'Secure biometric enrollment' : 'Secure biometric login' }}</span>
+            <h2 class="title">{{ isEnrollMode ? 'Save your face profile' : 'Login using your saved face profile' }}</h2>
+            <p class="subtitle">{{ isEnrollMode ? 'We will verify a detected face first, then store the scan inside your user profile.' : 'If your face matches data stored in database, login will continue automatically.' }}</p>
+
+            {% if isEnrollMode %}
+                <div id="enrollHero" class="enroll-hero show">
+                    <p class="enroll-hero-label">Live enrollment preview</p>
+                    <h3 class="enroll-hero-title">Face lock active</h3>
+                    <p id="enrollHeroText" class="enroll-hero-text">Move into the frame to begin the scan. When the detector locks, you will see a live preview update here before saving.</p>
+                </div>
+                <p id="enrollPreviewNote" class="enroll-preview-note show">Preview updates in real time while the scan is active.</p>
+            {% endif %}
+
+            <div id="faceStatus" class="status">{{ isEnrollMode ? 'Opening camera for enrollment...' : 'Opening camera...' }}</div>
+
+            {% if isEnrollMode %}
+                <div id="previewWrap" class="preview-wrap show">
+                    <div class="preview-head">
+                        <p class="preview-title">Scan preview</p>
+                        <span id="previewBadge" class="preview-badge">Waiting</span>
+                    </div>
+                    <div class="preview-frame">
+                        <canvas id="enrollPreviewCanvas" width="320" height="400"></canvas>
+                    </div>
+                    <p id="previewCaption" class="preview-caption"><strong>Tip:</strong> hold still until the ring turns gold and the preview locks on your face.</p>
+                </div>
+            {% endif %}
+
+            <div class="actions">
+                <button id="retryBtn" class="btn btn-main" type="button">{{ isEnrollMode ? 'Scan Again' : 'Retry Scan' }}</button>
+                <button id="backBtn" class="btn btn-light" type="button">{{ isEnrollMode ? 'Back to Mainpage' : 'Back to Login' }}</button>
+            </div>
+
+            <p class="hint">{{ isEnrollMode ? 'Tip: Keep your face centered and ensure good lighting before saving your profile.' : 'Tip: Keep your face centered and ensure good lighting.' }}</p>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const faceVideo = document.getElementById('faceVideo');
+            const faceStatus = document.getElementById('faceStatus');
+            const retryBtn = document.getElementById('retryBtn');
+            const backBtn = document.getElementById('backBtn');
+            const leftEyeNode = document.getElementById('leftEyeNode');
+            const rightEyeNode = document.getElementById('rightEyeNode');
+            const mouthNode = document.getElementById('mouthNode');
+            const previewWrap = document.getElementById('previewWrap');
+            const previewBadge = document.getElementById('previewBadge');
+            const previewCaption = document.getElementById('previewCaption');
+            const enrollPreviewCanvas = document.getElementById('enrollPreviewCanvas');
+            const enrollPreviewContext = enrollPreviewCanvas ? enrollPreviewCanvas.getContext('2d', { willReadFrequently: true }) : null;
+            const enrollHeroText = document.getElementById('enrollHeroText');
+            const faceMode = '{{ faceMode }}';
+            const isEnrollMode = faceMode === 'enroll';
+            const submitUrl = isEnrollMode ? '{{ path('app_face_id_enroll') }}' : '{{ path('app_login_face_id') }}';
+
+            const faceCanvas = document.createElement('canvas');
+            const faceContext = faceCanvas.getContext('2d', { willReadFrequently: true });
+
+            let faceStream = null;
+            let faceFrameId = null;
+            let loginInProgress = false;
+            let lastAttemptAt = 0;
+            let faceDetector = null;
+            let scanLockActive = false;
+            let scanStableFrames = 0;
+            const liveness = {
+                required: !isEnrollMode,
+                leftDone: false,
+                rightDone: false,
+                depthDone: false,
+                blinkDone: false,
+                blinkSupported: false,
+                blinkOpenSeen: false,
+                baselineWidth: 0,
+                baselineCenterX: null,
+            };
+
+            const hideTrackingNodes = () => {
+                [leftEyeNode, rightEyeNode, mouthNode].forEach((node) => {
+                    if (!node) {
+                        return;
+                    }
+
+                    node.classList.remove('active', 'locked');
+                });
+            };
+
+            const placeNode = (node, x, y) => {
+                if (!node) {
+                    return;
+                }
+
+                node.style.left = `${x}px`;
+                node.style.top = `${y}px`;
+                node.classList.add('active');
+            };
+
+            const updateTrackingNodes = (faceBounds, videoWidth, videoHeight) => {
+                if (!faceVideo || !faceBounds) {
+                    hideTrackingNodes();
+                    return;
+                }
+
+                const drawWidth = faceVideo.clientWidth;
+                const drawHeight = faceVideo.clientHeight;
+                if (!drawWidth || !drawHeight || !videoWidth || !videoHeight) {
+                    hideTrackingNodes();
+                    return;
+                }
+
+                const scaleX = drawWidth / videoWidth;
+                const scaleY = drawHeight / videoHeight;
+
+                const boxX = Number(faceBounds.x || 0);
+                const boxY = Number(faceBounds.y || 0);
+                const boxWidth = Number(faceBounds.width || 0);
+                const boxHeight = Number(faceBounds.height || 0);
+
+                if (boxWidth <= 0 || boxHeight <= 0) {
+                    hideTrackingNodes();
+                    return;
+                }
+
+                // The preview video is mirrored, so convert detector coordinates accordingly.
+                const mirroredX = videoWidth - (boxX + boxWidth);
+
+                const leftEyeX = (mirroredX + (boxWidth * 0.32)) * scaleX;
+                const rightEyeX = (mirroredX + (boxWidth * 0.68)) * scaleX;
+                const eyeY = (boxY + (boxHeight * 0.40)) * scaleY;
+                const mouthX = (mirroredX + (boxWidth * 0.50)) * scaleX;
+                const mouthY = (boxY + (boxHeight * 0.73)) * scaleY;
+
+                placeNode(leftEyeNode, leftEyeX, eyeY);
+                placeNode(rightEyeNode, rightEyeX, eyeY);
+                placeNode(mouthNode, mouthX, mouthY);
+            };
+
+            const setEnrollmentPreviewState = (state, caption, locked) => {
+                if (!isEnrollMode) {
+                    return;
+                }
+
+                if (previewBadge) {
+                    previewBadge.textContent = state;
+                    previewBadge.style.background = locked
+                        ? 'linear-gradient(135deg, rgba(73, 255, 188, 0.98), rgba(246, 188, 67, 0.96))'
+                        : 'linear-gradient(135deg, rgba(246, 188, 67, 0.98), rgba(255, 233, 158, 0.92))';
+                }
+
+                if (previewCaption && caption) {
+                    previewCaption.innerHTML = caption;
+                }
+
+                if (enrollHeroText) {
+                    enrollHeroText.textContent = locked
+                        ? 'Face lock active. The live preview is now highlighting your scan, and you can save once you are satisfied.'
+                        : 'Move into the frame to begin the scan. When the detector locks, you will see a live preview update here before saving.';
+                }
+
+                if (previewWrap) {
+                    previewWrap.classList.add('show');
+                }
+            };
+
+            const drawEnrollmentPreview = (frameWidth, frameHeight, faceBounds, locked) => {
+                if (!isEnrollMode || !enrollPreviewCanvas || !enrollPreviewContext) {
+                    return;
+                }
+
+                const previewWidth = enrollPreviewCanvas.width || 320;
+                const previewHeight = enrollPreviewCanvas.height || 400;
+                enrollPreviewContext.save();
+                enrollPreviewContext.clearRect(0, 0, previewWidth, previewHeight);
+
+                // Background gradient for the preview card.
+                const gradient = enrollPreviewContext.createLinearGradient(0, 0, 0, previewHeight);
+                gradient.addColorStop(0, 'rgba(3, 22, 38, 0.98)');
+                gradient.addColorStop(1, 'rgba(7, 52, 82, 0.96)');
+                enrollPreviewContext.fillStyle = gradient;
+                enrollPreviewContext.fillRect(0, 0, previewWidth, previewHeight);
+
+                // Simulate the live camera feed with a mirrored scan field and overlays.
+                enrollPreviewContext.fillStyle = 'rgba(9, 167, 162, 0.08)';
+                enrollPreviewContext.fillRect(0, 0, previewWidth, previewHeight);
+
+                for (let column = 1; column < 4; column += 1) {
+                    const x = (previewWidth / 4) * column;
+                    enrollPreviewContext.strokeStyle = 'rgba(9, 167, 162, 0.16)';
+                    enrollPreviewContext.beginPath();
+                    enrollPreviewContext.moveTo(x, 0);
+                    enrollPreviewContext.lineTo(x, previewHeight);
+                    enrollPreviewContext.stroke();
+                }
+
+                for (let row = 1; row < 4; row += 1) {
+                    const y = (previewHeight / 4) * row;
+                    enrollPreviewContext.strokeStyle = 'rgba(246, 188, 67, 0.14)';
+                    enrollPreviewContext.beginPath();
+                    enrollPreviewContext.moveTo(0, y);
+                    enrollPreviewContext.lineTo(previewWidth, y);
+                    enrollPreviewContext.stroke();
+                }
+
+                const boxX = faceBounds ? Number(faceBounds.x || 0) : frameWidth * 0.2;
+                const boxY = faceBounds ? Number(faceBounds.y || 0) : frameHeight * 0.14;
+                const boxWidth = faceBounds ? Number(faceBounds.width || 0) : frameWidth * 0.58;
+                const boxHeight = faceBounds ? Number(faceBounds.height || 0) : frameHeight * 0.72;
+
+                const scaleX = previewWidth / frameWidth;
+                const scaleY = previewHeight / frameHeight;
+                const mirroredX = frameWidth - (boxX + boxWidth);
+                const previewX = mirroredX * scaleX;
+                const previewY = boxY * scaleY;
+                const previewW = boxWidth * scaleX;
+                const previewH = boxHeight * scaleY;
+
+                const faceGlow = enrollPreviewContext.createRadialGradient(
+                    previewX + (previewW * 0.5),
+                    previewY + (previewH * 0.4),
+                    previewW * 0.15,
+                    previewX + (previewW * 0.5),
+                    previewY + (previewH * 0.45),
+                    previewW * 0.72
+                );
+                faceGlow.addColorStop(0, locked ? 'rgba(246, 188, 67, 0.28)' : 'rgba(9, 167, 162, 0.24)');
+                faceGlow.addColorStop(1, 'rgba(9, 167, 162, 0)');
+                enrollPreviewContext.fillStyle = faceGlow;
+                enrollPreviewContext.fillRect(0, 0, previewWidth, previewHeight);
+
+                enrollPreviewContext.strokeStyle = locked ? 'rgba(246, 188, 67, 0.96)' : 'rgba(9, 167, 162, 0.92)';
+                enrollPreviewContext.lineWidth = 2;
+                enrollPreviewContext.setLineDash([8, 6]);
+                enrollPreviewContext.strokeRect(previewX, previewY, previewW, previewH);
+                enrollPreviewContext.setLineDash([]);
+
+                const cornerSize = 18;
+                enrollPreviewContext.strokeStyle = locked ? 'rgba(255, 241, 191, 0.98)' : 'rgba(230, 247, 255, 0.92)';
+                enrollPreviewContext.lineWidth = 3;
+
+                const drawCorner = (x, y, flipX, flipY) => {
+                    enrollPreviewContext.beginPath();
+                    enrollPreviewContext.moveTo(x, y);
+                    enrollPreviewContext.lineTo(x + (flipX * cornerSize), y);
+                    enrollPreviewContext.lineTo(x + (flipX * cornerSize), y + (flipY * cornerSize));
+                    enrollPreviewContext.stroke();
+                };
+
+                drawCorner(previewX, previewY, 1, 1);
+                drawCorner(previewX + previewW, previewY, -1, 1);
+                drawCorner(previewX, previewY + previewH, 1, -1);
+                drawCorner(previewX + previewW, previewY + previewH, -1, -1);
+
+                // Stylized face mesh drawn on top of the preview for a more technical look.
+                const centerX = previewX + (previewW * 0.5);
+                const centerY = previewY + (previewH * 0.43);
+                const faceRadiusX = previewW * 0.22;
+                const faceRadiusY = previewH * 0.27;
+
+                enrollPreviewContext.strokeStyle = locked ? 'rgba(73, 255, 188, 0.72)' : 'rgba(9, 167, 162, 0.62)';
+                enrollPreviewContext.lineWidth = 1.5;
+                enrollPreviewContext.beginPath();
+                enrollPreviewContext.ellipse(centerX, centerY, faceRadiusX, faceRadiusY, 0, 0, Math.PI * 2);
+                enrollPreviewContext.stroke();
+
+                const eyeY = centerY - (faceRadiusY * 0.23);
+                const leftEyeX = centerX - (faceRadiusX * 0.35);
+                const rightEyeX = centerX + (faceRadiusX * 0.35);
+                const mouthY = centerY + (faceRadiusY * 0.35);
+
+                const nodes = [
+                    [centerX, centerY - (faceRadiusY * 0.58)],
+                    [leftEyeX, eyeY],
+                    [centerX, eyeY - (faceRadiusY * 0.08)],
+                    [rightEyeX, eyeY],
+                    [centerX, mouthY]
+                ];
+
+                enrollPreviewContext.strokeStyle = locked ? 'rgba(246, 188, 67, 0.72)' : 'rgba(230, 247, 255, 0.56)';
+                enrollPreviewContext.fillStyle = locked ? 'rgba(246, 188, 67, 0.92)' : 'rgba(9, 167, 162, 0.9)';
+
+                nodes.forEach(([x, y]) => {
+                    enrollPreviewContext.beginPath();
+                    enrollPreviewContext.arc(x, y, locked ? 4.5 : 3.8, 0, Math.PI * 2);
+                    enrollPreviewContext.fill();
+                });
+
+                enrollPreviewContext.beginPath();
+                enrollPreviewContext.moveTo(leftEyeX, eyeY);
+                enrollPreviewContext.lineTo(centerX, eyeY - (faceRadiusY * 0.08));
+                enrollPreviewContext.lineTo(rightEyeX, eyeY);
+                enrollPreviewContext.stroke();
+
+                enrollPreviewContext.beginPath();
+                enrollPreviewContext.moveTo(leftEyeX - 2, mouthY - 6);
+                enrollPreviewContext.quadraticCurveTo(centerX, mouthY + 8, rightEyeX + 2, mouthY - 6);
+                enrollPreviewContext.stroke();
+
+                if (locked) {
+                    enrollPreviewContext.fillStyle = 'rgba(73, 255, 188, 0.18)';
+                    enrollPreviewContext.fillRect(0, 0, previewWidth, previewHeight);
+
+                    enrollPreviewContext.fillStyle = 'rgba(255, 241, 191, 0.96)';
+                    enrollPreviewContext.font = '800 14px "Plus Jakarta Sans", sans-serif';
+                    enrollPreviewContext.fillText('Face lock active', 16, 28);
+                }
+
+                enrollPreviewContext.restore();
+            };
+
+            const setStatus = (text, type = '') => {
+                if (!faceStatus) {
+                    return;
+                }
+
+                faceStatus.textContent = text;
+                faceStatus.classList.remove('ok', 'error');
+                if (type) {
+                    faceStatus.classList.add(type);
+                }
+            };
+
+            const stopScanner = () => {
+                if (faceFrameId) {
+                    window.cancelAnimationFrame(faceFrameId);
+                    faceFrameId = null;
+                }
+
+                if (faceVideo) {
+                    faceVideo.pause();
+                    faceVideo.srcObject = null;
+                }
+
+                if (faceStream) {
+                    faceStream.getTracks().forEach((track) => track.stop());
+                    faceStream = null;
+                }
+
+                hideTrackingNodes();
+                loginInProgress = false;
+            };
+
+            const resetLiveness = () => {
+                liveness.leftDone = false;
+                liveness.rightDone = false;
+                liveness.depthDone = false;
+                liveness.blinkDone = false;
+                liveness.blinkSupported = false;
+                liveness.blinkOpenSeen = false;
+                liveness.baselineWidth = 0;
+                liveness.baselineCenterX = null;
+            };
+
+            const getAveragePoint = (points) => {
+                if (!Array.isArray(points) || points.length === 0) {
+                    return null;
+                }
+
+                let sx = 0;
+                let sy = 0;
+                points.forEach((point) => {
+                    sx += Number(point.x || 0);
+                    sy += Number(point.y || 0);
+                });
+
+                return { x: sx / points.length, y: sy / points.length };
+            };
+
+            const getEyeAspectRatio = (landmarks) => {
+                if (!Array.isArray(landmarks)) {
+                    return null;
+                }
+
+                const leftEye = landmarks.find((item) => item && item.type === 'leftEye');
+                const rightEye = landmarks.find((item) => item && item.type === 'rightEye');
+                if (!leftEye || !rightEye || !Array.isArray(leftEye.locations) || !Array.isArray(rightEye.locations)) {
+                    return null;
+                }
+
+                const calcRatio = (eye) => {
+                    if (!Array.isArray(eye.locations) || eye.locations.length < 4) {
+                        return null;
+                    }
+
+                    const sortedX = [...eye.locations].sort((a, b) => Number(a.x || 0) - Number(b.x || 0));
+                    const sortedY = [...eye.locations].sort((a, b) => Number(a.y || 0) - Number(b.y || 0));
+                    const left = sortedX[0];
+                    const right = sortedX[sortedX.length - 1];
+                    const top = sortedY[0];
+                    const bottom = sortedY[sortedY.length - 1];
+
+                    const width = Math.hypot(Number(right.x || 0) - Number(left.x || 0), Number(right.y || 0) - Number(left.y || 0));
+                    const height = Math.hypot(Number(bottom.x || 0) - Number(top.x || 0), Number(bottom.y || 0) - Number(top.y || 0));
+                    if (width <= 1e-6) {
+                        return null;
+                    }
+
+                    return height / width;
+                };
+
+                const leftRatio = calcRatio(leftEye);
+                const rightRatio = calcRatio(rightEye);
+                if (leftRatio === null || rightRatio === null) {
+                    return null;
+                }
+
+                return (leftRatio + rightRatio) / 2;
+            };
+
+            const updateLiveness = (faceBounds, landmarks) => {
+                if (!liveness.required || !faceBounds) {
+                    return;
+                }
+
+                const width = Number(faceBounds.width || 0);
+                const centerX = Number(faceBounds.x || 0) + (width / 2);
+                if (width <= 0) {
+                    return;
+                }
+
+                if (liveness.baselineWidth <= 0) {
+                    liveness.baselineWidth = width;
+                } else {
+                    liveness.baselineWidth = (liveness.baselineWidth * 0.9) + (width * 0.1);
+                }
+
+                if (liveness.baselineCenterX === null) {
+                    liveness.baselineCenterX = centerX;
+                } else {
+                    liveness.baselineCenterX = (liveness.baselineCenterX * 0.9) + (centerX * 0.1);
+                }
+
+                const horizontalShift = centerX - liveness.baselineCenterX;
+                const shiftThreshold = Math.max(18, liveness.baselineWidth * 0.16);
+                if (horizontalShift <= -shiftThreshold) {
+                    liveness.leftDone = true;
+                }
+                if (horizontalShift >= shiftThreshold) {
+                    liveness.rightDone = true;
+                }
+
+                if (width >= (liveness.baselineWidth * 1.22)) {
+                    liveness.depthDone = true;
+                }
+
+                const ear = getEyeAspectRatio(landmarks);
+                if (ear !== null) {
+                    liveness.blinkSupported = true;
+                    if (ear > 0.24) {
+                        liveness.blinkOpenSeen = true;
+                    }
+                    if (liveness.blinkOpenSeen && ear < 0.16) {
+                        liveness.blinkDone = true;
+                    }
+                }
+            };
+
+            const isLivenessPassed = () => {
+                if (!liveness.required) {
+                    return true;
+                }
+
+                const movementPassed = liveness.leftDone && liveness.rightDone && liveness.depthDone;
+                if (!movementPassed) {
+                    return false;
+                }
+
+                if (liveness.blinkSupported) {
+                    return liveness.blinkDone;
+                }
+
+                return true;
+            };
+
+            const getLivenessHint = () => {
+                if (!liveness.required) {
+                    return '';
+                }
+
+                const steps = [];
+                if (!liveness.leftDone) {
+                    steps.push('turn face left');
+                }
+                if (!liveness.rightDone) {
+                    steps.push('turn face right');
+                }
+                if (!liveness.depthDone) {
+                    steps.push('move slightly closer');
+                }
+                if (liveness.blinkSupported && !liveness.blinkDone) {
+                    steps.push('blink once');
+                }
+
+                if (steps.length === 0) {
+                    return 'Liveness verified. Checking your face...';
+                }
+
+                return `Liveness check: ${steps.join(' · ')}`;
+            };
+
+            const assessCaptureQuality = (canvas) => {
+                const context = canvas.getContext('2d', { willReadFrequently: true });
+                if (!context) {
+                    return { ok: false, message: 'Unable to read camera frame.' };
+                }
+
+                const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+                if (!data || width === 0 || height === 0) {
+                    return { ok: false, message: 'Invalid camera frame.' };
+                }
+
+                let sum = 0;
+                let sumSq = 0;
+                let gradientSum = 0;
+                let gradientCount = 0;
+
+                const luma = new Float32Array(width * height);
+                let idx = 0;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    const gray = (0.299 * data[i]) + (0.587 * data[i + 1]) + (0.114 * data[i + 2]);
+                    luma[idx++] = gray;
+                    sum += gray;
+                    sumSq += gray * gray;
+                }
+
+                const pixelCount = width * height;
+                const mean = sum / pixelCount;
+                const variance = Math.max(0, (sumSq / pixelCount) - (mean * mean));
+                const stdDev = Math.sqrt(variance);
+
+                for (let y = 0; y < height - 1; y += 1) {
+                    for (let x = 0; x < width - 1; x += 1) {
+                        const current = luma[(y * width) + x];
+                        const right = luma[(y * width) + x + 1];
+                        const down = luma[((y + 1) * width) + x];
+                        gradientSum += Math.abs(current - right) + Math.abs(current - down);
+                        gradientCount += 2;
+                    }
+                }
+
+                const sharpness = gradientCount > 0 ? (gradientSum / gradientCount) : 0;
+
+                if (mean < 45 || mean > 210) {
+                    return { ok: false, message: 'Lighting is not good enough. Face is too dark or too bright.' };
+                }
+
+                if (stdDev < 22) {
+                    return { ok: false, message: 'Face contrast is too low. Move to better lighting.' };
+                }
+
+                if (sharpness < 12) {
+                    return { ok: false, message: 'Image is blurry. Hold still and refocus your face.' };
+                }
+
+                return { ok: true };
+            };
+
+            const createFaceOnlyCapture = (faceBounds, frameWidth, frameHeight) => {
+                if (!faceBounds || !faceCanvas) {
+                    return { ok: false, message: 'No face detected. Keep your face inside the scan ring.' };
+                }
+
+                const rawX = Number(faceBounds.x || 0);
+                const rawY = Number(faceBounds.y || 0);
+                const rawW = Number(faceBounds.width || 0);
+                const rawH = Number(faceBounds.height || 0);
+
+                if (rawW <= 0 || rawH <= 0) {
+                    return { ok: false, message: 'No face detected. Keep your face inside the scan ring.' };
+                }
+
+                const faceRatio = (rawW * rawH) / (frameWidth * frameHeight);
+                if (faceRatio < 0.12) {
+                    return { ok: false, message: 'Move closer. Your face must fill more of the frame.' };
+                }
+
+                const pad = Math.round(Math.max(rawW, rawH) * 0.22);
+                const x = Math.max(0, Math.floor(rawX - pad));
+                const y = Math.max(0, Math.floor(rawY - pad));
+                const x2 = Math.min(frameWidth, Math.ceil(rawX + rawW + pad));
+                const y2 = Math.min(frameHeight, Math.ceil(rawY + rawH + pad));
+                const cropW = Math.max(1, x2 - x);
+                const cropH = Math.max(1, y2 - y);
+
+                const outputCanvas = document.createElement('canvas');
+                outputCanvas.width = 320;
+                outputCanvas.height = 320;
+                const outputContext = outputCanvas.getContext('2d');
+                if (!outputContext) {
+                    return { ok: false, message: 'Unable to process face capture.' };
+                }
+
+                outputContext.drawImage(
+                    faceCanvas,
+                    x,
+                    y,
+                    cropW,
+                    cropH,
+                    0,
+                    0,
+                    outputCanvas.width,
+                    outputCanvas.height
+                );
+
+                const quality = assessCaptureQuality(outputCanvas);
+                if (!quality.ok) {
+                    return quality;
+                }
+
+                return {
+                    ok: true,
+                    imageDataUrl: outputCanvas.toDataURL('image/jpeg', 0.95)
+                };
+            };
+
+            const submitFaceFrame = async (imageDataUrl) => {
+                loginInProgress = true;
+                setStatus(isEnrollMode ? 'Checking your face profile before saving...' : 'Checking your face profile...', '');
+
+                try {
+                    const response = await fetch(submitUrl, {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ imageData: imageDataUrl })
+                    });
+
+                    let payload = null;
+                    try {
+                        payload = await response.json();
+                    } catch (error) {
+                        payload = null;
+                    }
+
+                    if (payload && payload.success && payload.redirectUrl) {
+                        setStatus(isEnrollMode ? 'Face profile saved. Redirecting...' : 'Face recognized. Redirecting...', 'ok');
+                        window.location.assign(payload.redirectUrl);
+                        return;
+                    }
+
+                    const defaultMessage = response.status === 503
+                        ? 'Face service is unavailable. Start faceid_service on port 8001 and retry.'
+                        : (isEnrollMode ? 'Face not detected. Keep looking at the camera.' : 'Face not recognized. Keep looking at the camera.');
+                    const message = payload && payload.message
+                        ? payload.message
+                        : defaultMessage;
+
+                    if (payload && payload.debug) {
+                        const details = [];
+                        if (typeof payload.debug.bestSimilarity === 'number') {
+                            details.push(`score=${payload.debug.bestSimilarity}`);
+                        }
+                        if (typeof payload.debug.matchThreshold === 'number') {
+                            details.push(`threshold=${payload.debug.matchThreshold}`);
+                        }
+                        if (typeof payload.debug.evaluatedUsers === 'number') {
+                            details.push(`evaluated=${payload.debug.evaluatedUsers}`);
+                        }
+
+                        const detailsText = details.length > 0 ? ` (${details.join(', ')})` : '';
+                        setStatus(`${message}${detailsText}`, 'error');
+                        console.warn('Face ID response payload:', payload);
+                    } else {
+                        setStatus(message, 'error');
+                    }
+
+                    loginInProgress = false;
+                } catch (error) {
+                    setStatus(isEnrollMode ? 'Unable to save face right now. Retrying...' : 'Unable to verify face right now. Retrying...', 'error');
+                    loginInProgress = false;
+                }
+            };
+
+            const runScannerFrame = async () => {
+                if (!faceVideo || !faceContext) {
+                    return;
+                }
+
+                if (faceVideo.readyState >= 2) {
+                    const width = faceVideo.videoWidth;
+                    const height = faceVideo.videoHeight;
+
+                    if (width > 0 && height > 0) {
+                        faceCanvas.width = width;
+                        faceCanvas.height = height;
+                        faceContext.drawImage(faceVideo, 0, 0, width, height);
+
+                        let hasFace = false;
+                        let detectedFace = null;
+                        let detectedLandmarks = null;
+
+                        if (faceDetector) {
+                            try {
+                                const bitmap = await createImageBitmap(faceCanvas);
+                                const faces = await faceDetector.detect(bitmap);
+                                bitmap.close();
+
+                                if (Array.isArray(faces) && faces.length > 0 && faces[0].boundingBox) {
+                                    detectedFace = faces[0].boundingBox;
+                                    detectedLandmarks = Array.isArray(faces[0].landmarks) ? faces[0].landmarks : null;
+                                    hasFace = true;
+                                } else {
+                                    hasFace = false;
+                                }
+                            } catch (error) {
+                                hasFace = false;
+                                detectedFace = null;
+                                detectedLandmarks = null;
+                            }
+                        } else {
+                            setStatus('Face detection is unavailable in this browser. Please use a recent Chrome/Edge.', 'error');
+                        }
+
+                        if (!isEnrollMode && hasFace) {
+                            updateLiveness(detectedFace, detectedLandmarks);
+                        }
+
+                        updateTrackingNodes(detectedFace, width, height);
+
+                        if (isEnrollMode) {
+                            const locked = Boolean(detectedFace);
+                            scanStableFrames = locked ? scanStableFrames + 1 : 0;
+                            scanLockActive = scanStableFrames >= 3 || locked;
+
+                            if (leftEyeNode && rightEyeNode && mouthNode) {
+                                [leftEyeNode, rightEyeNode, mouthNode].forEach((node) => {
+                                    node.classList.toggle('locked', scanLockActive);
+                                });
+                            }
+
+                            drawEnrollmentPreview(width, height, detectedFace, scanLockActive);
+                            setEnrollmentPreviewState(
+                                scanLockActive ? 'Locked' : 'Scanning',
+                                scanLockActive
+                                    ? '<strong>Success preview:</strong> your face is locked into the enrollment frame and ready to save.'
+                                    : '<strong>Tip:</strong> center your face so the wireframe turns gold and the preview locks.',
+                                scanLockActive
+                            );
+                        }
+
+                        const now = Date.now();
+                        if (!loginInProgress && now - lastAttemptAt >= 1200) {
+                            if (hasFace) {
+                                if (!isEnrollMode && !isLivenessPassed()) {
+                                    setStatus(getLivenessHint(), '');
+                                    faceFrameId = window.requestAnimationFrame(() => {
+                                        runScannerFrame();
+                                    });
+                                    return;
+                                }
+
+                                const capture = createFaceOnlyCapture(detectedFace, width, height);
+                                if (!capture.ok || !capture.imageDataUrl) {
+                                    setStatus(capture.message || 'Face capture quality is too low. Retry with better lighting.', '');
+                                    faceFrameId = window.requestAnimationFrame(() => {
+                                        runScannerFrame();
+                                    });
+                                    return;
+                                }
+
+                                lastAttemptAt = now;
+                                const imageDataUrl = capture.imageDataUrl;
+                                submitFaceFrame(imageDataUrl);
+                            } else {
+                                setStatus(isEnrollMode ? 'No face detected yet. Keep your face inside the scan ring.' : 'No face detected yet. Keep eyes and mouth inside the scan ring.', '');
+                            }
+                        }
+                    }
+                }
+
+                faceFrameId = window.requestAnimationFrame(() => {
+                    runScannerFrame();
+                });
+            };
+
+            const startScanner = async () => {
+                stopScanner();
+                scanStableFrames = 0;
+                scanLockActive = false;
+                resetLiveness();
+
+                if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+                    setStatus('Camera is not supported in this browser.', 'error');
+                    return;
+                }
+
+                try {
+                    setStatus('Opening camera...', '');
+                    faceDetector = 'FaceDetector' in window
+                        ? new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 })
+                        : null;
+
+                    faceStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            facingMode: 'user'
+                        },
+                        audio: false
+                    });
+
+                    faceVideo.srcObject = faceStream;
+                    await faceVideo.play();
+                    setStatus(isEnrollMode ? 'Camera ready. Hold still for automatic scan.' : 'Camera ready. Liveness check: turn face left · turn face right · move slightly closer', '');
+                    if (isEnrollMode) {
+                        setEnrollmentPreviewState('Scanning', '<strong>Tip:</strong> hold still until the scan locks and the preview turns gold.', false);
+                        if (previewWrap) {
+                            previewWrap.classList.add('show');
+                        }
+                    }
+                    faceFrameId = window.requestAnimationFrame(() => {
+                        runScannerFrame();
+                    });
+                } catch (error) {
+                    setStatus('Unable to open camera. Please allow camera permission.', 'error');
+                }
+            };
+
+            if (retryBtn) {
+                retryBtn.addEventListener('click', () => {
+                    setStatus('Restarting scanner...', '');
+                    startScanner();
+                });
+            }
+
+            if (backBtn) {
+                backBtn.addEventListener('click', () => {
+                    window.location.assign(isEnrollMode ? '{{ path('app_mainpage') }}' : '{{ path('app_login') }}');
+                });
+            }
+
+            window.addEventListener('beforeunload', () => {
+                stopScanner();
+            });
+
+            startScanner();
+        });
+    </script>
+</body>
+</html>

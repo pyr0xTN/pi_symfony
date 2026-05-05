@@ -1,0 +1,356 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit User - Admin Dashboard{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .admin-edit-page {
+            min-height: 100vh;
+            background: #f2f4f7;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #213142;
+        }
+
+        .dashboard-top {
+            height: 86px;
+            background: #ffffff;
+            border-bottom: 1px solid #e6ebf0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+        }
+
+        .dashboard-top a {
+            border: 2px solid #0BA4A1;
+            color: #0BA4A1;
+            background: #f4fffe;
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        .dashboard-top img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .edit-shell {
+            max-width: 980px;
+            margin: 26px auto;
+            padding: 0 16px 24px;
+        }
+
+        .edit-card {
+            background: #ffffff;
+            border: 1px solid #e7edf2;
+            border-radius: 14px;
+            box-shadow: 0 6px 16px rgba(10, 34, 62, 0.06);
+            padding: 24px;
+        }
+
+        .edit-title {
+            margin: 0 0 4px;
+            font-size: 28px;
+            color: #173f69;
+        }
+
+        .edit-subtitle {
+            margin: 0 0 20px;
+            color: #6c7f93;
+        }
+
+        .avatar-line {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .avatar-line img {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dce7f1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .field label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4e6378;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .field input,
+        .field select {
+            border: 1px solid #d4dce6;
+            border-radius: 9px;
+            padding: 10px 12px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #ffffff;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: #0BA4A1;
+            box-shadow: 0 0 0 3px rgba(11, 164, 161, 0.12);
+        }
+
+        .field-error {
+            color: #c23636;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-top: 2px;
+        }
+
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 9px;
+            padding: 10px 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: #0BA4A1;
+            color: #ffffff;
+        }
+
+        .btn-secondary {
+            background: #edf3f8;
+            color: #3f566d;
+        }
+
+        /* Dark Mode Support */
+        body.dark-mode .admin-edit-page {
+            background: #0f1724;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .dashboard-top {
+            background: #162038;
+            border-bottom-color: #2a3f5f;
+        }
+
+        body.dark-mode .dashboard-top a {
+            background: #0a2e3f;
+            border-color: #0BA4A1;
+            color: #0BA4A1;
+        }
+
+        body.dark-mode .edit-card {
+            background: #162038;
+            border-color: #2a3f5f;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .edit-title {
+            color: #d4e1ec;
+        }
+
+        body.dark-mode .edit-subtitle {
+            color: #8b9aaf;
+        }
+
+        body.dark-mode .avatar-line img {
+            border-color: #2a3f5f;
+        }
+
+        body.dark-mode .field label {
+            color: #8b9aaf;
+        }
+
+        body.dark-mode .field input,
+        body.dark-mode .field select {
+            background: #0f1724;
+            border-color: #2a3f5f;
+            color: #c6d4e3;
+        }
+
+        body.dark-mode .field input:focus,
+        body.dark-mode .field select:focus {
+            border-color: #0BA4A1;
+            box-shadow: 0 0 0 3px rgba(11, 164, 161, 0.2);
+        }
+
+        body.dark-mode .field-error {
+            color: #ff8f8f;
+        }
+
+        body.dark-mode .btn-secondary {
+            background: #1d2d42;
+            color: #8b9aaf;
+        }
+
+        @media (max-width: 760px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        (function () {
+            const unlockScroll = function () {
+                document.body.style.overflow = '';
+            };
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', unlockScroll);
+            } else {
+                unlockScroll();
+            }
+
+            window.addEventListener('pageshow', unlockScroll);
+            window.addEventListener('load', unlockScroll);
+            document.addEventListener('turbo:load', unlockScroll);
+            document.addEventListener('turbo:render', unlockScroll);
+        })();
+    </script>
+{% endblock %}
+
+{% block body %}
+    {% set oldName = (app.flashes('user_edit_old_name_' ~ editedUser.id)|first)|default(editedUser.name|default('')) %}
+    {% set oldLastName = (app.flashes('user_edit_old_last_name_' ~ editedUser.id)|first)|default(editedUser.last_name|default('')) %}
+    {% set oldUsername = (app.flashes('user_edit_old_username_' ~ editedUser.id)|first)|default(editedUser.username|default('')) %}
+    {% set oldEmail = (app.flashes('user_edit_old_email_' ~ editedUser.id)|first)|default(editedUser.email|default('')) %}
+    {% set oldRole = (app.flashes('user_edit_old_role_' ~ editedUser.id)|first)|default(editedUser.role|default('USER')) %}
+    {% set oldStatus = (app.flashes('user_edit_old_status_' ~ editedUser.id)|first)|default(editedUser.status|default('offline')) %}
+    {% set oldTier = (app.flashes('user_edit_old_member_premium_' ~ editedUser.id)|first)|default(editedUser.member_premium|default('standard')) %}
+    {% set oldLanguage = (app.flashes('user_edit_old_language_' ~ editedUser.id)|first)|default(editedUser.language|default('English')) %}
+
+    {% set nameError = (app.flashes('user_edit_error_name_' ~ editedUser.id)|first)|default('') %}
+    {% set lastNameError = (app.flashes('user_edit_error_last_name_' ~ editedUser.id)|first)|default('') %}
+    {% set usernameError = (app.flashes('user_edit_error_username_' ~ editedUser.id)|first)|default('') %}
+    {% set emailError = (app.flashes('user_edit_error_email_' ~ editedUser.id)|first)|default('') %}
+    {% set roleError = (app.flashes('user_edit_error_role_' ~ editedUser.id)|first)|default('') %}
+    {% set tierError = (app.flashes('user_edit_error_member_premium_' ~ editedUser.id)|first)|default('') %}
+
+    <div class="admin-edit-page">
+        <div class="dashboard-top">
+            <img src="{{ asset('images/logo.png') }}" alt="Rehletna.tn" title="Rehletna.tn" />
+        </div>
+
+        <div class="edit-shell">
+            <div class="edit-card">
+                <h1 class="edit-title">Edit User</h1>
+                <p class="edit-subtitle">Update account details, role, status and subscription tier.</p>
+
+                <div class="avatar-line">
+                    <img src="{{ editedUser.image_url|default('/images/default_avatar.png') }}" alt="{{ editedUser.username }}" />
+                    <div>
+                        <strong>{{ editedUser.username }}</strong><br>
+                        <span>{{ editedUser.email }}</span>
+                    </div>
+                </div>
+
+                <form method="post" novalidate data-no-loader="true" data-turbo="false" onsubmit="document.body.style.overflow='';">
+                    <input type="hidden" name="_token" value="{{ csrf_token('edit-user-' ~ editedUser.id) }}">
+
+                    <div class="grid">
+                        <div class="field">
+                            <label for="name">First Name</label>
+                            <input id="name" type="text" name="name" value="{{ oldName }}">
+                            {% if nameError %}<div class="field-error">{{ nameError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="last_name">Last Name</label>
+                            <input id="last_name" type="text" name="last_name" value="{{ oldLastName }}">
+                            {% if lastNameError %}<div class="field-error">{{ lastNameError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="username">Username</label>
+                            <input id="username" type="text" name="username" value="{{ oldUsername }}">
+                            {% if usernameError %}<div class="field-error">{{ usernameError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="email">Email</label>
+                            <input id="email" type="email" name="email" value="{{ oldEmail }}">
+                            {% if emailError %}<div class="field-error">{{ emailError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="role">Role</label>
+                            <select id="role" name="role">
+                                {% set role = oldRole|default('USER')|upper %}
+                                <option value="USER" {% if role in ['USER', 'ROLE_USER'] %}selected{% endif %}>USER</option>
+                                <option value="GUIDER" {% if role in ['GUIDER', 'ROLE_GUIDE'] %}selected{% endif %}>GUIDER</option>
+                                <option value="AGENCY" {% if role in ['AGENCY', 'ROLE_AGENCY'] %}selected{% endif %}>AGENCY</option>
+                                <option value="ADMIN" {% if role in ['ADMIN', 'ROLE_ADMIN'] %}selected{% endif %}>ADMIN</option>
+                            </select>
+                            {% if roleError %}<div class="field-error">{{ roleError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="status">Status</label>
+                            {% set status = oldStatus|default('offline')|lower %}
+                            <select id="status" name="status">
+                                <option value="online" {% if status == 'online' %}selected{% endif %}>online</option>
+                                <option value="offline" {% if status != 'online' %}selected{% endif %}>offline</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="member_premium">Membership Tier</label>
+                            {% set tier = oldTier|default('standard')|lower %}
+                            <select id="member_premium" name="member_premium">
+                                <option value="standard" {% if tier == 'standard' %}selected{% endif %}>standard</option>
+                                <option value="premium" {% if tier == 'premium' %}selected{% endif %}>premium</option>
+                                <option value="vip" {% if tier == 'vip' %}selected{% endif %}>vip</option>
+                                <option value="vip+" {% if tier == 'vip+' %}selected{% endif %}>vip+</option>
+                            </select>
+                            {% if tierError %}<div class="field-error">{{ tierError }}</div>{% endif %}
+                        </div>
+
+                        <div class="field">
+                            <label for="language">Language</label>
+                            <input id="language" type="text" name="language" value="{{ oldLanguage }}">
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <a href="{{ path('app_dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

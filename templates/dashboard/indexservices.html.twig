@@ -1,0 +1,103 @@
+{# templates/dashboard/index.html.twig #}
+{# Converted from: DashboardServices.fxml #}
+{% extends 'dashboard/base_agency.html.twig' %}
+
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+{% block agency_content %}
+    {# ===== STAT CARDS ===== #}
+    <div class="stat-cards-row">
+
+        <div class="stat-card card-teal">
+            <span class="card-title">Hôtels</span>
+            <span class="card-value">{{ hotel_count }}</span>
+        </div>
+
+        <div class="stat-card card-yellow">
+            <span class="card-title">Vols</span>
+            <span class="card-value">{{ vol_count }}</span>
+        </div>
+
+        <div class="stat-card card-teal">
+            <span class="card-title">Réservations</span>
+            <span class="card-value">{{ reservation_count }}</span>
+        </div>
+
+    </div>
+
+    {# ===== CHARTS SECTION ===== #}
+    <div class="charts-row">
+        <div class="chart-container-wrapper revenue-chart-card">
+            <h3 class="chart-header">Revenue Trend (Last 7 Days)</h3>
+            <div class="chart-canvas-wrapper">
+                {{ render_chart(revenueChart) }}
+            </div>
+        </div>
+
+        <div class="chart-container-wrapper type-chart-card">
+            <h3 class="chart-header">Revenue by Type</h3>
+            <div class="chart-canvas-wrapper">
+                {{ render_chart(typeChart) }}
+            </div>
+        </div>
+    </div>
+
+    {# ===== SERVICES SECTION ===== #}
+    <section class="dashboard-section">
+
+        <div class="section-header-row">
+            <h2 class="section-header">Services</h2>
+            <div class="section-actions">
+                <a href="{{ path('vol_new') }}" class="btn-add">+ Add Vol</a>
+                <a href="{{ path('hotel_new') }}" class="btn-add">+ Add Hôtel</a>
+
+                <form method="GET" action="{{ path('dashboard') }}" class="filter-form">
+                    <select name="filter" class="btn-add" onchange="this.form.submit()">
+                        <option value="">Filter By</option>
+                        <option value="hotel" {% if filter == 'hotel' %}selected{% endif %}>Hôtels</option>
+                        <option value="vol" {% if filter == 'vol' %}selected{% endif %}>Vols</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        {# Services Table #}
+        <div class="table-header">
+            <span class="col-wide">Service Name</span>
+            <span class="col">Type</span>
+            <span class="col">Price</span>
+            <span class="col">Capacity</span>
+            <span class="col">Status</span>
+            <span class="col">Actions</span>
+        </div>
+
+        <div class="table-body">
+            {% for service in services %}
+                <div class="table-row">
+                    <span class="col-wide">{{ service.nom }}</span>
+                    <span class="col">{{ service.type }}</span>
+                    <span class="col">{{ service.prix }} TND</span>
+                    <span class="col">{{ service.capacite }}</span>
+                    <span class="col badge {% if service.disponibilite %}badge-success{% else %}badge-danger{% endif %}">
+                        {{ service.disponibilite ? 'Disponible' : 'Indisponible' }}
+                    </span>
+                    <span class="col"><a href="{{ path('reservations_by_service', { serviceId: service.idService }) }}"
+   class="btn-card-action">
+    📋 Réservations
+</a>
+</span>
+                </div>
+            {% else %}
+                <p class="empty-state">Aucun service trouvé.</p>
+            {% endfor %}
+        </div>
+
+    </section>
+
+{% endblock %}
+
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

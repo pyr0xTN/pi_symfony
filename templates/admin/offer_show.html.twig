@@ -1,0 +1,148 @@
+{% extends 'base.html.twig' %}
+{% block title %}Admin — {{ offer.title }}{% endblock %}
+
+{% block body %}
+{% include 'partials/_offer_subnav.html.twig' %}
+
+<div class="th-body">
+
+    <div class="th-page-header" style="padding-left:0;padding-right:0">
+        <div>
+            <h1 class="th-page-title">🛡️ {{ offer.title }}</h1>
+            <p class="th-page-sub">Offer details and all reservations.</p>
+        </div>
+        <a href="{{ path('app_admin_offers') }}" class="th-btn-outline">← Back to Monitor</a>
+    </div>
+
+    {# Offer stat cards #}
+    <div class="th-stats-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:1.5rem">
+        <div class="th-stat-card">
+            <div class="th-stat-icon" style="background:var(--teal-light);color:var(--teal)">💰</div>
+            <div class="th-stat-value">{{ offerStats.revenue|number_format(2) }}</div>
+            <div class="th-stat-label">Revenue TND</div>
+        </div>
+        <div class="th-stat-card">
+            <div class="th-stat-icon" style="background:#eaf7f0;color:#065f46">✅</div>
+            <div class="th-stat-value">{{ offerStats.confirmed }}</div>
+            <div class="th-stat-label">Confirmed</div>
+        </div>
+        <div class="th-stat-card">
+            <div class="th-stat-icon" style="background:#fef6e7;color:#92400e">⏳</div>
+            <div class="th-stat-value">{{ offerStats.pending }}</div>
+            <div class="th-stat-label">Pending</div>
+        </div>
+        <div class="th-stat-card">
+            <div class="th-stat-icon" style="background:#fff0f0;color:#a32d2d">❌</div>
+            <div class="th-stat-value">{{ offerStats.cancelled }}</div>
+            <div class="th-stat-label">Cancelled</div>
+        </div>
+        <div class="th-stat-card">
+            <div class="th-stat-icon" style="background:var(--navy-light);color:var(--navy)">📋</div>
+            <div class="th-stat-value">{{ offerStats.total }}</div>
+            <div class="th-stat-label">Total</div>
+        </div>
+    </div>
+
+    {# Offer summary #}
+    <div class="th-detail-grid" style="margin-bottom:1.5rem">
+        <div class="th-detail-img-wrap">
+            <img src="{{ offer.imageUrl ?: 'https://via.placeholder.com/900x500' }}"
+                 alt="{{ offer.title }}" class="th-detail-img">
+            <div class="th-status-badge th-status-{{ offer.status|lower }}">
+                {{ offer.status }}
+            </div>
+        </div>
+        <div class="th-detail-panel">
+            <h2 class="th-detail-title" style="font-size:1.1rem">Offer Info</h2>
+            <div class="th-detail-meta-grid" style="grid-template-columns:1fr 1fr">
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Agency</span>
+                    <span class="th-meta-value">{{ offer.user ? offer.user.fullName : '—' }}</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Location</span>
+                    <span class="th-meta-value">{{ offer.location ?: '—' }}</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Promo Price</span>
+                    <span class="th-meta-value" style="color:var(--teal)">{{ offer.promoPrice }} TND</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Original Price</span>
+                    <span class="th-meta-value">{{ offer.originalPrice ?: '—' }} TND</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Start Date</span>
+                    <span class="th-meta-value">{{ offer.startDate|date('d/m/Y') }}</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">End Date</span>
+                    <span class="th-meta-value">{{ offer.endDate|date('d/m/Y') }}</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Capacity</span>
+                    <span class="th-meta-value">{{ offer.capacity ?: 'Unlimited' }}</span>
+                </div>
+                <div class="th-meta-item">
+                    <span class="th-meta-label">Created</span>
+                    <span class="th-meta-value">{{ offer.createdAt|date('d/m/Y') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# Reservations list #}
+    <div class="th-form-card">
+        <h3 class="th-chart-title" style="margin-bottom:1rem">📋 All Reservations for this Offer</h3>
+
+        {% if reservations is empty %}
+            <p style="color:var(--text-muted);font-size:14px">No reservations yet.</p>
+        {% else %}
+            <div class="th-admin-table-wrap">
+                <table class="th-admin-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Client</th>
+                            <th>Persons</th>
+                            <th>Total</th>
+                            <th>Booked on</th>
+                            <th>Status</th>
+                            <th>Payment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reservations %}
+                            <tr>
+                                <td class="th-admin-td-muted">{{ r.id }}</td>
+                                <td>
+                                    <div style="font-weight:600;color:var(--navy);font-size:13px">{{ r.user.fullName }}</div>
+                                    <div style="font-size:11px;color:var(--text-muted)">{{ r.user.email }}</div>
+                                </td>
+                                <td style="text-align:center;font-weight:700">{{ r.numberOfPersons }}</td>
+                                <td style="font-weight:700;color:var(--teal)">{{ r.totalAmount }} TND</td>
+                                <td class="th-admin-td-muted" style="font-size:12px">{{ r.createdAt|date('d/m/Y H:i') }}</td>
+                                <td>
+                                    <span class="th-rsv-status-badge th-rsv-status-{{ r.status|lower }}" style="font-size:11px">
+                                        {% if r.status == 'CONFIRMED' %}✅
+                                        {% elseif r.status == 'PENDING' %}⏳
+                                        {% elseif r.status == 'CANCELLED' %}❌
+                                        {% endif %}
+                                        {{ r.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="th-rsv-payment-badge th-rsv-pay-{{ r.paymentStatus|lower }}" style="font-size:11px">
+                                        {{ r.paymentStatus }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -6,6 +6,7 @@
 parameters:
     aviationstack_api_key: '%env(AVIATIONSTACK_API_KEY)%'
     makcorps_api_key: '%env(MAKCORPS_API_KEY)%'
+    app.upload_dir: '%kernel.project_dir%/public/uploads/images'
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -14,15 +15,73 @@ services:
         bind:
             $geminiApiKey: '%env(GEMINI_API_KEY)%'
             $exchangeRateApiKey: '%env(EXCHANGERATE_API_KEY)%'
-
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
+     
     App\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
+            
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # ── Service wiring ───────────────────────────────────────
+    App\Service\WeatherService:
+        arguments:
+            $apiKey: '%env(OPENWEATHERMAP_API_KEY)%'
+
+    App\Service\AiChatService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
+    App\Service\UnsplashService:
+        arguments:
+            $accessKey: '%env(UNSPLASH_ACCESS_KEY)%'
+
+    App\Service\ImageUploadService:
+        arguments:
+            $uploadDir: '%app.upload_dir%'
+    OpenAI\Factory:
+        factory: ['OpenAI', 'factory']
+        calls:
+            - [withApiKey, ['%env(GROQ_API_KEY)%']]
+            - [withBaseUri, ['https://api.groq.com/openai/v1']]
+
+    OpenAI\Client:
+        factory: ['@OpenAI\Factory', 'make']
+
+
+
+    App\Service\StripeService:
+        arguments:
+            $secretKey: '%env(STRIPE_SECRET_KEY)%'
+            $publicKey: '%env(STRIPE_PUBLIC_KEY)%'
+            $appUrl:    '%env(APP_URL)%'
+
+    App\Service\MailerSendService:
+        arguments:
+            $apiKey:    '%env(MAILERSEND_API_KEY)%'
+            $fromEmail: '%env(MAILER_FROM_EMAIL)%'
+            $fromName:  '%env(MAILER_FROM_NAME)%'
+
+    App\Service\PdfTicketService:
+        arguments:
+            $twig: '@twig'
+
+    App\Service\ExchangeRateService:
+        arguments:
+            $apiKey:       '%env(EXCHANGE_RATE_API_KEY)%'
+            $baseCurrency: '%env(EXCHANGE_RATE_BASE_CURRENCY)%'
+
+    App\Service\AiOfferService:
+        arguments:
+            $apiKey: '%env(GROQ_API_KEY)%'
+
+
+    
+
+       
+
+   
+    
+
+   

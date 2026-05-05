@@ -1,0 +1,558 @@
+{{ form_start(form, {'attr': {'class': 'offer-form', 'novalidate': 'novalidate', 'id': 'offerForm'}}) }}
+
+{# ── Offer Details ── #}
+<div class="th-form-card">
+    <h3 class="th-form-section-title"><i class="bi bi-info-circle-fill me-2"></i>Offer Details</h3>
+
+    {# AI Assistant bar #}
+    <div class="th-ai-bar">
+        <span class="th-ai-badge">🤖 AI Assistant</span>
+        <span style="font-size:12px;color:var(--text-muted)">Let AI help you create a better offer</span>
+        <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+            <button type="button" class="th-ai-btn" id="btnAiTitle">✨ Generate Title</button>
+            <button type="button" class="th-ai-btn" id="btnAiDesc">📝 Generate Description</button>
+            <button type="button" class="th-ai-btn th-ai-btn-suggest" id="btnAiSuggest">🎯 Suggest Services</button>
+        </div>
+    </div>
+
+    <div class="th-ai-loading" id="aiLoading" style="display:none">
+        <div class="th-ai-spinner"></div>
+        <span id="aiLoadingText">AI is thinking...</span>
+    </div>
+
+    <div class="row g-4">
+
+        <div class="col-md-6">
+            {{ form_label(form.title) }}
+            {{ form_widget(form.title) }}
+            {{ form_errors(form.title) }}
+            <div class="th-field-error" id="err_title" style="display:none"></div>
+        </div>
+
+        {# Location with autocomplete #}
+        <div class="col-md-6" style="position:relative">
+            {{ form_label(form.location) }}
+            {{ form_widget(form.location, {'attr': {'id': 'locationInput', 'autocomplete': 'off', 'placeholder': 'e.g. Tunis, Paris, Dubai...'}}) }}
+            {{ form_errors(form.location) }}
+            <div class="th-field-error" id="err_location" style="display:none"></div>
+            <div id="locationSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid #1dbcaa;border-radius:12px;box-shadow:0 8px 24px rgba(27,58,107,0.12);z-index:9999;max-height:220px;overflow-y:auto;margin-top:4px;"></div>
+        </div>
+
+        <div class="col-12">
+            {{ form_label(form.description) }}
+            {{ form_widget(form.description) }}
+            {{ form_errors(form.description) }}
+            <div class="th-field-error" id="err_description" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.promoPrice) }}
+            {{ form_widget(form.promoPrice) }}
+            {{ form_errors(form.promoPrice) }}
+            <div class="th-field-error" id="err_promoPrice" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.originalPrice) }}
+            {{ form_widget(form.originalPrice) }}
+            {{ form_errors(form.originalPrice) }}
+            <div class="th-field-error" id="err_originalPrice" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.startDate) }}
+            {{ form_widget(form.startDate) }}
+            {{ form_errors(form.startDate) }}
+            <div class="th-field-error" id="err_startDate" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.endDate) }}
+            {{ form_widget(form.endDate) }}
+            {{ form_errors(form.endDate) }}
+            <div class="th-field-error" id="err_endDate" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.capacity) }}
+            {{ form_widget(form.capacity) }}
+            {{ form_errors(form.capacity) }}
+            <div class="th-field-error" id="err_capacity" style="display:none"></div>
+        </div>
+
+        <div class="col-md-6">
+            {{ form_label(form.imageUrl) }}
+            {{ form_widget(form.imageUrl) }}
+            {{ form_errors(form.imageUrl) }}
+            <div class="th-field-error" id="err_imageUrl" style="display:none"></div>
+        </div>
+
+    </div>
+</div>
+
+{# ── Service Picker ── #}
+<div class="th-form-card">
+    <h3 class="th-form-section-title"><i class="bi bi-grid-1x2-fill me-2"></i>Select Services</h3>
+    <p class="th-form-section-sub">Filter, search, and click a card to select it. Use AI to get suggestions.</p>
+
+    <div class="d-none">
+        {{ form_widget(form.services, {'attr': {'class': 'js-service-select'}}) }}
+    </div>
+    {{ form_errors(form.services) }}
+    <div class="th-field-error" id="err_services" style="display:none"></div>
+
+    <div class="th-picker-toolbar">
+        <div class="th-picker-tabs">
+            <button type="button" class="th-picker-tab active" data-filter="ALL">
+                <i class="bi bi-grid-3x3-gap"></i> All
+            </button>
+            <button type="button" class="th-picker-tab" data-filter="HOTEL">
+                <i class="bi bi-building"></i> Hotels
+            </button>
+            <button type="button" class="th-picker-tab" data-filter="VOL">
+                <i class="bi bi-airplane"></i> Flights
+            </button>
+        </div>
+        <div class="th-picker-search-wrap">
+            <i class="bi bi-search th-picker-search-icon"></i>
+            <input type="text" id="svcSearch" class="th-picker-search" placeholder="Search by name or location…">
+        </div>
+    </div>
+
+    <div class="th-service-picker" id="servicePicker">
+        {% for service in availableServiceDetails %}
+            {% set searchText = (service.name ~ ' ' ~ (service.location ?? '') ~ ' ' ~ (service.roomType ?? '') ~ ' ' ~ (service.departureCity ?? '') ~ ' ' ~ (service.arrivalCity ?? '') ~ ' ' ~ (service.flightNumber ?? ''))|lower %}
+            <div class="th-svc-card"
+                 data-value="{{ service.idService }}"
+                 data-type="{{ service.kind }}"
+                 data-search="{{ searchText }}">
+                <div class="th-svc-card-top">
+                    <span class="service-type-badge {% if service.kind == 'HOTEL' %}th-badge-hotel{% elseif service.kind == 'VOL' %}th-badge-vol{% else %}th-badge-default{% endif %}">
+                        <i class="bi {% if service.kind == 'HOTEL' %}bi-building{% elseif service.kind == 'VOL' %}bi-airplane{% else %}bi-box{% endif %}"></i>
+                        {{ service.kind }}
+                    </span>
+                    <span class="th-svc-check"><i class="bi bi-check2"></i></span>
+                </div>
+                <div class="th-svc-card-name">{{ service.name }}</div>
+                {% if service.description %}
+                    <div class="th-svc-card-extra">
+                        {{ service.description|length > 80 ? service.description|slice(0, 80) ~ '…' : service.description }}
+                    </div>
+                {% endif %}
+                <div class="th-svc-card-meta">
+                    {% if service.kind == 'HOTEL' %}
+                        {% if service.location %}<span><i class="bi bi-geo-alt"></i> {{ service.location }}</span>{% endif %}
+                        {% if service.stars %}<span><i class="bi bi-star-fill"></i> {{ service.stars }} stars</span>{% endif %}
+                        {% if service.roomType %}<span><i class="bi bi-door-open"></i> {{ service.roomType }}</span>{% endif %}
+                    {% elseif service.kind == 'VOL' %}
+                        {% if service.departureCity and service.arrivalCity %}
+                            <span><i class="bi bi-airplane"></i> {{ service.departureCity }} → {{ service.arrivalCity }}</span>
+                        {% endif %}
+                        {% if service.flightNumber %}<span><i class="bi bi-hash"></i> {{ service.flightNumber }}</span>{% endif %}
+                        {% if service.departureAt %}<span><i class="bi bi-clock"></i> {{ service.departureAt|date('d/m/Y H:i') }}</span>{% endif %}
+                    {% endif %}
+                    {% if service.price %}
+                        <span class="th-svc-card-price"><i class="bi bi-tag-fill"></i> {{ service.price }} TND</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="th-picker-empty" id="pickerEmpty" style="display:none">
+        <i class="bi bi-search"></i> No services match your search.
+    </div>
+
+    <div class="th-selected-summary" id="selectedSummary" style="display:none">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="selectedCount">0</span> service(s) selected
+    </div>
+</div>
+
+<div class="d-flex gap-2 mb-4">
+    <button type="submit" class="th-btn-primary" id="submitBtn">
+        <i class="bi bi-check-lg me-1"></i> Save Offer
+    </button>
+    <a href="{{ path('app_agency_offer_index') }}" class="th-btn-outline">Cancel</a>
+</div>
+
+{{ form_end(form) }}
+
+<div class="th-toast" id="validationToast">
+    <div class="th-toast-icon" id="toastIcon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+    <span id="toastMsg">Please fix the errors before submitting.</span>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Field finder ── */
+    function findInput(namePart) {
+        return document.querySelector('input[name*="[' + namePart + ']"]')
+            || document.querySelector('textarea[name*="[' + namePart + ']"]')
+            || document.querySelector('select[name*="[' + namePart + ']"]');
+    }
+
+    function findMoneyInput(namePart) {
+        return document.querySelector('input[name*="[' + namePart + '][amount]"]')
+            || document.querySelector('input[name*="[' + namePart + ']"]');
+    }
+
+    var F = {
+        title:         findInput('title'),
+        location:      findInput('location'),
+        description:   findInput('description') || document.querySelector('textarea'),
+        promoPrice:    findMoneyInput('promoPrice'),
+        originalPrice: findMoneyInput('originalPrice'),
+        startDate:     findInput('startDate'),
+        endDate:       findInput('endDate'),
+        capacity:      findInput('capacity'),
+        imageUrl:      findInput('imageUrl'),
+    };
+
+    /* ── Location Autocomplete ── */
+    var locationInput  = F.location;
+    var suggestions    = document.getElementById('locationSuggestions');
+    var locationTimer  = null;
+
+    if (locationInput && suggestions) {
+        locationInput.addEventListener('input', function() {
+            clearTimeout(locationTimer);
+            var query = locationInput.value.trim();
+
+            if (query.length < 2) {
+                suggestions.style.display = 'none';
+                return;
+            }
+
+            locationTimer = setTimeout(function() {
+                fetch('/api/location/autocomplete?q=' + encodeURIComponent(query))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data || !data.length) {
+                        suggestions.style.display = 'none';
+                        return;
+                    }
+
+                    suggestions.innerHTML = data.map(function(place) {
+                        var label = place.label || '';
+                        return '<div style="padding:10px 14px;cursor:pointer;font-size:13px;color:#1b3a6b;border-bottom:1px solid #f0f4f3;transition:background 0.1s;" '
+                            + 'onmouseover="this.style.background=\'#e6f8f6\'" '
+                            + 'onmouseout="this.style.background=\'#fff\'" '
+                            + 'onclick="selectLocation(\'' + label.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\')">'
+                            + '📍 ' + label
+                            + '</div>';
+                    }).join('');
+
+                    suggestions.style.display = 'block';
+                })
+                .catch(function() {
+                    suggestions.style.display = 'none';
+                });
+            }, 400);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target !== locationInput) {
+                suggestions.style.display = 'none';
+            }
+        });
+
+        locationInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                suggestions.style.display = 'none';
+            }
+        });
+    }
+
+    window.selectLocation = function(label) {
+        if (locationInput) {
+            locationInput.value = label;
+        }
+        if (suggestions) {
+            suggestions.style.display = 'none';
+        }
+    };
+
+    /* ── AI Features ── */
+    var aiLoading     = document.getElementById('aiLoading');
+    var aiLoadingText = document.getElementById('aiLoadingText');
+
+    function showAiLoading(msg) {
+        aiLoadingText.textContent = msg || 'AI is thinking...';
+        aiLoading.style.display = 'flex';
+    }
+
+    function hideAiLoading() {
+        aiLoading.style.display = 'none';
+    }
+
+    function getSelectedServiceIds() {
+        return Array.from(document.querySelectorAll('.th-svc-card--selected'))
+            .map(function(c) { return parseInt(c.dataset.value); });
+    }
+
+    document.getElementById('btnAiDesc') && document.getElementById('btnAiDesc').addEventListener('click', function() {
+        var title    = F.title ? F.title.value.trim() : '';
+        var location = F.location ? F.location.value.trim() : '';
+        if (!title) { alert('Please enter a title first.'); return; }
+        showAiLoading('📝 Generating description...');
+        fetch('/api/ai/description', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title, location: location, serviceIds: getSelectedServiceIds() })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideAiLoading();
+            if (data.error) { alert('AI error: ' + data.error); return; }
+            if (F.description) { F.description.value = data.description; }
+        })
+        .catch(function() { hideAiLoading(); alert('AI service unavailable.'); });
+    });
+
+    document.getElementById('btnAiTitle') && document.getElementById('btnAiTitle').addEventListener('click', function() {
+        var location = F.location ? F.location.value.trim() : '';
+        if (!location) { alert('Please enter a location first.'); return; }
+        showAiLoading('✨ Generating title...');
+        var serviceTypes = Array.from(document.querySelectorAll('.th-svc-card--selected')).map(function(c) { return c.dataset.type; });
+        fetch('/api/ai/title', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ location: location, serviceTypes: serviceTypes })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideAiLoading();
+            if (data.error) { alert('AI error: ' + data.error); return; }
+            if (F.title) { F.title.value = data.title; }
+        })
+        .catch(function() { hideAiLoading(); alert('AI service unavailable.'); });
+    });
+
+    document.getElementById('btnAiSuggest') && document.getElementById('btnAiSuggest').addEventListener('click', function() {
+        var title    = F.title ? F.title.value.trim() : '';
+        var location = F.location ? F.location.value.trim() : '';
+        if (!title) { alert('Please enter a title first.'); return; }
+        showAiLoading('🎯 AI is finding the best services...');
+        fetch('/api/ai/suggest-services', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title, location: location })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            hideAiLoading();
+            if (data.error) { alert('AI error: ' + data.error); return; }
+            var suggestedIds = data.suggestedIds.map(String);
+            document.querySelectorAll('.th-svc-card--selected').forEach(function(c) { c.classList.remove('th-svc-card--selected'); });
+            suggestedIds.forEach(function(id) {
+                var card = document.querySelector('.th-svc-card[data-value="' + id + '"]');
+                if (card) card.classList.add('th-svc-card--selected');
+            });
+            syncSelectFromCards();
+            updateSummary();
+            if (suggestedIds.length === 0) alert('No matching services found.');
+        })
+        .catch(function() { hideAiLoading(); alert('AI service unavailable.'); });
+    });
+
+    /* ── Service picker ── */
+    var select   = document.querySelector('.js-service-select');
+    var cards    = document.querySelectorAll('.th-svc-card');
+    var summary  = document.getElementById('selectedSummary');
+    var countEl  = document.getElementById('selectedCount');
+    var searchEl = document.getElementById('svcSearch');
+    var emptyEl  = document.getElementById('pickerEmpty');
+    var tabs     = document.querySelectorAll('.th-picker-tab');
+    var activeFilter = 'ALL', searchQuery = '';
+
+    function syncCardsFromSelect() {
+        if (!select) return;
+        var sel = Array.from(select.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
+        cards.forEach(function(c) { c.classList.toggle('th-svc-card--selected', sel.includes(c.dataset.value)); });
+    }
+
+    function syncSelectFromCards() {
+        if (!select) return;
+        var sel = Array.from(document.querySelectorAll('.th-svc-card--selected')).map(function(c) { return c.dataset.value; });
+        Array.from(select.options).forEach(function(o) { o.selected = sel.includes(o.value); });
+    }
+
+    function updateSummary() {
+        var n = document.querySelectorAll('.th-svc-card--selected').length;
+        countEl.textContent = n;
+        summary.style.display = n > 0 ? 'flex' : 'none';
+    }
+
+    function applyFilters() {
+        var visible = 0;
+        cards.forEach(function(card) {
+            var tm = activeFilter === 'ALL' || (card.dataset.type||'').toUpperCase() === activeFilter;
+            var sm = !searchQuery || (card.dataset.search||'').includes(searchQuery);
+            card.classList.toggle('th-hidden', !(tm && sm));
+            if (tm && sm) visible++;
+        });
+        emptyEl.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            activeFilter = (this.dataset.filter||'ALL').toUpperCase();
+            applyFilters();
+        });
+    });
+
+    if (searchEl) searchEl.addEventListener('input', function() {
+        searchQuery = this.value.toLowerCase().trim();
+        applyFilters();
+    });
+
+    cards.forEach(function(card) {
+        card.addEventListener('click', function() {
+            this.classList.toggle('th-svc-card--selected');
+            syncSelectFromCards();
+            updateSummary();
+            clearError('services');
+        });
+    });
+
+    if (select) syncCardsFromSelect();
+    updateSummary();
+    applyFilters();
+
+    /* ── Validation ── */
+    var today = new Date(); today.setHours(0,0,0,0);
+
+    function showError(id, msg) {
+        var errEl = document.getElementById('err_' + id);
+        if (errEl) { errEl.textContent = msg; errEl.style.display = 'flex'; }
+        if (F[id]) { F[id].classList.add('is-invalid'); F[id].classList.remove('is-valid'); }
+    }
+
+    function clearError(id) {
+        var errEl = document.getElementById('err_' + id);
+        if (errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
+        if (F[id]) {
+            F[id].classList.remove('is-invalid');
+            if (F[id].value.trim()) F[id].classList.add('is-valid');
+            else F[id].classList.remove('is-valid');
+        }
+    }
+
+    function clearAll() {
+        Object.keys(F).forEach(function(k) { clearError(k); });
+        var svcErr = document.getElementById('err_services');
+        if (svcErr) { svcErr.textContent = ''; svcErr.style.display = 'none'; }
+    }
+
+    function val(key) { return F[key] ? F[key].value.trim() : ''; }
+
+    function showToast(msg, ok) {
+        var t = document.getElementById('validationToast');
+        var i = document.getElementById('toastIcon');
+        document.getElementById('toastMsg').textContent = msg;
+        i.className = 'th-toast-icon' + (ok ? ' success' : '');
+        i.innerHTML = ok ? '<i class="bi bi-check-lg"></i>' : '<i class="bi bi-exclamation-triangle-fill"></i>';
+        t.classList.add('show');
+        setTimeout(function() { t.classList.remove('show'); }, 3500);
+    }
+
+    function vTitle() {
+        var v = val('title');
+        if (!v) { showError('title', 'Title is required.'); return false; }
+        if (v.length < 3) { showError('title', 'At least 3 characters.'); return false; }
+        clearError('title'); return true;
+    }
+    function vLocation() { clearError('location'); return true; }
+    function vDescription() {
+        var v = val('description');
+        if (!v) { showError('description', 'Description is required.'); return false; }
+        if (v.length < 10) { showError('description', 'At least 10 characters.'); return false; }
+        clearError('description'); return true;
+    }
+    function vPromoPrice() {
+        var raw = val('promoPrice'), v = parseFloat(raw);
+        if (!raw) { showError('promoPrice', 'Promotional price is required.'); return false; }
+        if (isNaN(v) || v <= 0) { showError('promoPrice', 'Must be greater than 0.'); return false; }
+        clearError('promoPrice'); return true;
+    }
+    function vOriginalPrice() {
+        var raw = val('originalPrice');
+        if (!raw) { clearError('originalPrice'); return true; }
+        var v = parseFloat(raw), promo = parseFloat(val('promoPrice'));
+        if (isNaN(v) || v <= 0) { showError('originalPrice', 'Must be greater than 0.'); return false; }
+        if (!isNaN(promo) && v <= promo) { showError('originalPrice', 'Must be higher than promo price.'); return false; }
+        clearError('originalPrice'); return true;
+    }
+    function vStartDate() {
+        var raw = val('startDate');
+        if (!raw) { showError('startDate', 'Start date is required.'); return false; }
+        var d = new Date(raw); d.setHours(0,0,0,0);
+        if (d < today) { showError('startDate', 'Cannot be in the past.'); return false; }
+        clearError('startDate'); return true;
+    }
+    function vEndDate() {
+        var raw = val('endDate');
+        if (!raw) { showError('endDate', 'End date is required.'); return false; }
+        var startRaw = val('startDate');
+        if (startRaw) {
+            var s = new Date(startRaw); s.setHours(0,0,0,0);
+            var e = new Date(raw); e.setHours(0,0,0,0);
+            if (e <= s) { showError('endDate', 'Must be after start date.'); return false; }
+        }
+        clearError('endDate'); return true;
+    }
+    function vCapacity() {
+        var raw = val('capacity');
+        if (!raw) { clearError('capacity'); return true; }
+        var v = parseInt(raw, 10);
+        if (isNaN(v) || v < 1) { showError('capacity', 'Must be at least 1.'); return false; }
+        if (v > 10000) { showError('capacity', 'Cannot exceed 10,000.'); return false; }
+        clearError('capacity'); return true;
+    }
+    function vImageUrl() {
+        var raw = val('imageUrl');
+        if (!raw) { clearError('imageUrl'); return true; }
+        if (!/^https?:\/\/.+\..+/.test(raw)) { showError('imageUrl', 'Must start with http:// or https://'); return false; }
+        clearError('imageUrl'); return true;
+    }
+    function vServices() {
+        var n = document.querySelectorAll('.th-svc-card--selected').length;
+        var el = document.getElementById('err_services');
+        if (n === 0) {
+            if (el) { el.textContent = 'Please select at least one service.'; el.style.display = 'flex'; }
+            return false;
+        }
+        if (el) { el.textContent = ''; el.style.display = 'none'; }
+        return true;
+    }
+
+    if (F.title)         F.title.addEventListener('input', vTitle);
+    if (F.description)   F.description.addEventListener('input', vDescription);
+    if (F.promoPrice)    F.promoPrice.addEventListener('input', function() { vPromoPrice(); vOriginalPrice(); });
+    if (F.originalPrice) F.originalPrice.addEventListener('input', vOriginalPrice);
+    if (F.startDate)     F.startDate.addEventListener('change', function() { vStartDate(); vEndDate(); });
+    if (F.endDate)       F.endDate.addEventListener('change', vEndDate);
+    if (F.capacity)      F.capacity.addEventListener('input', vCapacity);
+    if (F.imageUrl)      F.imageUrl.addEventListener('input', vImageUrl);
+
+    var form = document.getElementById('offerForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            clearAll();
+            var validators = [vTitle, vLocation, vDescription, vPromoPrice, vOriginalPrice, vStartDate, vEndDate, vCapacity, vImageUrl, vServices];
+            var allValid = validators.map(function(fn) { return fn(); }).every(function(r) { return r; });
+            if (!allValid) {
+                e.preventDefault();
+                showToast('Please fix the errors before saving.', false);
+                var firstErr = document.querySelector('.is-invalid');
+                if (!firstErr) firstErr = document.querySelector('.th-field-error[style*="flex"]');
+                if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+});
+</script>

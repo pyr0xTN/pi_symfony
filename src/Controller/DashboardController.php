@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
 use Symfony\UX\Chartjs\Model\Chart;
 use Symfony\Component\Routing\Attribute\Route;
+use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/dashboard')]
 class DashboardController extends AbstractController
@@ -18,12 +19,14 @@ class DashboardController extends AbstractController
         private ServicesRepository      $servicesRepo,
         private ReservationsRepository  $reservationsRepo,
         private ChartBuilderInterface   $chartBuilder,
+        private PaginatorInterface $paginator,
     ) {}
 
     
     #[Route('', name: 'dashboard', methods: ['GET'])]
     public function index(Request $request): Response
     {
+        
         $filter = $request->query->get('filter', '');
         $search = $request->query->get('q', '');
 
@@ -100,16 +103,18 @@ class DashboardController extends AbstractController
             'maintainAspectRatio' => false,
         ]);
 
-        return $this->render('dashboard/index.html.twig', [
+        return $this->render('dashboard/indexservices.html.twig', [
             'active_page'       => 'dashboard',
-            'hotel_count'       => $this->servicesRepo->count(['type' => 'hotel']),
-            'vol_count'         => $this->servicesRepo->count(['type' => 'vol']),
-            'reservation_count' => $this->reservationsRepo->count([]),
             'services'          => $services,
             'reservations'      => $this->reservationsRepo->findLatest(10),
             'filter'            => $filter,
             'revenueChart'      => $revenueChart,
             'typeChart'         => $typeChart,
+            'hotel_count'=> $this->servicesRepo->count(['type' => 'hotel']),
+            'vol_count'=> $this->servicesRepo->count(['type' => 'vol']),
+            'reservation_count' => $this->reservationsRepo->count([]),
+            'available' => $this->servicesRepo->count(['disponibilite' => true]),
+            
         ]);
     }
 }

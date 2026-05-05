@@ -31,4 +31,10 @@ return [
     '@kurkle/color' => [
         'version' => '0.3.4',
     ],
+    '@symfony/stimulus-bridge' => [
+        'version' => '4.0.1',
+    ],
 ];
+
+
+

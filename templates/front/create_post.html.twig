@@ -1,0 +1,115 @@
+{% extends 'front/layout.html.twig' %}
+
+{% block title %}{{ post ? 'Edit Post' : 'New Post' }}{% endblock %}
+
+{% block content %}
+<div class="create-post-container">
+    <div class="create-post-card">
+        <h2 class="create-post-title">{{ post ? 'Edit Post' : 'Create New Post' }}</h2>
+
+        <form method="post" enctype="multipart/form-data" 
+              action="{{ post ? path('app_post_edit', {id: post.id}) : path('app_post_new') }}">
+            
+            {# ── USER STRIP ── #}
+            <div class="cpd-user-strip" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px;">
+                <div class="avatar" style="margin: 0; width: 50px; height: 50px; font-size: 20px;">{{ app.user.username|first|upper|default('U') }}</div>
+                <div>
+                    <span class="cpd-username">{{ app.user.username|default('User') }}</span>
+                    <div class="cpd-audience">
+                        <span class="cpd-audience-label">Posting to</span>
+                        <span class="cpd-audience-pill" id="audienceLabel">Public Feed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cpd-divider"></div>
+
+            {# ── MAIN TEXTAREA ── #}
+            <textarea name="content" class="cpd-textarea" rows="5" 
+                      placeholder="Share your travel experience..." 
+                      required>{{ post ? post.content : '' }}</textarea>
+
+            {# ── IMAGE PREVIEW ── #}
+            <div id="imagePreviewBox" class="cpd-image-zone" style="{{ post and post.hasImage ? '' : 'display:none' }}">
+                <img id="imagePreview" src="{{ post and post.hasImage ? asset(post.imagePath) : '' }}" alt="">
+                <button type="button" class="cpd-remove-img-btn" onclick="removeImagePreview()">✕</button>
+            </div>
+
+            {# ── LOCATION ── #}
+            <div class="cpd-details-section">
+                <div class="cpd-field-row">
+                    <label class="cpd-field-icon">Location</label>
+                    <div class="cpd-autocomplete-wrapper">
+                        <input type="text" name="place" id="placeInput" 
+                               value="{{ post ? post.place : '' }}" 
+                               placeholder="Search a location..."
+                               class="cpd-place-input" autocomplete="off">
+                        <div id="placeDropdown" class="cpd-place-dropdown" style="display:none"></div>
+                    </div>
+                </div>
+
+                {# Agency inputs removed securely #}
+            {# ── TOOLBAR ── #}
+            <div class="cpd-toolbar">
+                <span class="cpd-toolbar-label">Add to post:</span>
+                <label class="cpd-tool-btn">
+                    Photo
+                    <input type="file" name="image" accept="image/*" style="display:none" 
+                           onchange="previewImage(this)">
+                </label>
+            </div>
+
+            {# ── SUBMIT ── #}
+            <div class="cpd-submit-row">
+                <a href="{{ path('app_feed') }}" class="cpd-cancel-btn">Cancel</a>
+                <button type="submit" class="primary-btn">{{ post ? 'Update Post' : 'Publish' }}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Location autocomplete
+let placeTimeout;
+document.getElementById('placeInput').addEventListener('input', function() {
+    clearTimeout(placeTimeout);
+    const q = this.value.trim();
+    if (q.length < 2) { document.getElementById('placeDropdown').style.display = 'none'; return; }
+    placeTimeout = setTimeout(() => {
+        fetch('/api/places/autocomplete?q=' + encodeURIComponent(q))
+            .then(r => r.json())
+            .then(results => {
+                const dd = document.getElementById('placeDropdown');
+                if (!results.length) { dd.style.display = 'none'; return; }
+                dd.innerHTML = results.map(p => 
+                    `<div class="cpd-place-option" onclick="selectPlace('${p.description.replace(/'/g,"\\'")}')">
+                        <strong>${p.mainText}</strong><span>${p.secondaryText}</span>
+                    </div>`
+                ).join('');
+                dd.style.display = 'block';
+            });
+    }, 400);
+});
+
+function selectPlace(name) {
+    document.getElementById('placeInput').value = name;
+    document.getElementById('placeDropdown').style.display = 'none';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('imagePreview').src = e.target.result;
+            document.getElementById('imagePreviewBox').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImagePreview() {
+    document.getElementById('imagePreview').src = '';
+    document.getElementById('imagePreviewBox').style.display = 'none';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Explore Map{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block body %}
+<div class="map-view-root">
+    <div class="map-header">
+        <a href="{{ path('app_feed') }}" class="close-detail-btn">✕</a>
+        <span class="map-header-title">Explore Map</span>
+        <span id="mapPinCount" class="map-pin-count" style="display:none"></span>
+    </div>
+    <div id="map" class="map-container"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+function initMap() {
+    if (typeof L === 'undefined') {
+        setTimeout(initMap, 50);
+        return;
+    }
+    const container = document.getElementById('map');
+    if (!container) return;
+    if (container._leaflet_id) {
+        container.outerHTML = container.outerHTML; // Reset div to clear old map instance
+    }
+
+    const map = L.map('map').setView([34.5, 9.5], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+    }).addTo(map);
+
+    fetch('/api/map/markers')
+        .then(r => r.json())
+        .then(markers => {
+            const pinCount = document.getElementById('mapPinCount');
+            if (pinCount) {
+                pinCount.textContent = markers.length + ' post' + (markers.length !== 1 ? 's' : '') + ' on map';
+                pinCount.style.display = 'inline';
+            }
+
+            markers.forEach(m => {
+                const popup = `
+                    <div class="map-popup">
+                        <strong>${m.author}</strong>
+                        <p>${m.content}</p>
+                        <span class="map-popup-place">${m.place}</span>
+                        <span class="map-popup-date">${m.date}</span>
+                        <a href="/post/${m.id}" class="map-popup-link">View post →</a>
+                    </div>`;
+                L.marker([m.lat, m.lon])
+                    .addTo(map)
+                    .bindPopup(popup);
+            });
+
+            if (markers.length > 0) {
+                const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lon]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        })
+        .catch(err => console.error('Failed to load markers:', err));
+}
+initMap();
+</script>
+{% endblock %}

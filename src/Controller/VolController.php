@@ -69,7 +69,7 @@ class VolController extends AbstractController
             return $this->redirectToRoute('dashboard');
         }
 
-        return $this->render('vol/new.html.twig', [
+        return $this->render('dashboard/vol/new.html.twig', [
             'active_page' => 'services',
             'form'        => $form,
         ]);
@@ -196,7 +196,7 @@ class VolController extends AbstractController
             $this->addFlash('success', 'vol supprimée.');
         }
 
-        return $this->redirectToRoute('services_index');
+        return $this->redirectToRoute('servicespage');
     }
 
  

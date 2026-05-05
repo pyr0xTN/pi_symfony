@@ -11,7 +11,7 @@ use Symfony\UX\Chartjs\Builder\ChartBuilderInterface;
 use Symfony\UX\Chartjs\Model\Chart;
 use Knp\Component\Pager\PaginatorInterface;
 
-#[Route('/services')]
+#[Route('/servicesAgency')]
 class ServicesController extends AbstractController
 {
     public function __construct(
@@ -20,7 +20,7 @@ class ServicesController extends AbstractController
         private PaginatorInterface $paginator,
     ) {}
 
-    #[Route('', name: 'services_index', methods: ['GET'])]
+    #[Route('', name: 'servicespage', methods: ['GET'])]
     public function index(Request $request): Response
     {
         $search   = $request->query->get('q', '');
@@ -66,7 +66,7 @@ class ServicesController extends AbstractController
             ],
         ]);
 
-        return $this->render('services/index.html.twig', [
+        return $this->render('dashboard\services\index.html.twig', [
             'active_page' => 'services',
             'pagination'  => $pagination,
             'typeChart'   => $chart,
