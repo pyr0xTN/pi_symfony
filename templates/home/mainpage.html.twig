@@ -2845,7 +2845,7 @@
                                     const callsign = (d.flight_icao || d.callsign || d.flight_iata || 'FLIGHT').toString().trim();
                                     label.append('tspan').attr('x', 16).attr('dy', 0).text(callsign);
                                 });
-                                renderLiveFlightPositions(performance.now());
+                              //  renderLiveFlightPositions(performance.now());
                                 merged.raise();
 
                                 groups.exit().remove();
@@ -2866,7 +2866,7 @@
                                 if (!window.__airportRadarAnimationStarted) {
                                     window.__airportRadarAnimationStarted = true;
                                     (function animateRadar() {
-                                        renderLiveFlightPositions(performance.now());
+                                       // renderLiveFlightPositions(performance.now());
                                         window.requestAnimationFrame(animateRadar);
                                     })();
                                 }
@@ -2884,7 +2884,7 @@
                     }
 
                     // start radar after atlas may initialize; safe to call repeatedly
-                    setTimeout(initializeRadarLayer, 1200);
+                 //   setTimeout(initializeRadarLayer, 1200);
             }
 
             // Menu toggle
