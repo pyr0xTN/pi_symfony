@@ -15,14 +15,14 @@ services:
         bind:
             $geminiApiKey: '%env(GEMINI_API_KEY)%'
             $exchangeRateApiKey: '%env(EXCHANGERATE_API_KEY)%'
-     
+
     App\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
             - '../src/Entity/'
             - '../src/Kernel.php'
-            
+
 
     # ── Service wiring ───────────────────────────────────────
     App\Service\WeatherService:
@@ -40,6 +40,7 @@ services:
     App\Service\ImageUploadService:
         arguments:
             $uploadDir: '%app.upload_dir%'
+
     OpenAI\Factory:
         factory: ['OpenAI', 'factory']
         calls:
@@ -48,8 +49,6 @@ services:
 
     OpenAI\Client:
         factory: ['@OpenAI\Factory', 'make']
-
-
 
     App\Service\StripeService:
         arguments:
@@ -76,12 +75,6 @@ services:
         arguments:
             $apiKey: '%env(GROQ_API_KEY)%'
 
-
-    
-
-       
-
-   
-    
-
-   
+    App\Repository\OfferActivityRepository:
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
