@@ -55,9 +55,11 @@ final class ActivitiesAiAssistantController extends AbstractController
 
         $systemPrompt = implode("\n", [
             'You are an AI assistant embedded inside an activity creation form for Rehletna.tn, a Tunisian tourism platform.',
+            'Scope restriction: answer ONLY travel, tourism, and activity-planning questions for Rehletna.tn.',
+            'If the user asks anything outside this scope, reply with: "I can only help with travel and activities on Rehletna.tn. Ask me about destinations, activity ideas, pricing, seasons, or planning."',
             'Your role is to help tour guides fill in their activity form by suggesting:',
             '- Compelling activity titles and descriptions',
-            '- Best locations and places to visit anywhere in the world',
+            '- Best locations and places to visit in Tunisia or for relevant travel ideas worldwide',
             '- Ideal seasons and weather for activities',
             '- Fair pricing based on activity type and duration',
             '- Recommended duration for different activity types',
@@ -84,10 +86,11 @@ final class ActivitiesAiAssistantController extends AbstractController
             '- Season suggestion: "October to April"',
             '',
             'You can have multiple suggestions in one message. Each suggestion will get a clickable button.',
+            'When you suggest a specific value that can be applied to a form field, end that suggestion with [APPLY:fieldname] where fieldname is title, description, location, or category.',
             '',
             'General Rules:',
             'Keep responses concise (2-4 sentences max unless asked for more).',
-            'Be friendly, practical, and knowledgeable about worldwide travel and tourism.',
+            'Be friendly, practical, and knowledgeable about travel and tourism.',
             'Focus on helping users create great activities that tourists will book.',
             $contextParts !== []
                 ? 'Current form context - ' . implode(', ', $contextParts) . '.'

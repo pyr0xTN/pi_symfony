@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
 #[Route('/api/participants')]
-class ParticipantController extends AbstractController
+class ParticipantConversationController extends AbstractController
 {
     /**
      * Replaces 'quitterConversation'

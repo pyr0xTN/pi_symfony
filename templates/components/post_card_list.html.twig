@@ -7,6 +7,20 @@
             <span class="post-meta">{{ post.timeAgo }}</span>
             {% if post.hasPlace %}
                 <span class="post-place-tag">📍 {{ post.place }}</span>
+                <span class="weather-badge" id="weatherBadgeL-{{ post.id }}" style="display:none; font-size:11px; margin-left: 6px; background: rgba(255,255,255,0.8); border-radius: 12px; padding: 2px 6px;"></span>
+                <script>
+                    fetch('/api/weather/{{ post.place|url_encode }}')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && !data.error) {
+                                const badge = document.getElementById('weatherBadgeL-{{ post.id }}');
+                                if (badge) {
+                                    badge.innerHTML = `${data.emoji} ${data.formattedTemp}`;
+                                    badge.style.display = 'inline-flex';
+                                }
+                            }
+                        }).catch(() => {});
+                </script>
             {% endif %}
         </div>
         <div class="post-menu">

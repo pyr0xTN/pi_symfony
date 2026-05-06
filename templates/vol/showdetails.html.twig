@@ -1,0 +1,237 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/styles/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
+{% endblock %}
+{% block body %}
+<body>
+
+
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <!-- Navbar Area -->
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <!-- Menu -->
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+
+                        <!-- Nav brand -->
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>
+
+                        <!-- Navbar Toggler -->
+                        <div class="classy-navbar-toggler">
+                            <span class="navbarToggler"><span></span><span></span><span></span></span>
+                        </div>
+
+                        <!-- Menu -->
+                        <div class="classy-menu">
+
+                            <!-- close btn -->
+                            <div class="classycloseIcon">
+                                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
+                            </div>
+
+                            <!-- Nav Start -->
+                            <div class="classynav">
+                                <ul>
+                                    <li ><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li class="active"><a href="{{path('myreservations_index')}}">My reservations</a></li>
+                                </ul>
+                                <!-- Button -->
+                                <div class="menu-btn">
+                                    <a href="#" class="btn palatin-btn">HOME</a>
+                                </div>
+
+                            </div>
+                            <!-- Nav End -->
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ##### Header Area End ##### -->
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/styles/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>Details</h2>
+        </div>
+    </section>
+    <!-- ##### Breadcumb Area End ##### -->
+
+    
+
+<div class="detail-wrapper">
+    <div class="detail-card">
+
+        {# ── Hero ── #}
+        <div class="detail-hero">
+            {% if vol.imgUrl is defined and vol.imgUrl %}
+                <img src="{{ asset(vol.imgUrl) }}" alt="{{ vol.nom }}" class="detail-hero-img" />
+            {% else %}
+                <div class="detail-hero-placeholder">✈️</div>
+            {% endif %}
+
+            <span class="detail-badge detail-badge--type">Vol</span>
+            <span class="detail-badge detail-badge--dispo {% if vol.disponibilite %}badge-avail{% else %}badge-unavail{% endif %}">
+                {{ vol.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+            </span>
+        </div>
+
+        {# ── Title Row ── #}
+        <div class="detail-title-row">
+            <div>
+                <h2 class="detail-name">{{ vol.nom }}</h2>
+                <p class="detail-location">✈️ {{ vol.villeDepart }} → {{ vol.villeArrivee }}</p>
+            </div>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ vol.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ personne</span>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Flight Route Banner ── #}
+        <div class="flight-route">
+            <div class="flight-city">
+                <span class="flight-city-name">{{ vol.villeDepart }}</span>
+                <span class="flight-city-date">🗓 {{ vol.dateDepart|date('d/m/Y') }}</span>
+                {% if tempDepart is defined %}
+                    <span class="weather-chip">🌡 {{ tempDepart }}°C</span>
+                {% endif %}
+            </div>
+
+            <div class="flight-arrow">
+                <span class="flight-line"></span>
+                <span class="flight-plane">✈</span>
+                <span class="flight-line"></span>
+            </div>
+
+            <div class="flight-city flight-city--right">
+                <span class="flight-city-name">{{ vol.villeArrivee }}</span>
+                <span class="flight-city-date">🗓 {{ vol.dateArrive|date('d/m/Y') }}</span>
+                {% if tempArrivee is defined %}
+                    <span class="weather-chip">🌡 {{ tempArrivee }}°C</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Info Chips ── #}
+        <div class="detail-chips">
+            <div class="detail-chip">
+                <span class="chip-icon">🎫</span>
+                <div>
+                    <span class="chip-label">Numéro Vol</span>
+                    <span class="chip-value">{{ vol.numeroVol }}</span>
+                </div>
+            </div>
+            <div class="detail-chip">
+                <span class="chip-icon">👥</span>
+                <div>
+                    <span class="chip-label">Capacité</span>
+                    <span class="chip-value">{{ vol.capacite }} personnes</span>
+                </div>
+            </div>
+            <div class="detail-chip">
+                <span class="chip-icon">📅</span>
+                <div>
+                    <span class="chip-label">Durée</span>
+                    <span class="chip-value">{{ vol.dateDepart|date('d/m') }} → {{ vol.dateArrive|date('d/m') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Description ── #}
+        <div class="detail-description">
+            <h4 class="detail-section-title">À propos de ce vol</h4>
+            <p>{{ vol.description }}</p>
+        </div>
+
+        {# ── Actions ── #}
+        <div class="detail-actions">
+            <a href="{{ path('ourservices_index') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_newfront', { serviceId: vol.idService, serviceType: 'vol' }) }}" class="btn-submit">
+                Réserver ce Vol →
+            </a>
+        </div>
+
+    </div>
+</div>
+
+  
+    <!-- ##### Core Features End ##### -->
+   
+   
+    <!-- ##### Footer Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Find us on the map</h6>
+                        <img src="{{asset('assets/styles/img/bg-img/footer-map.png')}}" alt="">
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Subscribe to our newsletter</h6>
+                        <form action="#" method="post" class="subscribe-form">
+                            <input type="email" name="subscribe-email" id="subscribeemail" placeholder="Your E-mail">
+                            <button type="submit">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Copywrite Text -->
+                <div class="col-12">
+                    <div class="copywrite-text mt-30">
+                        <p><a href="#"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+{% endblock %}
+
+
+{% block javascripts %}
+ {{ parent() }}
+    <!-- ##### All Javascript Script ##### -->
+    <!-- jQuery-2.2.4 js -->
+    <script src="{{asset('assets/styles/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <!-- Popper js -->
+    <script src="{{asset('assets/styles/js/bootstrap/popper.min.js')}}"></script>
+    <!-- Bootstrap js -->
+    <script src="{{asset('assets/styles/js/bootstrap/bootstrap.min.js')}}"></script>
+    <!-- All Plugins js -->
+    <script src="{{asset('assets/styles/js/plugins/plugins.js')}}"></script>
+    <!-- Active js -->
+    <script src="{{asset('assets/styles/js/active.js')}}"></script>
+{% endblock %}

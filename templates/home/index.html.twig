@@ -16,6 +16,11 @@
             --home-blue: #93c5fd;
             --home-text: #e8f4ff;
             --home-muted: #b9cce4;
+            --home-map-sea: rgba(20, 85, 132, 0.25);
+            --home-map-land: rgba(135, 199, 224, 0.22);
+            --home-map-route: rgba(111, 216, 255, 0.55);
+            --home-map-point: #a2f4ff;
+            --home-map-point-ring: rgba(162, 244, 255, 0.32);
         }
 
         .home-landing {
@@ -138,7 +143,118 @@
             opacity: 0.08;
             background: url('{{ asset('images/logo.png') }}') center/contain no-repeat;
             z-index: 0;
-            animation: breathe 7s ease-in-out infinite;
+            (function initInteractiveMap() {
+                const container = document.getElementById('interactiveMap');
+                if (!container) return;
+
+                // ensure container overlays the background map area and accepts pointer events
+                container.style.position = 'absolute';
+                container.style.inset = '6% 4% 9%';
+                container.style.borderRadius = '28px';
+                container.style.overflow = 'hidden';
+                container.style.zIndex = '0';
+                container.style.pointerEvents = 'auto';
+
+                const popup = document.createElement('div');
+                popup.id = 'mapPopup';
+                popup.style.position = 'fixed';
+                popup.style.pointerEvents = 'none';
+                popup.style.zIndex = 9999;
+                popup.style.padding = '8px 10px';
+                popup.style.borderRadius = '10px';
+                popup.style.background = 'rgba(2,10,22,0.92)';
+                popup.style.color = '#e8f6ff';
+                popup.style.fontSize = '13px';
+                popup.style.display = 'none';
+                popup.style.boxShadow = '0 8px 30px rgba(2,10,22,0.7)';
+                popup.innerHTML = '<div id="mapPopupInner" style="display:flex;align-items:center;gap:8px;"><img id="mapPopupFlag" src="" alt="" style="width:28px;height:20px;border-radius:3px;display:none;object-fit:cover;"/><span id="mapPopupName"></span></div>';
+                document.body.appendChild(popup);
+
+                const svgUrl = '{{ asset('images/world-map-2d.svg') }}';
+
+                fetch(svgUrl).then(function (r) { return r.text(); }).then(function (svgText) {
+                    container.innerHTML = svgText;
+                    const svgEl = container.querySelector('svg');
+                    if (!svgEl) return;
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+                    svgEl.style.display = 'block';
+
+                    const selector = 'path, polygon, circle, rect, ellipse';
+                    svgEl.querySelectorAll(selector).forEach(function (el, idx) {
+                        el.style.cursor = 'pointer';
+                        el.style.pointerEvents = 'all';
+
+                        const computed = window.getComputedStyle(el);
+                        const orig = el.getAttribute('fill') || computed.fill || '';
+                        el.dataset._origFill = orig;
+
+                        el.addEventListener('pointerenter', function (ev) {
+                            try {
+                                el.setAttribute('fill', '#ffd166');
+                                const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                                const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                                const nameEl = document.getElementById('mapPopupName');
+                                const flagImg = document.getElementById('mapPopupFlag');
+                                if (nameEl) nameEl.textContent = name;
+                                if (flagImg) {
+                                    if (code && /^[a-z]{2}$/.test(code)) {
+                                        flagImg.src = 'https://flagcdn.com/w40/' + code + '.png';
+                                        flagImg.style.display = 'inline-block';
+                                    } else {
+                                        flagImg.style.display = 'none';
+                                        flagImg.src = '';
+                                    }
+                                }
+                                popup.style.display = 'block';
+                                const clientX = ev.clientX || 0;
+                                const clientY = ev.clientY || 0;
+                                popup.style.left = (clientX + 14) + 'px';
+                                popup.style.top = (clientY + 8) + 'px';
+                            } catch (e) {}
+                        });
+
+                        el.addEventListener('pointermove', function (ev) {
+                            const clientX = ev.clientX || 0;
+                            const clientY = ev.clientY || 0;
+                            popup.style.left = (clientX + 14) + 'px';
+                            popup.style.top = (clientY + 8) + 'px';
+                        });
+
+                        el.addEventListener('pointerleave', function () {
+                            const orig = el.dataset._origFill || '';
+                            if (orig && orig !== 'none') {
+                                el.setAttribute('fill', orig);
+                            } else {
+                                el.removeAttribute('fill');
+                            }
+                            popup.style.display = 'none';
+                        });
+
+                        el.addEventListener('click', function (ev) {
+                            ev.preventDefault();
+                            const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                            const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                            const flagHtml = (code && /^[a-z]{2}$/.test(code)) ? '<img src="https://flagcdn.com/w160/' + code + '.png" alt="flag" style="width:160px;height:auto;border-radius:6px;display:block;margin-bottom:12px;"/>' : '';
+                            const html = '<!doctype html><meta charset="utf-8"><title>' + name + '</title><div style="font-family:Inter, system-ui, sans-serif;padding:22px;background:#04202b;color:#e8f6ff;min-height:120px;">' + flagHtml + '<h2 style="margin:0 0 8px;">' + name + '</h2></div>';
+                            const w = window.open('', '_blank', 'noopener');
+                            if (w) {
+                                w.document.write(html);
+                                w.document.close();
+                            }
+                        });
+                    });
+                }).catch(function () {
+                    container.style.display = 'none';
+                });
+            })();
+            animation-delay: -0.7s;
+        }
+
+        .home-flight-point.flight-istanbul {
+            left: 54%;
+            top: 38%;
+            animation-delay: -2.2s;
         }
 
         .home-card {
@@ -628,6 +744,27 @@
             background: rgba(9, 22, 40, 0.86);
         }
 
+        html.dark-mode .home-landing {
+            --home-map-sea: rgba(26, 102, 162, 0.3);
+            --home-map-land: rgba(159, 216, 240, 0.26);
+            --home-map-route: rgba(131, 226, 255, 0.8);
+            --home-map-point: #c8fbff;
+            --home-map-point-ring: rgba(143, 237, 255, 0.46);
+        }
+
+        html.dark-mode .home-bg-layer.map {
+            opacity: 0.93;
+        }
+
+        html.dark-mode .home-bg-layer.map::before {
+            opacity: 0.96;
+            filter: saturate(1.2) contrast(1.14) brightness(1.08);
+        }
+
+        html.dark-mode .home-point-label {
+            color: #effcff;
+        }
+
         @keyframes floatPulse {
             0%,
             100% {
@@ -647,6 +784,18 @@
             50% {
                 opacity: 0.11;
                 transform: translate(-50%, -52%) scale(1.04);
+            }
+        }
+
+        @keyframes pulseDot {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 5px rgba(162, 244, 255, 0.22);
+            }
+            50% {
+                transform: scale(1.18);
+                box-shadow: 0 0 0 10px rgba(162, 244, 255, 0.08);
             }
         }
 
@@ -690,6 +839,17 @@
                 width: 40px;
                 height: 40px;
                 font-size: 16px;
+            }
+
+            .home-bg-layer.map,
+            .home-bg-layer.routes {
+                inset: 10% 3% 11%;
+                border-radius: 18px;
+            }
+
+            .home-point-label {
+                font-size: 10px;
+                left: 12px;
             }
 
             .home-btn {
@@ -794,6 +954,11 @@
                 height: 36px;
             }
 
+            .home-flight-point.flight-newyork,
+            .home-flight-point.flight-dubai {
+                display: none;
+            }
+
             .home-top-icon img {
                 width: 24px;
                 height: 24px;
@@ -860,11 +1025,14 @@
             .home-landing {
                 align-items: flex-start;
                 padding: calc(14px + env(safe-area-inset-top)) 10px calc(12px + env(safe-area-inset-bottom));
+                overflow: hidden;
             }
 
             .home-card {
                 width: min(1140px, 100%);
-                padding: 14px 12px;
+                padding: 12px 12px;
+                max-height: calc(100dvh - 36px);
+                overflow: hidden;
             }
 
             .home-logo {
@@ -881,6 +1049,12 @@
                 font-size: 12px;
                 line-height: 1.4;
                 margin-top: 6px;
+            }
+
+            .home-qr-section,
+            .home-dev-team,
+            .home-contact {
+                display: none;
             }
 
             .home-qr-section,
@@ -929,10 +1103,18 @@
     </div>
 
     <span class="home-bg-layer grid" aria-hidden="true"></span>
+    <span class="home-bg-layer map" aria-hidden="true"></span>
+    <div id="interactiveMap" class="home-bg-layer map" aria-hidden="false" style="pointer-events: auto;"></div>
+    <span class="home-bg-layer routes" aria-hidden="true"></span>
     <span class="home-bg-layer glow-a" aria-hidden="true"></span>
     <span class="home-bg-layer glow-b" aria-hidden="true"></span>
     <span class="home-bg-layer glow-c" aria-hidden="true"></span>
     <span class="home-bg-layer logo-halo" aria-hidden="true"></span>
+    <span class="home-bg-layer home-flight-point flight-tunis" aria-hidden="true"><span class="home-point-label">Tunis</span></span>
+    <span class="home-bg-layer home-flight-point flight-paris" aria-hidden="true"><span class="home-point-label">Paris</span></span>
+    <span class="home-bg-layer home-flight-point flight-dubai" aria-hidden="true"><span class="home-point-label">Dubai</span></span>
+    <span class="home-bg-layer home-flight-point flight-newyork" aria-hidden="true"><span class="home-point-label">New York</span></span>
+    <span class="home-bg-layer home-flight-point flight-istanbul" aria-hidden="true"><span class="home-point-label">Istanbul</span></span>
 
     <div class="home-card">
         <img src="{{ asset('images/logo.png') }}" alt="Rehltna logo" class="home-logo">
@@ -1340,11 +1522,12 @@
                     return;
                 }
 
-                const fixedQrUrl = 'http://192.168.1.111:8000/';
-                applyQrTarget(fixedQrUrl);
+                const normalizedOrigin = window.location.origin.replace(/\/$/, '');
+                const defaultQrUrl = normalizedOrigin + '/';
+                applyQrTarget(defaultQrUrl);
 
                 if (homeQrUrlInput) {
-                    homeQrUrlInput.value = fixedQrUrl;
+                    homeQrUrlInput.value = defaultQrUrl;
                 }
 
                 if (homeQrApplyBtn && homeQrUrlInput) {
@@ -1356,7 +1539,22 @@
                     });
                 }
 
-                detectLanIpv4();
+                const isLoopbackHost = /^(localhost|127\.0\.0\.1|::1)$/i.test(window.location.hostname);
+                if (isLoopbackHost) {
+                    detectLanIpv4().then(function (lanIp) {
+                        if (!lanIp) {
+                            return;
+                        }
+
+                        const portPart = window.location.port ? ':' + window.location.port : '';
+                        const lanUrl = window.location.protocol + '//' + lanIp + portPart + '/';
+                        applyQrTarget(lanUrl);
+
+                        if (homeQrUrlInput) {
+                            homeQrUrlInput.value = lanUrl;
+                        }
+                    });
+                }
             };
 
             initQr();
@@ -1425,6 +1623,113 @@
             });
 
             applyLanguage();
+
+            /* Interactive map: fetch SVG, inline it, change country color on pointerover and show popup with country name + flag */
+            (function initInteractiveMap() {
+                const container = document.getElementById('interactiveMap');
+                if (!container) return;
+
+                const popup = document.createElement('div');
+                popup.id = 'mapPopup';
+                popup.style.position = 'fixed';
+                popup.style.pointerEvents = 'auto';
+                popup.style.zIndex = 9999;
+                popup.style.padding = '8px 10px';
+                popup.style.borderRadius = '10px';
+                popup.style.background = 'rgba(2,10,22,0.92)';
+                popup.style.color = '#e8f6ff';
+                popup.style.fontSize = '13px';
+                popup.style.display = 'none';
+                popup.style.boxShadow = '0 8px 30px rgba(2,10,22,0.7)';
+                popup.innerHTML = '<div id="mapPopupInner" style="display:flex;align-items:center;gap:8px;"><img id="mapPopupFlag" src="" alt="" style="width:28px;height:20px;border-radius:3px;display:none;object-fit:cover;"/><span id="mapPopupName"></span></div>';
+                document.body.appendChild(popup);
+
+                const svgUrl = '{{ asset('images/world-map-2d.svg') }}';
+
+                fetch(svgUrl).then(function (r) { return r.text(); }).then(function (svgText) {
+                    container.innerHTML = svgText;
+                    const svgEl = container.querySelector('svg');
+                    if (!svgEl) return;
+                    svgEl.style.width = '100%';
+                    svgEl.style.height = '100%';
+                    svgEl.style.display = 'block';
+
+                    // use pointer events for robust cross-device behaviour
+                    svgEl.querySelectorAll('path, g, rect, circle, polygon').forEach(function (el, idx) {
+                        el.style.cursor = 'pointer';
+                        el.style.pointerEvents = 'auto';
+
+                        const computed = window.getComputedStyle(el);
+                        const orig = el.getAttribute('fill') || computed.fill || '';
+                        el.dataset._origFill = orig;
+
+                        el.addEventListener('pointerover', function (ev) {
+                            // highlight
+                            try {
+                                el.setAttribute('fill', '#ffd166');
+
+                                const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                                const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+
+                                const nameEl = document.getElementById('mapPopupName');
+                                const flagImg = document.getElementById('mapPopupFlag');
+                                if (nameEl) nameEl.textContent = name;
+
+                                if (flagImg) {
+                                    if (code && /^[a-z]{2}$/.test(code)) {
+                                        flagImg.src = 'https://flagcdn.com/w40/' + code + '.png';
+                                        flagImg.style.display = 'inline-block';
+                                    } else {
+                                        flagImg.style.display = 'none';
+                                        flagImg.src = '';
+                                    }
+                                }
+
+                                popup.style.display = 'block';
+                                // position using client coords to avoid scroll offset issues
+                                const clientX = ev.clientX || 0;
+                                const clientY = ev.clientY || 0;
+                                popup.style.left = (clientX + 14) + 'px';
+                                popup.style.top = (clientY + 8) + 'px';
+                            } catch (e) {
+                                // ignore
+                            }
+                        });
+
+                        el.addEventListener('pointermove', function (ev) {
+                            const clientX = ev.clientX || 0;
+                            const clientY = ev.clientY || 0;
+                            popup.style.left = (clientX + 14) + 'px';
+                            popup.style.top = (clientY + 8) + 'px';
+                        });
+
+                        el.addEventListener('pointerout', function () {
+                            const orig = el.dataset._origFill || '';
+                            if (orig && orig !== 'none') {
+                                el.setAttribute('fill', orig);
+                            } else {
+                                el.removeAttribute('fill');
+                            }
+                            popup.style.display = 'none';
+                        });
+
+                        el.addEventListener('click', function (ev) {
+                            ev.preventDefault();
+                            const name = el.getAttribute('data-name') || el.id || ('Region ' + (idx + 1));
+                            const code = (el.getAttribute('data-code') || el.id || '').toLowerCase();
+                            const flagHtml = (code && /^[a-z]{2}$/.test(code)) ? '<img src="https://flagcdn.com/w160/' + code + '.png" alt="flag" style="width:160px;height:auto;border-radius:6px;display:block;margin-bottom:12px;"/>' : '';
+                            const html = '<!doctype html><meta charset="utf-8"><title>' + name + '</title><div style="font-family:Inter, system-ui, sans-serif;padding:22px;background:#04202b;color:#e8f6ff;min-height:120px;">' + flagHtml + '<h2 style="margin:0 0 8px;">' + name + '</h2></div>';
+                            const w = window.open('', '_blank', 'noopener');
+                            if (w) {
+                                w.document.write(html);
+                                w.document.close();
+                            }
+                        });
+                    });
+                }).catch(function () {
+                    container.style.display = 'none';
+                });
+            })();
         });
     </script>
 {% endblock %}

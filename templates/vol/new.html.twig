@@ -1,0 +1,279 @@
+{# templates/vol/new.html.twig #}
+{# Converted from: AddVol.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Ajouter un Vol{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">✈ Ajouter un Vol</h2>
+
+        {{ form_start(form, { attr: { enctype: 'multipart/form-data', novalidate: 'novalidate' } }) }}
+
+            <div class="form-grid form-grid-2col">
+
+                {# Nom #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Nom :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Ex: Tunisair 711' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Description #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Description :</label>
+                    {{ form_widget(form.description, { attr: { class: 'form-input', placeholder: 'Détails du vol...', rows: 3 } }) }}
+                    {% if form.description.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.description) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Prix #}
+                <div class="form-group">
+                    <label class="form-label">Prix :</label>
+                    {{ form_widget(form.prix, { attr: { class: 'form-input', placeholder: '0.00' } }) }}
+                    {% if form.prix.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.prix) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Disponibilité #}
+                <div class="form-group form-group-checkbox">
+                    {{ form_widget(form.disponibilite, { attr: { class: 'form-checkbox' } }) }}
+                    <label class="form-label">Disponible</label>
+                </div>
+
+                {# Capacité #}
+                <div class="form-group">
+                    <label class="form-label">Capacité :</label>
+                    {{ form_widget(form.capacite, { attr: { class: 'form-input', placeholder: 'Nb Sièges' } }) }}
+                    {% if form.capacite.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.capacite) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Numéro Vol #}
+                <div class="form-group">
+                    <label class="form-label">Numéro Vol :</label>
+                    {{ form_widget(form.numeroVol, { attr: { class: 'form-input', placeholder: 'Code Vol' } }) }}
+                    {% if form.numeroVol.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.numeroVol) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Ville Départ #}
+                <div class="form-group">
+                    <label class="form-label">Ville Départ :</label>
+                    {{ form_widget(form.villeDepart, { attr: { class: 'form-input' } }) }}
+                    {% if form.villeDepart.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.villeDepart) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Ville Arrivée #}
+                <div class="form-group">
+                    <label class="form-label">Ville Arrivée :</label>
+                    {{ form_widget(form.villeArrivee, { attr: { class: 'form-input' } }) }}
+                    {% if form.villeArrivee.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.villeArrivee) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date Départ #}
+                <div class="form-group">
+                    <label class="form-label">Date Départ :</label>
+                    {{ form_widget(form.dateDepart, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateDepart.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateDepart) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date Arrivée #}
+                <div class="form-group">
+                    <label class="form-label">Date Arrivée :</label>
+                    {{ form_widget(form.dateArrive, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateArrive.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateArrive) }}</span>
+                    {% endif %}
+                </div>
+
+            
+               {# Photo #}
+<div class="form-group form-group-full">
+    <label class="form-label">Photo :</label>
+    <div class="file-upload-row">
+        
+        {# We hide the default input using style="display:none;" (or use your CSS class) #}
+        {{ form_widget(form.photo, { attr: { class: 'form-input-file', accept: 'image/*', style: 'display:none;' } }) }}
+        
+        {# We dynamically link the label to Symfony's generated ID #}
+        <label for="{{ form.photo.vars.id }}" class="btn-submit">📁 Choisir une image</label>
+        
+        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none; max-width: 200px; margin-top: 10px;" />
+    </div>
+    {% if form.photo.vars.errors|length %}
+        <span class="error-label">{{ form_errors(form.photo) }}</span>
+    {% endif %}
+</div>     
+
+            </div>
+
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Ajouter le Vol</button>
+                {# Auto-fill from external flight API — handled via a separate route or JS fetch #}
+               <a type="button" class="btn-submit" id=btnAutoFill >⚡ Auto remplissage</a>
+                <a href="{{ path('dashboard') }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+ <script>
+    document.addEventListener('turbo:load', initVolForm);
+    document.addEventListener('DOMContentLoaded', initVolForm);
+
+    function initVolForm() {
+
+    // ── Photo preview ──
+    const photoInput = document.getElementById('{{ form.photo.vars.id }}');
+    const preview    = document.getElementById('imgPreview');
+
+    if (photoInput && !photoInput.dataset.bound) {
+        photoInput.dataset.bound = 'true';
+        photoInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                if (!file.type.startsWith('image/')) {
+                    alert('Veuillez sélectionner une image valide.');
+                    e.target.value = '';
+                    return;
+                }
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+                preview.onload = () => URL.revokeObjectURL(preview.src);
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
+            }
+        });
+    }
+
+    // ── AI Description Logic ──
+    const btnGenDesc = document.getElementById('btnGenDesc');
+    const descInput  = document.getElementById('{{ form.description.vars.id }}');
+    const nomInput   = document.getElementById('{{ form.nom.vars.id }}');
+
+    if (btnGenDesc && descInput && nomInput && !btnGenDesc.dataset.bound) {
+        btnGenDesc.dataset.bound = 'true';
+        btnGenDesc.addEventListener('click', async function (e) {
+            e.preventDefault();
+            const nomVol = nomInput.value.trim();
+
+            if (!nomVol) {
+                alert('Veuillez d\'abord saisir le nom du vol avant de générer la description.');
+                nomInput.focus();
+                return;
+            }
+
+            btnGenDesc.disabled = true;
+            btnGenDesc.textContent = '⏳ Génération...';
+
+            try {
+                const res = await fetch('{{ path("api_gemini_generate") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: nomVol,
+                        type: 'vol'
+                    })
+                });
+
+                const data = await res.json();
+                
+                if (data.error) {
+                    alert('Erreur IA : ' + data.error);
+                } else if (data.description) {
+                    descInput.value = data.description;
+                    descInput.classList.add('flash-highlight');
+                    setTimeout(() => descInput.classList.remove('flash-highlight'), 1000);
+                }
+            } catch (err) {
+                console.error('Erreur génération IA:', err);
+                alert('Erreur réseau lors de la génération avec l\'IA.');
+            } finally {
+                btnGenDesc.disabled = false;
+                btnGenDesc.textContent = '✨ Générer par IA';
+            }
+        });
+    }
+
+    // ── Autofill ──
+    const btnAutoFill   = document.getElementById('btnAutoFill');
+    const numeroVolInput = document.getElementById('{{ form.numeroVol.vars.id }}');
+
+    if (btnAutoFill && !btnAutoFill.dataset.bound) {
+        btnAutoFill.dataset.bound = 'true';
+        btnAutoFill.addEventListener('click', async function () {
+            const numeroVol = numeroVolInput ? numeroVolInput.value.trim() : '';
+
+        if (!numeroVol) {
+            alert('Veuillez saisir un numéro de vol avant de lancer l\'auto-remplissage.');
+            numeroVolInput.focus();
+            return;
+        }
+
+        btnAutoFill.textContent = '⏳ Chargement...';
+        btnAutoFill.disabled = true;
+
+        try {
+            const res  = await fetch('{{ path("vol_autofill") }}?numeroVol=' + encodeURIComponent(numeroVol));
+            const data = await res.json();
+
+            if (data.error) {
+                alert('Erreur : ' + data.error);
+                return;
+            }
+
+            // Fill in the fields using Symfony's generated IDs
+            document.getElementById('{{ form.villeDepart.vars.id }}').value  = data.villeDepart  ?? '';
+            document.getElementById('{{ form.villeArrivee.vars.id }}').value = data.villeArrivee ?? '';
+            document.getElementById('{{ form.nom.vars.id }}').value          = data.nom          ?? '';
+            document.getElementById('{{ form.capacite.vars.id }}').value     = data.capacite     ?? '';
+
+if (data.dateDepart) {
+    document.getElementById('{{ form.dateDepart.vars.id }}').value = data.dateDepart.substring(0, 10);
+}
+if (data.dateArrivee) {
+    document.getElementById('{{ form.dateArrive.vars.id }}').value = data.dateArrivee.substring(0, 10);
+}
+            // Symfony date inputs expect YYYY-MM-DD
+            if (data.dateDepart)  {
+                document.getElementById('{{ form.dateDepart.vars.id }}').value  = data.dateDepart.substring(0, 10);
+            }
+            if (data.dateArrivee) {
+                document.getElementById('{{ form.dateArrive.vars.id }}').value  = data.dateArrivee.substring(0, 10);
+            }
+
+        } catch (err) {
+            alert('Erreur réseau : ' + err.message);
+        } finally {
+            btnAutoFill.textContent = '⚡ Auto remplissage';
+            btnAutoFill.disabled = false;
+        }
+        });
+    }
+ }
+ </script>
+{% endblock %}

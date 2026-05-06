@@ -1,0 +1,58 @@
+{# templates/dashboard/layout.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block body %}
+<div class="root-pane">
+
+    {# ===== LEFT SIDEBAR ===== #}
+    {% include 'partials/_sidebar.html.twig' with { active_page: active_page|default('dashboard') } %}
+
+    {# ===== MAIN CONTENT ===== #}
+    <div class="content-area">
+
+        {# Top Bar #}
+        <header class="top-bar">
+            <h1 class="page-title">{% block page_title %}Dashboard Overview{% endblock %}</h1>
+
+            <div class="top-bar-spacer"></div>
+
+            {% block top_bar_actions %}
+            <div class="d-flex align-items-center" style="gap: 10px;">
+                <form method="GET" action="" class="search-form" style="margin-bottom: 0;">
+                    <input
+                        type="text"
+                        name="q"
+                        class="search-box"
+                        placeholder="Search service..."
+                        value="{{ app.request.query.get('q') }}"
+                    />
+                    <button type="submit" class="action-btn">Search</button>
+                </form>
+
+                <div class="currency-selector">
+                    <select onchange="window.location.href = '{{ path('app_set_currency', {currency: 'CURR'}) }}'.replace('CURR', this.value)" class="search-box" style="width: auto; padding: 0 15px; cursor: pointer; height: 40px;">
+                        <option value="TND" {{ current_currency() == 'TND' ? 'selected' : '' }}>🇹🇳 TND</option>
+                        <option value="USD" {{ current_currency() == 'USD' ? 'selected' : '' }}>🇺🇸 USD</option>
+                        <option value="EUR" {{ current_currency() == 'EUR' ? 'selected' : '' }}>🇪🇺 EUR</option>
+                        <option value="GBP" {{ current_currency() == 'GBP' ? 'selected' : '' }}>🇬🇧 GBP</option>
+                    </select>
+                </div>
+            </div>
+            {% endblock %}
+        </header>
+
+        {# Flash Messages #}
+        {% for type, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ type }}">{{ message }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        {# Page Content #}
+        <main class="main-scroll">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+{% endblock %}

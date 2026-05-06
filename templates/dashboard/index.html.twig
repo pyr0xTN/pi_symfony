@@ -74,6 +74,113 @@
             grid-template-columns: 260px minmax(0, 1fr);
             min-height: 100vh;
             align-items: stretch;
+            position: relative;
+        }
+
+        .dashboard-skeleton {
+            position: absolute;
+            top: 86px;
+            right: 0;
+            bottom: 0;
+            left: 260px;
+            z-index: 18;
+            display: none;
+            padding: 22px;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(242, 246, 250, 0.78), rgba(234, 241, 247, 0.92));
+            backdrop-filter: blur(7px);
+        }
+
+        .dashboard-skeleton.is-active {
+            display: block;
+        }
+
+        .dashboard-skeleton-card {
+            height: 100%;
+            border-radius: 18px;
+            border: 1px solid rgba(181, 198, 214, 0.45);
+            background: rgba(255, 255, 255, 0.86);
+            box-shadow: 0 18px 36px rgba(26, 52, 80, 0.08);
+            padding: 20px;
+            display: grid;
+            gap: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .dashboard-skeleton-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            transform: translateX(-100%);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+            animation: dashboardSkeletonShimmer 1.5s ease-in-out infinite;
+        }
+
+        .dashboard-skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .dashboard-skeleton-card-block {
+            height: 110px;
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(222, 233, 242, 0.9), rgba(241, 246, 250, 0.98));
+            border: 1px solid rgba(181, 198, 214, 0.35);
+        }
+
+        .dashboard-skeleton-board {
+            flex: 1;
+            min-height: 0;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .dashboard-skeleton-column {
+            border-radius: 16px;
+            border: 1px solid rgba(181, 198, 214, 0.35);
+            background: linear-gradient(180deg, rgba(246, 249, 252, 0.98), rgba(236, 243, 248, 0.98));
+            padding: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .dashboard-skeleton-line {
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, rgba(171, 190, 207, 0.5), rgba(244, 248, 251, 1), rgba(171, 190, 207, 0.5));
+            background-size: 200% 100%;
+            animation: dashboardSkeletonPulse 1.2s ease-in-out infinite;
+        }
+
+        .dashboard-skeleton-line.wide {
+            width: 88%;
+        }
+
+        .dashboard-skeleton-line.medium {
+            width: 66%;
+        }
+
+        .dashboard-skeleton-line.narrow {
+            width: 44%;
+        }
+
+        @keyframes dashboardSkeletonShimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes dashboardSkeletonPulse {
+            0%,
+            100% {
+                opacity: 0.72;
+            }
+            50% {
+                opacity: 1;
+            }
         }
 
         .dash-sidebar {
@@ -476,6 +583,34 @@
                 </div>
             </aside>
 
+            <div class="dashboard-skeleton" id="dashboardSkeleton" aria-hidden="true">
+                <div class="dashboard-skeleton-card">
+                    <div class="dashboard-skeleton-grid">
+                        <div class="dashboard-skeleton-card-block"></div>
+                        <div class="dashboard-skeleton-card-block"></div>
+                        <div class="dashboard-skeleton-card-block"></div>
+                        <div class="dashboard-skeleton-card-block"></div>
+                    </div>
+                    <div class="dashboard-skeleton-board">
+                        <div class="dashboard-skeleton-column">
+                            <div class="dashboard-skeleton-line wide"></div>
+                            <div class="dashboard-skeleton-line medium"></div>
+                            <div class="dashboard-skeleton-card-block" style="height: 170px;"></div>
+                        </div>
+                        <div class="dashboard-skeleton-column">
+                            <div class="dashboard-skeleton-line wide"></div>
+                            <div class="dashboard-skeleton-line medium"></div>
+                            <div class="dashboard-skeleton-card-block" style="height: 170px;"></div>
+                        </div>
+                        <div class="dashboard-skeleton-column">
+                            <div class="dashboard-skeleton-line wide"></div>
+                            <div class="dashboard-skeleton-line medium"></div>
+                            <div class="dashboard-skeleton-card-block" style="height: 170px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <main class="dash-content" id="dashboardContent">
                 <section class="welcome-strip">
                     <div>
@@ -597,6 +732,7 @@
         (function () {
             const clock = document.getElementById('dashboardClock');
             const dashboardContent = document.getElementById('dashboardContent');
+            const dashboardSkeleton = document.getElementById('dashboardSkeleton');
             const moduleLinks = Array.from(document.querySelectorAll('.js-dashboard-module'));
             const dynamicStylesId = 'dashboardDynamicModuleStyles';
             const sidebarLockStylesId = 'dashboardSidebarLockStyles';
@@ -624,6 +760,16 @@
 
                 tick();
                 setInterval(tick, 1000);
+            }
+
+            function setDashboardLoading(isLoading) {
+                if (dashboardSkeleton) {
+                    dashboardSkeleton.classList.toggle('is-active', isLoading);
+                }
+
+                if (dashboardContent) {
+                    dashboardContent.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+                }
             }
 
             function applyModuleStyles(sourceDoc) {
@@ -810,6 +956,7 @@
                     return;
                 }
 
+                setDashboardLoading(true);
                 dashboardContent.innerHTML = '<div style="padding:20px;font-weight:700;color:#194575;">' + moduleText.loading + '</div>';
 
                 try {
@@ -852,6 +999,7 @@
                     runModuleScripts(doc);
                     syncStoredTheme();
                     lockSidebarStyles();
+                    setDashboardLoading(false);
 
                     moduleLinks.forEach((item) => item.classList.remove('active'));
                     link.classList.add('active');
@@ -859,6 +1007,7 @@
                 } catch (error) {
                     const isTimeout = error && error.name === 'AbortError';
                     dashboardContent.innerHTML = '<div style="padding:20px;color:#c43d3d;font-weight:700;">' + (isTimeout ? moduleText.timeout : moduleText.error) + '</div>';
+                    setDashboardLoading(false);
 
                     // Fallback to a full page navigation so the user is never blocked on loading.
                     setTimeout(function () {

@@ -3,7 +3,9 @@
 {% block title %}Explore Map{% endblock %}
 
 {% block stylesheets %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 {% endblock %}
 
 {% block body %}
@@ -18,39 +20,54 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([34.5, 9.5], 6);
+function initMap() {
+    if (typeof L === 'undefined') {
+        setTimeout(initMap, 50);
+        return;
+    }
+    const container = document.getElementById('map');
+    if (!container) return;
+    if (container._leaflet_id) {
+        container.outerHTML = container.outerHTML; // Reset div to clear old map instance
+    }
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors',
-    maxZoom: 18,
-}).addTo(map);
+    const map = L.map('map').setView([34.5, 9.5], 6);
 
-fetch('/api/map/markers')
-    .then(r => r.json())
-    .then(markers => {
-        const pinCount = document.getElementById('mapPinCount');
-        pinCount.textContent = markers.length + ' post' + (markers.length !== 1 ? 's' : '') + ' on map';
-        pinCount.style.display = 'inline';
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+    }).addTo(map);
 
-        markers.forEach(m => {
-            const popup = `
-                <div class="map-popup">
-                    <strong>${m.author}</strong>
-                    <p>${m.content}</p>
-                    <span class="map-popup-place">${m.place}</span>
-                    <span class="map-popup-date">${m.date}</span>
-                    <a href="/post/${m.id}" class="map-popup-link">View post →</a>
-                </div>`;
-            L.marker([m.lat, m.lon])
-                .addTo(map)
-                .bindPopup(popup);
-        });
+    fetch('/api/map/markers')
+        .then(r => r.json())
+        .then(markers => {
+            const pinCount = document.getElementById('mapPinCount');
+            if (pinCount) {
+                pinCount.textContent = markers.length + ' post' + (markers.length !== 1 ? 's' : '') + ' on map';
+                pinCount.style.display = 'inline';
+            }
 
-        if (markers.length > 0) {
-            const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lon]));
-            map.fitBounds(bounds, { padding: [50, 50] });
-        }
-    })
-    .catch(err => console.error('Failed to load markers:', err));
+            markers.forEach(m => {
+                const popup = `
+                    <div class="map-popup">
+                        <strong>${m.author}</strong>
+                        <p>${m.content}</p>
+                        <span class="map-popup-place">${m.place}</span>
+                        <span class="map-popup-date">${m.date}</span>
+                        <a href="/post/${m.id}" class="map-popup-link">View post →</a>
+                    </div>`;
+                L.marker([m.lat, m.lon])
+                    .addTo(map)
+                    .bindPopup(popup);
+            });
+
+            if (markers.length > 0) {
+                const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lon]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        })
+        .catch(err => console.error('Failed to load markers:', err));
+}
+initMap();
 </script>
 {% endblock %}

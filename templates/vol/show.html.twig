@@ -1,0 +1,111 @@
+{# templates/vol/show.html.twig #}
+{# Converted from: volsDetails.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Détails du Vol{% endblock %}
+
+{% block content %}
+
+<div class="detail-wrapper">
+    <div class="detail-card">
+
+        {# ── Hero ── #}
+        <div class="detail-hero">
+            {% if vol.imgUrl is defined and vol.imgUrl %}
+                <img src="{{ asset(vol.imgUrl) }}" alt="{{ vol.nom }}" class="detail-hero-img" />
+            {% else %}
+                <div class="detail-hero-placeholder">✈️</div>
+            {% endif %}
+
+            <span class="detail-badge detail-badge--type">Vol</span>
+            <span class="detail-badge detail-badge--dispo {% if vol.disponibilite %}badge-avail{% else %}badge-unavail{% endif %}">
+                {{ vol.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+            </span>
+        </div>
+
+        {# ── Title Row ── #}
+        <div class="detail-title-row">
+            <div>
+                <h2 class="detail-name">{{ vol.nom }}</h2>
+                <p class="detail-location">✈️ {{ vol.villeDepart }} → {{ vol.villeArrivee }}</p>
+            </div>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ vol.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ personne</span>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Flight Route Banner ── #}
+        <div class="flight-route">
+            <div class="flight-city">
+                <span class="flight-city-name">{{ vol.villeDepart }}</span>
+                <span class="flight-city-date">🗓 {{ vol.dateDepart|date('d/m/Y') }}</span>
+                {% if tempDepart is defined %}
+                    <span class="weather-chip">🌡 {{ tempDepart }}°C</span>
+                {% endif %}
+            </div>
+
+            <div class="flight-arrow">
+                <span class="flight-line"></span>
+                <span class="flight-plane">✈</span>
+                <span class="flight-line"></span>
+            </div>
+
+            <div class="flight-city flight-city--right">
+                <span class="flight-city-name">{{ vol.villeArrivee }}</span>
+                <span class="flight-city-date">🗓 {{ vol.dateArrive|date('d/m/Y') }}</span>
+                {% if tempArrivee is defined %}
+                    <span class="weather-chip">🌡 {{ tempArrivee }}°C</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Info Chips ── #}
+        <div class="detail-chips">
+            <div class="detail-chip">
+                <span class="chip-icon">🎫</span>
+                <div>
+                    <span class="chip-label">Numéro Vol</span>
+                    <span class="chip-value">{{ vol.numeroVol }}</span>
+                </div>
+            </div>
+            <div class="detail-chip">
+                <span class="chip-icon">👥</span>
+                <div>
+                    <span class="chip-label">Capacité</span>
+                    <span class="chip-value">{{ vol.capacite }} personnes</span>
+                </div>
+            </div>
+            <div class="detail-chip">
+                <span class="chip-icon">📅</span>
+                <div>
+                    <span class="chip-label">Durée</span>
+                    <span class="chip-value">{{ vol.dateDepart|date('d/m') }} → {{ vol.dateArrive|date('d/m') }}</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Description ── #}
+        <div class="detail-description">
+            <h4 class="detail-section-title">À propos de ce vol</h4>
+            <p>{{ vol.description }}</p>
+        </div>
+
+        {# ── Actions ── #}
+        {# Action Buttons #}
+        <div class="detail-actions">
+            <a href="{{ path('services_index') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_new', { serviceId: vol.idService, serviceType: 'vol' }) }}" class="btn-submit">
+                Réserver ce Vol
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

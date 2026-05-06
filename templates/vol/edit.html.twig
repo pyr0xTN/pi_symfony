@@ -1,0 +1,180 @@
+{# templates/vol/edit.html.twig #}
+{# Converted from: updateVol.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Modifier un Vol{% endblock %}
+
+{% block content %}
+<div class="form-wrapper">
+    <div class="form-card">
+
+        <h2 class="form-title">✈ Modifier un Vol</h2>
+
+        {{ form_start(form, { attr: { enctype: 'multipart/form-data', novalidate: 'novalidate' } }) }}
+
+            <div class="form-grid form-grid-2col">
+
+                {# Nom #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Nom :</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Nom du vol' } }) }}
+                    {% if form.nom.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.nom) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Description #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Description :</label>
+                    {{ form_widget(form.description, { attr: { class: 'form-input', placeholder: 'Détails...', rows: 3 } }) }}
+                    {% if form.description.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.description) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Prix #}
+                <div class="form-group">
+                    <label class="form-label">Prix :</label>
+                    {{ form_widget(form.prix, { attr: { class: 'form-input', placeholder: '0.00' } }) }}
+                    {% if form.prix.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.prix) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Disponibilité #}
+                <div class="form-group form-group-checkbox">
+                    {{ form_widget(form.disponibilite, { attr: { class: 'form-checkbox' } }) }}
+                    <label class="form-label">Disponible</label>
+                </div>
+
+                {# Capacité #}
+                <div class="form-group">
+                    <label class="form-label">Capacité :</label>
+                    {{ form_widget(form.capacite, { attr: { class: 'form-input', placeholder: 'Nb Sièges' } }) }}
+                    {% if form.capacite.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.capacite) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Numéro Vol #}
+                <div class="form-group">
+                    <label class="form-label">Numéro Vol :</label>
+                    {{ form_widget(form.numeroVol, { attr: { class: 'form-input', placeholder: 'Code Vol' } }) }}
+                    {% if form.numeroVol.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.numeroVol) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Ville Départ #}
+                <div class="form-group">
+                    <label class="form-label">Ville Départ :</label>
+                    {{ form_widget(form.villeDepart, { attr: { class: 'form-input' } }) }}
+                    {% if form.villeDepart.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.villeDepart) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Ville Arrivée #}
+                <div class="form-group">
+                    <label class="form-label">Ville Arrivée :</label>
+                    {{ form_widget(form.villeArrivee, { attr: { class: 'form-input' } }) }}
+                    {% if form.villeArrivee.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.villeArrivee) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date Départ #}
+                <div class="form-group">
+                    <label class="form-label">Date Départ :</label>
+                    {{ form_widget(form.dateDepart, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateDepart.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateDepart) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Date Arrivée #}
+                <div class="form-group">
+                    <label class="form-label">Date Arrivée :</label>
+                    {{ form_widget(form.dateArrive, { attr: { class: 'form-input' } }) }}
+                    {% if form.dateArrive.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.dateArrive) }}</span>
+                    {% endif %}
+                </div>
+
+                {# Photo #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Photo :</label>
+                    {% if vol.img_url %}
+                        <img src="{{ asset('uploads/vols/' ~ vol.img_url) }}" alt="Photo actuelle" class="img-preview" />
+                    {% endif %}
+                   <div class="file-upload-row">
+        
+        {# We hide the default input using style="display:none;" (or use your CSS class) #}
+        {{ form_widget(form.photo, { attr: { class: 'form-input-file', accept: 'image/*', style: 'display:none;' } }) }}
+        
+        {# We dynamically link the label to Symfony's generated ID #}
+        <label for="{{ form.photo.vars.id }}" class="btn-submit">📁 Choisir une image</label>
+        
+        <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="display:none; max-width: 200px; margin-top: 10px;" />
+    </div>
+                    {% if form.photo.vars.errors|length %}
+                        <span class="error-label">{{ form_errors(form.photo) }}</span>
+                    {% endif %}
+                </div>
+
+            </div>
+
+            {# Buttons #}
+            <div class="form-actions">
+                <button type="submit" class="btn-submit">✔ Modifier</button>
+                <a href="{{ path('services_index', { id: vol.idService }) }}" class="btn-back">← Retour</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // Wait for the HTML to fully load before running the script
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Get the exact ID Symfony generated for the input
+            const inputId = '{{ form.photo.vars.id }}';
+            const photoInput = document.getElementById(inputId);
+            const preview = document.getElementById('imgPreview');
+
+            // Make sure the input exists on the page to prevent JS errors
+            if (photoInput) {
+                photoInput.addEventListener('change', function (e) {
+                    const file = e.target.files[0];
+                    
+                    if (file) {
+                        // Check if it's actually an image
+                        if (!file.type.startsWith('image/')) {
+                            alert('Veuillez sélectionner une image valide.');
+                            e.target.value = ''; 
+                            return;
+                        }
+
+                        preview.src = URL.createObjectURL(file);
+                        preview.style.display = 'block';
+
+                        // Free up memory
+                        preview.onload = function() {
+                            URL.revokeObjectURL(preview.src);
+                        };
+                    } else {
+                        // Hide preview if user cancels
+                        preview.src = '#';
+                        preview.style.display = 'none';
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}
