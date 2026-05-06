@@ -1502,7 +1502,7 @@ class HomeController extends AbstractController
         return $this->redirectToRoute('app_settings');
     }
 
-     #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
+    #[Route('/load-content', name: 'app_load_content', methods: ['POST'])]
     #[IsGranted('ROLE_USER')]
     public function loadContent(Request $request, Connection $connection, ConversationRepository $convRepo, UserRepository $userRepo, MessagesRepository $msgRepo, ParticipantConversationRepository $pcRepo): Response
     {
