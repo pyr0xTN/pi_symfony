@@ -261,8 +261,17 @@
     padding: 3px 11px;
     border-radius: 20px;
 }
-.chart-body { flex: 1; }
+.chart-body {
+    flex: 1;
+    min-height: 250px; /* AJOUTE CETTE LIGNE */
+    position: relative;
+}
 
+/* Force le canvas à prendre toute la place */
+.chart-body canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
 /* ── AI Card ── */
 .ai-card {
     position: relative;

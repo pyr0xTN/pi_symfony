@@ -90,7 +90,7 @@ class MessagesRepository extends ServiceEntityRepository
 
     // src/Repository/MessagesRepository.php
 
-    public function findLastMessageBeforeDate($conversation, \DateTimeInterface $dateLimit)
+    public function findLastMessageBeforeDate(Conversation $conversation, \DateTimeInterface $dateLimit)
     {
         return $this->createQueryBuilder('m')
             ->where('m.idConversation = :conv')

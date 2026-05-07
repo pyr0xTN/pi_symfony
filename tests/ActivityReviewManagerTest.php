@@ -18,7 +18,7 @@ class ActivityReviewManagerTest extends TestCase
         $this->manager = new ActivityReviewManager();
     }
 
-    /** Cas valide : tout est rempli correctement */
+    /** valide  */
     public function testValidReview(): void
     {
         $user = $this->createMock(User::class);
@@ -32,7 +32,7 @@ class ActivityReviewManagerTest extends TestCase
         $this->assertTrue($this->manager->validate($review));
     }
 
-    /** Règle 1 : contenu vide → exception */
+    /** contenu vide → exception */
     public function testEmptyContentThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -47,7 +47,7 @@ class ActivityReviewManagerTest extends TestCase
         $this->manager->validate($review);
     }
 
-    /** Règle 1 bis : contenu avec espaces seulement */
+    /**  contenu avec espaces */
     public function testWhitespaceOnlyContentThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -61,7 +61,7 @@ class ActivityReviewManagerTest extends TestCase
         $this->manager->validate($review);
     }
 
-    /** Règle 2 : activityId invalide → exception */
+    /** activityId invalide  */
     public function testInvalidActivityIdThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -76,7 +76,7 @@ class ActivityReviewManagerTest extends TestCase
         $this->manager->validate($review);
     }
 
-    /** Règle 3 : utilisateur null → exception */
+    /**utilisateur null*/
     public function testNullUserThrowsException(): void
     {
         $this->expectException(InvalidArgumentException::class);

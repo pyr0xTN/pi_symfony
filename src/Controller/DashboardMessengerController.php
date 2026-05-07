@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 namespace App\Controller;
 
 use App\Repository\MessagesRepository;
@@ -27,7 +28,14 @@ class DashboardMessengerController extends AbstractController
         $totalGroups = $convRepo->count(['type' => 'GROUPE']);
 
         // 2. Création du Graphique (Répartition des types de messages)
-        $mediaData = $msgRepo->countByMessageType();
+        //$mediaData = $msgRepo->countByMessageType();
+        $mediaData = [
+            'Texte' => 120,
+            'Image' => 45,
+            'Vidéo' => 30,
+            'Fichier' => 15,
+            'Autre' => 10
+        ];
         $chart = $chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
         $chart->setData([
             'labels' => array_keys($mediaData),
@@ -42,10 +50,10 @@ class DashboardMessengerController extends AbstractController
         try {
             $lastMsgs = $msgRepo->findBy([], ['dateEnvoi' => 'DESC'], 10);
             $text = "";
-            foreach($lastMsgs as $m) $text .= $m->getContenu() . " | ";
+            foreach ($lastMsgs as $m) $text .= $m->getContenu() . " | ";
 
             $prompt = "En tant qu'administrateur système, analyse ces 10 derniers messages et donne un résumé très court (20 mots max) de l'ambiance globale des utilisateurs : " . $text;
-            
+
             $result = $aiClient->chat()->create([
                 'model' => 'llama-3.1-8b-instant',
                 'messages' => [['role' => 'user', 'content' => $prompt]],
