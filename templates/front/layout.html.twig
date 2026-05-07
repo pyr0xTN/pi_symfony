@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+{% extends embed|default(false) ? 'empty_body.html.twig' : 'base.html.twig' %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -6,16 +6,19 @@
 {% endblock %}
 {% block body %}
 <div class="dashboard-root">
+    {% if embed|default(false) %}
+        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    {% endif %}
     {# Sidebar removed in favor of unified utilisateurs menu #}
     {# ═══ MAIN AREA ═══ #}
     <main class="main-area">
-        {% if not embed|default(false) %}
         {# ═══ TOP NAV BAR ═══ #}
         <header class="nav-bar">
             <div class="nav-bar-brand" style="display:flex;align-items:center;gap:12px;">
-                <a href="{{ app.request.attributes.get('_route') == 'app_feed' ? path('app_mainpage') : path('app_feed') }}" data-turbo="false" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back">⬅</a>
+                <a href="{{ path('app_mainpage') }}" class="btn-pill btn-back" style="text-decoration:none;font-size:16px;" title="Back to Dashboard">⬅</a>
                 <div>
-                    <img src="/images/logo.png" alt="Rehletna logo" class="brand-logo">
+                    <span class="brand-text">Rehletna</span>
+                    <span class="brand-dot">.tn</span>
                 </div>
             </div>
 
@@ -33,9 +36,11 @@
                 </form>
             </div>
 
+            <a href="{{ path('app_journal_pdf') }}" class="secondary-btn" title="Download your posts as a PDF travel journal">📄 Journal</a>
             <a href="{{ path('app_post_new') }}" class="primary-btn">+ New Post</a>
+
         </header>
-        {% endif %}
+
 
         {# ═══ CONTENT AREA ═══ #}
         <div class="content-container">
@@ -47,7 +52,7 @@
         </div>
 
         {# ═══ FABs ═══ #}
-        <a href="{{ path('app_map') }}" class="fab map-fab-btn">Explore Map</a>
+        <a href="{{ path('app_map') }}" class="fab map-fab-btn" data-turbo="false">Explore Map</a>
         <button class="fab chat-fab-btn" onclick="toggleChatPanel()">✦ Ask Rihla</button>
 
         {# ═══ AI CHAT PANEL ═══ #}
@@ -73,5 +78,7 @@
     </main>
 </div>
 
+{% if not embed|default(false) %}
 <script src="{{ asset('js/app.js') }}"></script>
+{% endif %}
 {% endblock %}

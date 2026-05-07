@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: DejaVu Sans, Arial, sans-serif; color: #1a1a2e; background: #fff; padding: 30px; }
+
+        .cover { text-align: center; padding: 60px 20px 40px; border-bottom: 3px solid #0FA5A2; margin-bottom: 30px; }
+        .cover h1 { font-size: 28px; color: #0FA5A2; margin-bottom: 8px; }
+        .cover .subtitle { font-size: 14px; color: #666; }
+        .cover .author { font-size: 16px; margin-top: 12px; font-weight: 600; }
+        .cover .date-range { font-size: 12px; color: #888; margin-top: 6px; }
+
+        .post-entry { page-break-inside: avoid; margin-bottom: 28px; padding: 16px; border: 1px solid #e8e8e8; border-radius: 8px; }
+        .post-header { display: flex; align-items: center; margin-bottom: 10px; }
+        .post-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #0FA5A2, #17B3A6); color: #fff; text-align: center; line-height: 32px; font-weight: 700; font-size: 14px; margin-right: 10px; }
+        .post-author { font-weight: 600; font-size: 13px; }
+        .post-date { font-size: 11px; color: #888; margin-left: 8px; }
+        .post-place { display: inline-block; background: #e8f8f5; color: #0FA5A2; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 500; margin-left: 6px; }
+        .post-content { font-size: 13px; line-height: 1.6; margin-bottom: 10px; color: #333; }
+        .post-image { max-width: 100%; border-radius: 6px; margin-bottom: 8px; }
+        .post-stats { font-size: 11px; color: #999; }
+
+        .footer { text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 11px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="cover">
+        <h1>✈ My Travel Journal</h1>
+        <p class="subtitle">A collection of travel memories from Rehletna</p>
+        <p class="author">By {{ username }}</p>
+        <p class="date-range">Generated on {{ "now"|date("d M Y") }}</p>
+    </div>
+
+    {% for entry in entries %}
+    <div class="post-entry">
+        <div class="post-header">
+            <div class="post-avatar">{{ entry.post.user.username|first|upper }}</div>
+            <span class="post-author">{{ entry.post.user.username }}</span>
+            <span class="post-date">{{ entry.post.datePublication|date("d M Y, H:i") }}</span>
+            {% if entry.post.hasPlace %}
+                <span class="post-place">📍 {{ entry.post.place }}</span>
+            {% endif %}
+        </div>
+
+        <div class="post-content">{{ entry.post.content|nl2br }}</div>
+
+        {% if entry.post.hasImage %}
+            <img class="post-image" src="{{ absolute_url(asset(entry.post.imagePath)) }}" alt="Post image">
+        {% endif %}
+
+        <div class="post-stats">
+            ❤ {{ entry.likeCount }} likes · 💬 {{ entry.commentCount }} comments
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="footer">
+        Rehletna — Travel Community Platform · {{ "now"|date("Y") }}
+    </div>
+</body>
+</html>

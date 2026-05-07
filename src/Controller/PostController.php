@@ -27,20 +27,27 @@ class PostController extends AbstractController
         PublicationRepository $pubRepo,
         LikeRepository $likeRepo,
         CommentRepository $commentRepo,
+        \Knp\Component\Pager\PaginatorInterface $paginator,
     ): Response {
         $search = $request->query->get('q', '');
         $view   = $request->query->get('view', 'grid');
 
-        $posts = $search
-            ? $pubRepo->searchByKeyword($search)
-            : $pubRepo->findAllApproved();
+        $qb = $search
+            ? $pubRepo->searchByKeywordQb($search)
+            : $pubRepo->findAllApprovedQb();
+
+        $pagination = $paginator->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            6  // posts per page
+        );
 
         $user = $this->getUser();
         $clientId = $user->getId();
 
         // Build metadata for each post
         $postMeta = [];
-        foreach ($posts as $post) {
+        foreach ($pagination as $post) {
             $postMeta[$post->getId()] = [
                 'likeCount'    => $likeRepo->countByPublication($post->getId()),
                 'commentCount' => $commentRepo->countByPublication($post->getId()),
@@ -49,12 +56,12 @@ class PostController extends AbstractController
         }
 
         return $this->render('front/feed.html.twig', [
-            'posts'     => $posts,
-            'postMeta'  => $postMeta,
-            'search'    => $search,
-            'viewMode'  => $view,
-            'clientId'  => $clientId,
-            'embed'     => (bool) $request->query->get('embed', false),
+            'posts'      => $pagination,
+            'postMeta'   => $postMeta,
+            'search'     => $search,
+            'viewMode'   => $view,
+            'clientId'   => $clientId,
+            'embed'      => (bool) $request->query->get('embed', false),
         ]);
     }
 
@@ -169,5 +176,39 @@ class PostController extends AbstractController
 
         $this->addFlash('success', 'Post deleted.');
         return $this->redirectToRoute('app_feed');
+    }
+
+    #[Route('/community/journal/pdf', name: 'app_journal_pdf')]
+    public function journalPdf(
+        PublicationRepository $pubRepo,
+        LikeRepository $likeRepo,
+        CommentRepository $commentRepo,
+    ): Response {
+        $user = $this->getUser();
+        $posts = $pubRepo->findByUser($user->getId());
+
+        $entries = [];
+        foreach ($posts as $post) {
+            $entries[] = [
+                'post'         => $post,
+                'likeCount'    => $likeRepo->countByPublication($post->getId()),
+                'commentCount' => $commentRepo->countByPublication($post->getId()),
+            ];
+        }
+
+        $html = $this->renderView('front/journal_pdf.html.twig', [
+            'entries'  => $entries,
+            'username' => $user->getUsername(),
+        ]);
+
+        $dompdf = new \Dompdf\Dompdf();
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="my-travel-journal.pdf"',
+        ]);
     }
 }
