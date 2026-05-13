@@ -12,6 +12,7 @@ class Profile
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    /** @phpstan-ignore property.unusedType */
     private ?int $id = null;
 
     #[ORM\Column(type: 'blob', nullable: true)]
@@ -24,7 +25,7 @@ class Profile
     private ?string $language = null;
 
     #[ORM\Column]
-    private ?int $coins = 0;
+    private int $coins = 0;
 
     #[ORM\Column(name: 'birthday_gift_year', type: 'integer', nullable: true)]
     private ?int $birthdayGiftYear = null;

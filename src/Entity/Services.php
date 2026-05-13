@@ -333,24 +333,24 @@ private ?\DateTimeInterface $date_arrive = null;
             return $this;
         }
 
-        public function getDateDepart(): ?\DateTime
+        public function getDateDepart(): ?\DateTimeInterface
         {
             return $this->date_depart;
         }
 
-        public function setDateDepart(\DateTime $date_depart): static
+                public function setDateDepart(\DateTimeInterface $date_depart): static
         {
             $this->date_depart = $date_depart;
 
             return $this;
         }
 
-        public function getDateArrive(): ?\DateTime
+        public function getDateArrive(): ?\DateTimeInterface
         {
             return $this->date_arrive;
         }
 
-        public function setDateArrive(\DateTime $date_arrive): static
+                public function setDateArrive(\DateTimeInterface $date_arrive): static
         {
             $this->date_arrive = $date_arrive;
 

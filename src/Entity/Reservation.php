@@ -51,7 +51,7 @@ class Reservation
     /**
      * @var Collection<int, Payment>
      */
-    #[ORM\OneToMany(mappedBy: 'reservation', targetEntity: Payment::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'reservation', targetEntity: Payment::class)]
     private Collection $payments;
 
     public function __construct()

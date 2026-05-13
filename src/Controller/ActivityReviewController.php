@@ -148,21 +148,6 @@ class ActivityReviewController extends AbstractController
         return is_array($activity) ? $activity : null;
     }
 
-    private function buildEligibility(Connection $connection, array $activity, int $userId): array
-    {
-        $purchase = $connection->fetchAssociative(
-            'SELECT 1 AS has_purchase FROM achat WHERE idActivite = ? AND idClient = ? LIMIT 1',
-            [(int) ($activity['idActivite'] ?? 0), $userId]
-        );
-
-        $guideId = (int) ($activity['idGuide'] ?? 0);
-        $activityPassed = $this->isActivityPassed($activity);
-
-        return [
-            'canSubmit' => is_array($purchase) && $activityPassed && $guideId !== $userId,
-        ];
-    }
-
     private function isActivityPassed(array $activity): bool
     {
         $status = strtolower(trim((string) ($activity['statut'] ?? '')));
@@ -193,7 +178,7 @@ class ActivityReviewController extends AbstractController
 
         return [
             'id' => (int) ($review->getId() ?? 0),
-            'content' => (string) ($review->getContent() ?? ''),
+            'content' => $review->getContent(),
             'timeAgo' => $review->getTimeAgo(),
             'createdAt' => $review->getCreatedAt() ? $review->getCreatedAt()->format('Y-m-d H:i') : '',
             'anonymousLabel' => 'Anonymous traveler',

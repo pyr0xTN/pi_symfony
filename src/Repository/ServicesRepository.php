@@ -26,6 +26,7 @@ class ServicesRepository extends ServiceEntityRepository
             ->orWhere('LOWER(s.ville_arrivee) LIKE :q')
             ->setParameter('q', $q)
             ->orderBy('s.nom', 'ASC')
+            ->setMaxResults(10)
             ->getQuery()
             ->getResult();
     }
@@ -39,8 +40,10 @@ class ServicesRepository extends ServiceEntityRepository
             ->setParameter('type', $type)
             ->setParameter('dispo', '1')
             ->orderBy('s.nom', 'ASC')
+            ->setMaxResults(10)
             ->getQuery()
             ->getResult();
+            
     }
 
     public function findAllQueryBuilder(string $search = ''): \Doctrine\ORM\QueryBuilder
@@ -52,7 +55,9 @@ class ServicesRepository extends ServiceEntityRepository
             $qb->where('LOWER(s.nom) LIKE :q')
                ->orWhere('LOWER(s.description) LIKE :q')
                ->orWhere('LOWER(s.localisation) LIKE :q')
-               ->setParameter('q', $q);
+               ->setMaxResults(10)
+               ->setParameter('q', $q)
+              ;
         }
 
         return $qb->orderBy('s.nom', 'ASC');
@@ -90,6 +95,7 @@ class ServicesRepository extends ServiceEntityRepository
         if (!empty($filters['max_prix'])) {
             $qb->andWhere('s.prix <= :max_prix')
                ->setParameter('max_prix', (float) $filters['max_prix']);
+               
         }
 
         return $qb->orderBy('s.nom', 'ASC');

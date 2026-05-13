@@ -12,7 +12,7 @@ use Symfony\UX\Chartjs\Model\Chart;
 use Symfony\Component\Routing\Attribute\Route;
 use Knp\Component\Pager\PaginatorInterface;
 
-#[Route('/dashboard')]
+#[Route('/dashboardServices')]
 class DashboardController extends AbstractController
 {
     public function __construct(

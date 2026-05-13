@@ -59,7 +59,7 @@ class Offer
     /**
      * @var Collection<int, OfferService>
      */
-    #[ORM\OneToMany(mappedBy: 'offer', targetEntity: OfferService::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'offer', targetEntity: OfferService::class)]
     private Collection $offerServices;
 
     /**

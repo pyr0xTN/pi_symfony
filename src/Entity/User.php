@@ -85,12 +85,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $purchases;
 
     #[ORM\OneToOne(mappedBy: 'user', targetEntity: Profile::class, cascade: ['persist', 'remove'])]
-    private ?Profile $profile = null;
+    private Profile $profile;
 
     /**
      * @var Collection<int, ParticipantConversation>
      */
-    #[ORM\OneToMany(targetEntity: ParticipantConversation::class, mappedBy: 'idUtilisateur')]
+    #[ORM\OneToMany(targetEntity: ParticipantConversation::class, mappedBy: 'idUtilisateur',orphanRemoval: true)]
     private Collection $participantConversations;
 
     /**
@@ -414,16 +414,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->purchases;
     }
 
-    public function getProfile(): ?Profile
-    {
-        return $this->profile;
-    }
 
-    public function setProfile(?Profile $profile): static
-    {
-        $this->profile = $profile;
-        return $this;
-    }
+
+public function getProfile(): Profile
+{
+    return $this->profile;
+}
+
+public function setProfile(Profile $profile): static
+{
+    $this->profile = $profile;
+    return $this;
+}
 
     // ========== COLLECTION HELPER METHODS ==========
 

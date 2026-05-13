@@ -26,7 +26,7 @@ class Conversation
     #[ORM\Column(name: 'titre', length: 100, nullable: true)]
     private ?string $titre = null;
 
-    #[ORM\OneToMany(mappedBy: 'idConversation', targetEntity: ParticipantConversation::class)]
+    #[ORM\OneToMany(mappedBy: 'idConversation', targetEntity: ParticipantConversation::class, orphanRemoval: true)]
     private Collection $participants;
 
     /**
