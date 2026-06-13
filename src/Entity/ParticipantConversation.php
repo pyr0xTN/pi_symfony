@@ -28,7 +28,7 @@ class ParticipantConversation
     #[ORM\Column(name: 'estActif',nullable: true)]
     private ?bool $estActif = null;
 
-    // Not persisted: current DB schema has no dateSortie column.
+    #[ORM\Column(name: 'dateSortie', type : 'datetime', nullable: true)] 
     private ?\DateTime $dateSortie = null;
 
     public function getId(): ?int

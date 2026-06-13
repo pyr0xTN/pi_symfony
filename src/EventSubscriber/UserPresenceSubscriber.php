@@ -149,6 +149,7 @@ class UserPresenceSubscriber implements EventSubscriberInterface
             'app_set_locale',
             'app_collect_coin_status',
             'app_collect_coin',
+            'app_collect_birthday_gift',
         ];
 
         if (in_array($route, $allowedRoutes, true)) {

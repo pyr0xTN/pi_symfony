@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page {
+            margin: 14mm 12mm;
+        }
+
+        body {
+            font-family: DejaVu Sans, Arial, sans-serif;
+            color: #1f2937;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .header {
+            border-bottom: 2px solid #0f766e;
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+
+        .brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f766e;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: #4b5563;
+        }
+
+        .meta-grid {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0 18px;
+        }
+
+        .meta-grid td {
+            vertical-align: top;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .meta-value {
+            font-size: 12px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .summary {
+            margin: 0 0 16px;
+            padding: 10px 12px;
+            background: #ecfeff;
+            border: 1px solid #99f6e4;
+            color: #0f766e;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            text-align: left;
+            background: #0f172a;
+            color: #fff;
+            padding: 10px 8px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .table td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 9px 8px;
+            vertical-align: top;
+        }
+
+        .table tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: #d1fae5;
+            color: #065f46;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            padding: 18px 16px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            color: #64748b;
+            background: #f8fafc;
+        }
+
+        .footer {
+            margin-top: 18px;
+            padding-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 9px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">Reservations Bundle</div>
+        <div class="subtitle">Guide export for the activity reservation list</div>
+    </div>
+
+    <table class="meta-grid">
+        <tr>
+            <td width="58%">
+                <span class="meta-label">Activity</span>
+                <span class="meta-value">{{ activity.titre }}</span>
+            </td>
+            <td width="42%">
+                <span class="meta-label">Activity ID</span>
+                <span class="meta-value">{{ activity.idActivite }}</span>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <span class="meta-label">Generated at</span>
+                <span class="meta-value">{{ generatedAt|date('Y-m-d H:i') }}</span>
+            </td>
+            <td>
+                <span class="meta-label">Total reservations</span>
+                <span class="meta-value">{{ reservations|length }}</span>
+            </td>
+        </tr>
+    </table>
+
+    <div class="summary">
+        This PDF bundles the complete reservation list for the guide in a printable format.
+    </div>
+
+    {% if reservations is empty %}
+        <div class="empty-state">No reservations yet for this activity.</div>
+    {% else %}
+        <table class="table" cellspacing="0" cellpadding="0">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ID</th>
+                    <th style="width: 22%;">Client</th>
+                    <th style="width: 25%;">Email</th>
+                    <th style="width: 10%;">Places</th>
+                    <th style="width: 12%;">Amount</th>
+                    <th style="width: 11%;">Status</th>
+                    <th style="width: 12%;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for reservation in reservations %}
+                    {% set clientName = reservation.name ~ ' ' ~ reservation.last_name %}
+                    <tr>
+                        <td>#{{ reservation.idAchat }}</td>
+                        <td>
+                            <strong>{{ clientName|trim }}</strong>
+                            {% if reservation.username %}
+                                <div style="color: #64748b; font-size: 10px;">@{{ reservation.username }}</div>
+                            {% endif %}
+                        </td>
+                        <td>{{ reservation.email }}</td>
+                        <td>{{ reservation.nbPlaces }}</td>
+                        <td>{{ reservation.montantTotal }} DT</td>
+                        <td><span class="badge">{{ reservation.statut }}</span></td>
+                        <td>{{ reservation.dateAchat ? reservation.dateAchat|date('Y-m-d H:i') : '-' }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div class="footer">
+        {{ reservations|length }} reservation{% if reservations|length != 1 %}s{% endif %} exported for guide review and record keeping.
+    </div>
+</body>
+</html>

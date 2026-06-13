@@ -1,0 +1,128 @@
+{# templates/agency/services/index.html.twig #}
+{% extends 'dashboard/base_agency.html.twig' %}
+
+{% block agency_page_title %}Available Services{% endblock %}
+
+{% block agency_content %}
+<div class="page-with-sidebar" style="display: flex; gap: 28px;">
+
+    {# ── Main Column: Services Grid ── #}
+    <div class="main-column" style="flex: 1;">
+        {% if pagination is empty %}
+            <div class="empty-state">
+                <span class="empty-icon">🔍</span>
+                <p>Aucun service disponible pour le moment.</p>
+            </div>
+        {% else %}
+            <div class="cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 24px; padding-bottom: 24px;">
+                {% for service in pagination %}
+                    <div class="service-card" style="background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+
+                        {# ── IMAGE AREA ── #}
+                        <div class="card-img-wrapper" style="position: relative; height: 160px;">
+                            {% if service.imgUrl is defined and service.imgUrl %}
+                                <img src="{{ asset(service.imgUrl) }}" alt="{{ service.nom }}" class="card-img" style="width: 100%; height: 100%; object-fit: cover;" />
+                            {% else %}
+                                <div class="card-img-placeholder" style="width: 100%; height: 100%; background: #f0f2f5; display: flex; align-items: center; justify-content: center; font-size: 40px;">
+                                    {{ service.type == 'hotel' ? '🏨' : '✈️' }}
+                                </div>
+                            {% endif %}
+
+                            <span class="card-type-badge card-type-badge--{{ service.type }}" style="position: absolute; top: 10px; left: 10px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; color: #fff; background: {{ service.type == 'hotel' ? '#4ba3a1' : '#183c75' }};">
+                                {{ service.type == 'hotel' ? 'Hôtel' : 'Vol' }}
+                            </span>
+
+                            <span class="card-dispo-dot {% if service.disponibilite %}dispo-available{% else %}dispo-unavailable{% endif %}" style="position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; color: #fff; background: {{ service.disponibilite ? '#27ae60' : '#e74c3c' }};">
+                                {{ service.disponibilite ? 'Disponible' : 'Indisponible' }}
+                            </span>
+                        </div>
+
+                        {# ── CARD BODY ── #}
+                        <div class="card-body" style="padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                            <p class="card-meta" style="font-size: 12px; color: #888; margin: 0;">
+                                {% if service.type == 'hotel' %}
+                                    📍 {{ service.localisation }} · {% for i in 1..service.nombreEtoiles|default(0) %}⭐{% endfor %}
+                                {% else %}
+                                    ✈️ {{ service.villeDepart }} → {{ service.villeArrivee }}
+                                {% endif %}
+                            </p>
+
+                            <h3 class="card-name" style="font-size: 16px; font-weight: 700; color: #183c75; margin: 0;">{{ service.nom }}</h3>
+
+                            <p class="card-description" style="font-size: 13px; color: #666; margin: 0; line-height: 1.4; flex-grow: 1;">
+                                {{ service.description|length > 60 ? service.description|slice(0, 60) ~ '…' : service.description }}
+                            </p>
+
+                            <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid #eee;">
+                                <span class="card-price" style="font-weight: 700; color: #4ba3a1;">{{ service.prix }} <small>TND</small></span>
+                                <span class="card-capacity" style="font-size: 13px; color: #888;">👥 {{ service.capacite }}</span>
+                            </div>
+
+                            <div class="card-actions" style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+                                {% if service.type == 'hotel' %}
+                                    <a href="{{ path('hotel_edit', { id: service.idService }) }}" class="rc-btn" style="text-align: center; background: #f0f2f5; color: #333; padding: 6px; border-radius: 5px; font-size: 12px; font-weight: 700;">edit</a>
+                                    <form method="POST" action="{{ path('hotel_delete', { id: service.idService }) }}" onsubmit="return confirm('Confirmer la suppression ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ service.idService) }}">
+                                        <button type="submit" class="rc-btn rc-btn-danger" style="width: 100%; height: 32px; font-size: 12px; font-weight: 700;">Supprimer</button>
+                                    </form>
+                                {% else %}
+                                    <a href="{{ path('vol_edit', { id: service.idService }) }}" class="rc-btn" style="text-align: center; background: #f0f2f5; color: #333; padding: 6px; border-radius: 5px; font-size: 12px; font-weight: 700;">edit</a>
+                                    <form method="POST" action="{{ path('vol_delete', { id: service.idService }) }}" onsubmit="return confirm('Confirmer la suppression ?');">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ service.idService) }}">
+                                        <button type="submit" class="rc-btn rc-btn-danger" style="width: 100%; height: 32px; font-size: 12px; font-weight: 700;">Supprimer</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {# ── PAGINATION CONTROLS ── #}
+            <div class="pagination-wrapper" style="display: flex; justify-content: center; margin-top: 20px;">
+                {{ knp_pagination_render(pagination) }}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ── Sidebar: Statistics & Chart ── #}
+    <div class="sidebar-stats" style="width: 300px; display: flex; flex-direction: column; gap: 24px;">
+        
+        <div class="sidebar-chart-card" style="background: #fff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <h3 style="font-size: 16px; color: #183c75; margin-bottom: 20px;">📊 Service Mix</h3>
+            
+            <div style="height: 220px; position: relative;">
+                {{ render_chart(typeChart) }}
+            </div>
+
+            <div class="chart-legend" style="margin-top: 20px; font-size: 14px;">
+                <div class="chart-legend-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="legend-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #4ba3a1;"></span>
+                    <span>Hôtels: <strong>{{ stats.hotels }}</strong></span>
+                </div>
+                <div class="chart-legend-item" style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span class="legend-dot" style="width: 12px; height: 12px; border-radius: 50%; background: #183c75;"></span>
+                    <span>Vols: <strong>{{ stats.flights }}</strong></span>
+                </div>
+                <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+                <div class="chart-legend-item">
+                    <span>Available: <strong>{{ stats.available }} / {{ stats.total }}</strong></span>
+                </div>
+            </div>
+        </div>
+
+        {# Catalog Health Card #}
+        <div class="sidebar-chart-card" style="background-color: #f0fbfc; border: 1px solid #4ba3a1; padding: 20px; border-radius: 10px;">
+            <h3 style="color: #4ba3a1; font-size: 16px; margin-bottom: 10px;">🚀 Catalog Health</h3>
+            <p style="font-size: 13px; color: #3a8a88; line-height: 1.5; margin: 0;">
+                Currently, <strong>{{ (stats.available / (stats.total > 0 ? stats.total : 1) * 100)|round }}%</strong> of your services are available for booking. 
+                Keep your inventory updated to maximize conversions!
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+{% block javascripts %}
+    {{ parent() }}
+{% endblock %}

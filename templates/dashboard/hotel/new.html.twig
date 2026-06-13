@@ -1,0 +1,155 @@
+{# templates/agency/hotel/new.html.twig #}
+{% extends 'dashboard/base_agency.html.twig' %}
+
+{% block agency_page_title %}Ajouter un Hôtel{% endblock %}
+
+{% block agency_content %}
+<div class="form-wrapper" style="padding: 0;">
+    <div class="form-card" style="max-width: 100%; margin: 0; box-shadow: none; border: 1px solid #eee;">
+
+        <h2 class="form-title" style="font-size: 20px; border-bottom-color: #fbbe30;">🏨 Nouveau Hôtel</h2>
+
+        {{ form_start(form, { attr: { enctype: 'multipart/form-data', novalidate: 'novalidate', id: 'hotelForm' } }) }}
+
+            <div class="form-grid form-grid-2col">
+
+                {# Nom #}
+                <div class="form-group">
+                    <label class="form-label">Nom Hôtel :</label>
+                    <div style="display: flex; gap: 8px;">
+                        {{ form_widget(form.nom, { attr: { class: 'form-input', placeholder: 'Ex: El Mouradi', style: 'flex: 1;' } }) }}
+                        <button type="button" class="btn-submit" id="btnAutoFill" style="width: auto; padding: 0 15px; background: #fbbe30;">⚡ Auto</button>
+                    </div>
+                    {{ form_errors(form.nom) }}
+                </div>
+
+                {# Localisation #}
+                <div class="form-group">
+                    <label class="form-label">Localisation :</label>
+                    {{ form_widget(form.localisation, { attr: { class: 'form-input', placeholder: 'Ville / Adresse' } }) }}
+                    {{ form_errors(form.localisation) }}
+                </div>
+
+                {# Description #}
+                <div class="form-group form-group-full">
+                    <label class="form-label">Description :</label>
+                    {{ form_widget(form.description, { attr: { class: 'form-input', rows: 3, placeholder: 'Courte description' } }) }}
+                    {{ form_errors(form.description) }}
+                </div>
+
+                {# Prix #}
+                <div class="form-group">
+                    <label class="form-label">Prix (TND) :</label>
+                    {{ form_widget(form.prix, { attr: { class: 'form-input', placeholder: '0.00' } }) }}
+                    {{ form_errors(form.prix) }}
+                </div>
+
+                {# Capacité #}
+                <div class="form-group">
+                    <label class="form-label">Capacité :</label>
+                    {{ form_widget(form.capacite, { attr: { class: 'form-input', placeholder: 'Nb Personnes' } }) }}
+                    {{ form_errors(form.capacite) }}
+                </div>
+
+                {# Nombre d'étoiles #}
+                <div class="form-group">
+                    <label class="form-label">Nb Étoiles :</label>
+                    {{ form_widget(form.nombreEtoiles, { attr: { class: 'form-input', placeholder: '1 - 5' } }) }}
+                    {{ form_errors(form.nombreEtoiles) }}
+                </div>
+
+                {# Type Chambre #}
+                <div class="form-group">
+                    <label class="form-label">Type Chambre :</label>
+                    {{ form_widget(form.typeChambre, { attr: { class: 'form-input', placeholder: 'Ex: Single, Double, Suite' } }) }}
+                    {{ form_errors(form.typeChambre) }}
+                </div>
+
+                {# Disponibilité #}
+                <div class="form-group form-group-checkbox">
+                    {{ form_widget(form.disponibilite, { attr: { class: 'form-checkbox' } }) }}
+                    <label class="form-label">Disponible pour réservation</label>
+                </div>
+
+                {# Photo #}
+                <div class="form-group form-group-full" style="padding-top: 10px;">
+                    <label class="form-label">Photo de l'hôtel :</label>
+                    <div class="file-upload-row">
+                        {{ form_widget(form.photo, { attr: { class: 'form-input', accept: 'image/*', style: 'padding: 8px;' } }) }}
+                        <div id="imgPreviewContainer" class="mt-3" style="display: none;">
+                            <img id="imgPreview" src="#" alt="Aperçu" class="img-preview" style="max-width: 200px; border-radius: 8px; border: 1px solid #ddd;" />
+                        </div>
+                    </div>
+                    {{ form_errors(form.photo) }}
+                </div>     
+
+            </div>
+
+            {# Buttons #}
+            <div class="form-actions" style="border-top: 1px solid #eee; margin-top: 30px; padding-top: 20px;">
+                <button type="submit" class="btn-submit" style="width: auto; padding: 12px 30px; font-size: 15px;">✔ Ajouter Hôtel</button>
+                <a href="{{ path('servicespage') }}" class="btn-back" style="padding: 11px 25px;">← Annuler</a>
+            </div>
+
+        {{ form_end(form) }}
+
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Image Preview
+        const photoInput = document.querySelector('input[type="file"]');
+        const preview = document.getElementById('imgPreview');
+        const previewContainer = document.getElementById('imgPreviewContainer');
+
+        if (photoInput) {
+            photoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    preview.src = URL.createObjectURL(file);
+                    previewContainer.style.display = 'block';
+                }
+            });
+        }
+
+        // Autofill with MakCorps
+        const btnAutoFill = document.getElementById('btnAutoFill');
+        const nomInput = document.getElementById('{{ form.nom.vars.id }}');
+
+        if (btnAutoFill && nomInput) {
+            btnAutoFill.addEventListener('click', async function() {
+                const hotelName = nomInput.value.trim();
+                if (!hotelName) {
+                    alert('Veuillez saisir un nom d\'hôtel.');
+                    return;
+                }
+
+                btnAutoFill.innerText = '...';
+                btnAutoFill.disabled = true;
+
+                try {
+                    const response = await fetch('{{ path("hotel_autofill") }}?nomHotel=' + encodeURIComponent(hotelName));
+                    const data = await response.json();
+
+                    if (data.error) {
+                        alert(`Erreur: ${data.error}`);
+                    } else {
+                        document.getElementById('{{ form.localisation.vars.id }}').value = data.localisation || '';
+                        document.getElementById('{{ form.nombreEtoiles.vars.id }}').value = data.nombreEtoiles || 5;
+                        document.getElementById('{{ form.description.vars.id }}').value = data.description || '';
+                    }
+                } catch (e) {
+                    alert('Erreur de connexion au service autofill.');
+                } finally {
+                    btnAutoFill.innerText = '⚡ Auto';
+                    btnAutoFill.disabled = false;
+                }
+            });
+        }
+    });
+    </script>
+{% endblock %}

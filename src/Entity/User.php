@@ -47,6 +47,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', length: 20, nullable: true)]
     private ?string $status = null;
 
+    #[ORM\Column(name: 'block', type: 'boolean', nullable: true, options: ['default' => 0])]
+    private ?bool $block = false;
+
     #[ORM\Column(type: 'boolean', nullable: true, options: ['default' => 0])]
     private ?bool $two_factor_enabled = false;
 
@@ -251,6 +254,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->date;
     }
 
+    public function getDateDisplay(): string
+    {
+        if (!$this->date instanceof \DateTimeInterface) {
+            return '';
+        }
+
+        return $this->date->format('Y-m-d');
+    }
+
     public function setDate(\DateTimeInterface $date): static
     {
         $this->date = $date;
@@ -279,6 +291,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isBlocked(): bool
+    {
+        return (bool) ($this->block ?? false);
+    }
+
+    public function setBlocked(?bool $blocked): static
+    {
+        $this->block = $blocked;
+        return $this;
+    }
+
     public function isTwoFactorEnabled(): ?bool
     {
         return $this->two_factor_enabled;
@@ -304,6 +327,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getTwoFactorExpiry(): ?\DateTimeInterface
     {
         return $this->two_factor_expiry;
+    }
+
+    public function getTwoFactorExpiryDisplay(): string
+    {
+        if (!$this->two_factor_expiry instanceof \DateTimeInterface) {
+            return '';
+        }
+
+        return $this->two_factor_expiry->format('Y-m-d H:i:s');
     }
 
     public function setTwoFactorExpiry(?\DateTimeInterface $two_factor_expiry): static
@@ -343,6 +375,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->fingerprint_slot_id = $fingerprint_slot_id;
         return $this;
+    }
+
+    public function getBlockedDisplay(): string
+    {
+        return $this->isBlocked() ? 'Yes' : 'No';
+    }
+
+    public function getTwoFactorEnabledDisplay(): string
+    {
+        return $this->isTwoFactorEnabled() ? 'Enabled' : 'Disabled';
     }
 
     // ========== COLLECTION GETTERS ==========

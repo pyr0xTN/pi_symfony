@@ -1,0 +1,23 @@
+{# templates/agency/partials/_sidebar_agency.html.twig #}
+<aside class="sidebar">
+    <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" style="max-width: 140px; margin: 0 auto; display: block;" />
+    </div>
+
+    <hr class="sidebar-divider" style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 20px;" />
+
+    <nav class="sidebar-nav">
+        <a href="{{ path('dashboard') }}"
+           class="nav-btn {% if active_page == 'dashboard' %}active{% endif %}">
+            📉 Dashboard
+        </a>
+        <a href="{{ path('servicespage') }}"
+           class="nav-btn {% if active_page == 'services' %}active{% endif %}">
+            👨🏻‍💻 Services
+        </a>
+        <a href="{{ path('reservations_index') }}"
+           class="nav-btn {% if active_page == 'reservations' %}active{% endif %}">
+            🎫 Réservations
+        </a>
+    </nav>
+</aside>

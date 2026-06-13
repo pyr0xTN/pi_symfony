@@ -15,6 +15,9 @@
             {% if post.hasImage %}
                 <div class="detail-hero-container">
                     <img src="{{ asset(post.imagePath) }}" alt="Post image" class="detail-hero-image">
+                    {% if post.hasPlace %}
+                        <span class="weather-badge weather-badge-overlay" id="weatherBadge-{{ post.id }}" style="display:none"></span>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -30,7 +33,6 @@
                 {% if post.hasPlace %}
                     <div class="place-weather-row">
                         <span class="post-place-tag">📍 {{ post.place }}</span>
-                        <span class="weather-badge" id="weatherBadge-{{ post.id }}" style="display:none"></span>
                     </div>
                 {% endif %}
 
@@ -90,8 +92,15 @@
         .then(data => {
             if (data && !data.error) {
                 const badge = document.getElementById('weatherBadge-{{ post.id }}');
-                badge.innerHTML = `${data.formattedTemp} — ${data.weatherDescription}`;
-                badge.style.display = 'inline-flex';
+                if (!badge) return;
+
+                const emoji = data.emoji || '';
+                const temp = data.formattedTemp || '';
+                badge.textContent = `${emoji} ${temp}`.trim();
+
+                if (badge.textContent) {
+                    badge.style.display = 'inline-flex';
+                }
             }
         }).catch(() => {});
 </script>

@@ -1,0 +1,59 @@
+{% extends 'agency/base_agency.html.twig' %}
+
+{% block title %}Edit Reservation - Agency Panel{% endblock %}
+
+{% block agency_content %}
+    <div class="mb-4">
+        <a href="{{ path('agency_reservation_index') }}" class="text-muted small text-decoration-none">← Back to Reservations</a>
+        <h2 class="mt-2" style="color: #194575; font-size: 32px; font-weight: 800;">Edit Reservation #{{ reservation.idReservation }}</h2>
+    </div>
+
+    <div class="panel">
+        <div class="alert alert-info border-0 mb-4" style="background: rgba(11, 164, 161, 0.1); color: #0BA4A1;">
+            <strong>Service:</strong> {{ reservation.idService.nom }} ({{ reservation.idService.type|upper }})
+        </div>
+
+        {{ form_start(form, { attr: { novalidate: 'novalidate' } }) }}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label font-weight-bold">Customer Name</label>
+                    {{ form_widget(form.nom, { attr: { class: 'form-control' } }) }}
+                    {{ form_errors(form.nom) }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label font-weight-bold">Status</label>
+                    {{ form_widget(form.statut, { attr: { class: 'form-control' } }) }}
+                    {{ form_errors(form.statut) }}
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label font-weight-bold">Date</label>
+                    {{ form_widget(form.dateReservation, { attr: { class: 'form-control' } }) }}
+                    {{ form_errors(form.dateReservation) }}
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label font-weight-bold">Payment Method</label>
+                    {{ form_widget(form.modePaiement, { attr: { class: 'form-control' } }) }}
+                    {{ form_errors(form.modePaiement) }}
+                </div>
+            </div>
+
+            {% if reservation.seatNb > 0 %}
+            <div class="mb-3">
+                <label class="form-label font-weight-bold">Seat Number</label>
+                {{ form_widget(form.siege, { attr: { class: 'form-control' } }) }}
+                {{ form_errors(form.siege) }}
+            </div>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <div class="d-flex gap-3">
+                <button type="submit" class="btn btn-lg px-5" style="background: #0BA4A1; color: white; border-radius: 12px; font-weight: 800;">Update Reservation</button>
+                <a href="{{ path('agency_reservation_index') }}" class="btn btn-lg btn-light px-5" style="border-radius: 12px; font-weight: 700;">Cancel</a>
+            </div>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

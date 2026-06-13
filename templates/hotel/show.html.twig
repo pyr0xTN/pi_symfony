@@ -1,0 +1,81 @@
+{# templates/hotel/show.html.twig #}
+{# Converted from: hotelDetails.fxml #}
+{% extends 'dashboard/layout.html.twig' %}
+
+{% block page_title %}Détails Hôtel{% endblock %}
+
+{% block content %}
+<div class="detail-wrapper">
+    <div class="detail-card">
+
+        {# ── Hero ── #}
+        <div class="detail-hero">
+            {% if hotel.imgUrl is defined and hotel.imgUrl %}
+                <img src="{{ asset(hotel.imgUrl) }}" alt="{{ hotel.nom }}" class="detail-hero-img" />
+            {% else %}
+                <div class="detail-hero-placeholder">🏨</div>
+            {% endif %}
+
+            <span class="detail-badge detail-badge--type">Hôtel</span>
+            <span class="detail-badge detail-badge--dispo {% if hotel.disponibilite %}badge-avail{% else %}badge-unavail{% endif %}">
+                {{ hotel.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+            </span>
+        </div>
+
+        {# ── Title Row ── #}
+        <div class="detail-title-row">
+            <div>
+                <h2 class="detail-name">{{ hotel.nom }}</h2>
+                <p class="detail-location">
+                    📍 {{ hotel.localisation }}
+                    {% if weather is defined %}
+                        <span class="weather-chip">🌡 {{ weather }}°C</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ hotel.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ nuit</span>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Info Chips ── #}
+        <div class="detail-chips">
+            <div class="detail-chip">
+                <span class="chip-icon">⭐</span>
+                <div>
+                    <span class="chip-label">Étoiles</span>
+                    <span class="chip-value">{% for i in 1..hotel.nombre_etoiles %}★{% endfor %}</span>
+                </div>
+            </div>
+          
+            <div class="detail-chip">
+                <span class="chip-icon">👥</span>
+                <div>
+                    <span class="chip-label">Capacité</span>
+                    <span class="chip-value">{{ hotel.capacite }} personnes</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Description ── #}
+        <div class="detail-description">
+            <h4 class="detail-section-title">À propos</h4>
+            <p>{{ hotel.description }}</p>
+        </div>
+
+        {# ── Actions ── #}
+        <div class="detail-actions">
+           <a href="{{ path('servicespage') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_new', { serviceId: hotel.idService, serviceType: 'hotel' }) }}" class="btn-submit">
+                Réserver une chambre
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

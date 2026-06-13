@@ -1,0 +1,210 @@
+{% extends 'base.html.twig' %}
+{% block stylesheets %}
+    <!-- Favicon -->
+    <link rel="icon" href="{{asset('assets/styles/img/core-img/favicon.ico')}}">
+
+    <!-- Core Stylesheet -->
+    <link rel="stylesheet" href="{{ asset('assets/styles/style.css') }}">
+{% endblock %}
+{% block body %}
+<body>
+
+
+    <!-- ##### Header Area Start ##### -->
+    <header class="header-area">
+        <!-- Navbar Area -->
+        <div class="palatin-main-menu">
+            <div class="classy-nav-container breakpoint-off">
+                <div class="container">
+                    <!-- Menu -->
+                    <nav class="classy-navbar justify-content-between" id="palatinNav">
+
+                        <!-- Nav brand -->
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>
+
+                        <!-- Navbar Toggler -->
+                        <div class="classy-navbar-toggler">
+                            <span class="navbarToggler"><span></span><span></span><span></span></span>
+                        </div>
+
+                        <!-- Menu -->
+                        <div class="classy-menu">
+
+                            <!-- close btn -->
+                            <div class="classycloseIcon">
+                                <div class="cross-wrap"><span class="top"></span><span class="bottom"></span></div>
+                            </div>
+
+                            <!-- Nav Start -->
+                            <div class="classynav">
+                                <ul>
+                                    <li ><a href="{{path('ourservices_index')}}">Services</a></li>
+                                    <li class="active"><a href="{{path('myreservations_index')}}">details</a></li>
+                                </ul>
+                                <!-- Button -->
+                                <div class="menu-btn">
+                                    <a href="#" class="btn palatin-btn">Make a Reservation</a>
+                                </div>
+
+                            </div>
+                            <!-- Nav End -->
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- ##### Header Area End ##### -->
+
+    <!-- ##### Breadcumb Area Start ##### -->
+    <section class="breadcumb-area bg-img d-flex align-items-center justify-content-center" style="background-image: url({{asset('assets/styles/img/bg-img/bg-5.jpg')}});">
+        <div class="bradcumbContent">
+            <h2>Details</h2>
+        </div>
+    </section>
+    <!-- ##### Breadcumb Area End ##### -->
+
+    
+
+<div class="detail-wrapper">
+    <div class="detail-card">
+
+        {# ── Hero ── #}
+        <div class="detail-hero">
+            {% if hotel.imgUrl is defined and hotel.imgUrl %}
+                <img src="{{ asset(hotel.imgUrl) }}" alt="{{ hotel.nom }}" class="detail-hero-img" />
+            {% else %}
+                <div class="detail-hero-placeholder">🏨</div>
+            {% endif %}
+
+            <span class="detail-badge detail-badge--type">Hôtel</span>
+            <span class="detail-badge detail-badge--dispo {% if hotel.disponibilite %}badge-avail{% else %}badge-unavail{% endif %}">
+                {{ hotel.disponibilite ? '✔ Disponible' : '✖ Indisponible' }}
+            </span>
+        </div>
+
+        {# ── Title Row ── #}
+        <div class="detail-title-row">
+            <div>
+                <h2 class="detail-name">{{ hotel.nom }}</h2>
+                <p class="detail-location">
+                    📍 {{ hotel.localisation }}
+                    {% if weather is defined %}
+                        <span class="weather-chip">🌡 {{ weather }}°C</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="detail-price-box">
+                <span class="detail-price">{{ hotel.prix | format_currency | raw }}</span>
+                <span class="detail-price-label">/ nuit</span>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Info Chips ── #}
+        <div class="detail-chips">
+            <div class="detail-chip">
+                <span class="chip-icon">⭐</span>
+                <div>
+                    <span class="chip-label">Étoiles</span>
+                    <span class="chip-value">{% for i in 1..hotel.nombre_etoiles %}★{% endfor %}</span>
+                </div>
+            </div>
+        
+            <div class="detail-chip">
+                <span class="chip-icon">👥</span>
+                <div>
+                    <span class="chip-label">Capacité</span>
+                    <span class="chip-value">{{ hotel.capacite }} personnes</span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="detail-divider" />
+
+        {# ── Description ── #}
+        <div class="detail-description">
+            <h4 class="detail-section-title">À propos</h4>
+            <p>{{ hotel.description }}</p>
+        </div>
+
+        {# ── Actions ── #}
+        <div class="detail-actions">
+            <a href="{{ path('ourservices_index') }}" class="btn-back">← Retour</a>
+            <a href="{{ path('reservation_newfront', { serviceId: hotel.idService, serviceType: 'hotel' }) }}" class="btn-submit">
+                Réserver une chambre →
+            </a>
+        </div>
+
+    </div>
+</div>
+
+  
+    <!-- ##### Core Features End ##### -->
+   
+   
+    <!-- ##### Footer Area Start ##### -->
+    <footer class="footer-area">
+        <div class="container">
+            <div class="row">
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-lg-5">
+                    <div class="footer-widget-area mt-50">
+                      <div class="sidebar-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Rehletna Logo" />
+    </div>                        
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec malesuada lorem maximus mauris sceleri sque, at rutrum nulla dictum. Ut ac ligula sapien. Suspendisse cursus faucibus finibus. </p>
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-4">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Find us on the map</h6>
+                        <img src="{{asset('assets/styles/img/bg-img/footer-map.png')}}" alt="">
+                    </div>
+                </div>
+
+                <!-- Footer Widget Area -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="footer-widget-area mt-50">
+                        <h6 class="widget-title mb-5">Subscribe to our newsletter</h6>
+                        <form action="#" method="post" class="subscribe-form">
+                            <input type="email" name="subscribe-email" id="subscribeemail" placeholder="Your E-mail">
+                            <button type="submit">Subscribe</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Copywrite Text -->
+                <div class="col-12">
+                    <div class="copywrite-text mt-30">
+                        <p><a href="#"><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+{% endblock %}
+
+
+{% block javascripts %}
+ {{ parent() }}
+    <!-- ##### All Javascript Script ##### -->
+    <!-- jQuery-2.2.4 js -->
+    <script src="{{asset('assets/styles/js/jquery/jquery-2.2.4.min.js')}}"></script>
+    <!-- Popper js -->
+    <script src="{{asset('assets/styles/js/bootstrap/popper.min.js')}}"></script>
+    <!-- Bootstrap js -->
+    <script src="{{asset('assets/styles/js/bootstrap/bootstrap.min.js')}}"></script>
+    <!-- All Plugins js -->
+    <script src="{{asset('assets/styles/js/plugins/plugins.js')}}"></script>
+    <!-- Active js -->
+    <script src="{{asset('assets/styles/js/active.js')}}"></script>
+{% endblock %}
